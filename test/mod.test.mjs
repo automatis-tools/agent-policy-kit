@@ -33,3 +33,28 @@ test('custom policy paths reject relative paths before reading local files', asy
   });
   assert.equal(reads, 0);
 });
+
+test('explicit native option takes precedence without reading wrapper environment', async () => {
+  const entry = hooks({ policyPath: '/private/explicit-policy.json' }).get('agent.spawn');
+  const paths = [];
+  const policy = {
+    schemaVersion: 1, mode: 'observe', clients: {
+      claude: { defaultProfile: 'code', maxConcurrent: 3,
+        profiles: { code: { model: 'sonnet', effort: 'high', roles: ['worker'] } },
+        deniedModels: ['opus'], observedModels: [],
+      },
+    },
+  };
+  const engine = {
+    env: { get() { throw new Error('explicit option must not consult environment'); } },
+    fs: { read(path) { paths.push(path); return JSON.stringify(policy); } },
+    store: { set() { throw new Error('store unavailable'); } },
+  };
+  const event = { model: 'opus', subagentType: 'worker', fork: false };
+  const result = await entry.run(engine, event, input => {
+    assert.equal(input, event);
+    return { model: input.model };
+  });
+  assert.deepEqual(paths, ['/private/explicit-policy.json']);
+  assert.deepEqual(result, { model: 'opus' });
+});

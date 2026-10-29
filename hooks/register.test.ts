@@ -22,6 +22,7 @@ const spawn = {
 
 function setup(on, value = policy) {
   mock.store(on);
+  mock.env(on, {});
   on('fs.read', () => ({ value: JSON.stringify(value) }));
   on('command.register', ($, e) => ({ value: { command: e.name } }));
 }
@@ -31,6 +32,38 @@ async function audit($) {
 }
 
 describe('native subagent policy', () => {
+  test('wrapper policy environment selects custom observe policy', async ($, on) => {
+    mock.store(on);
+    mock.env(on, { AGENT_POLICY_PATH: '/private/wrapper-policy.json' });
+    on('fs.read', ($, e) => ({ value: JSON.stringify(e.path === '/private/wrapper-policy.json' ? { ...policy, mode: 'observe' } : policy) }));
+    on('agent.spawn', ($, e) => ({ model: e.model }));
+    expect((await $.agent.spawn({ ...spawn, model: 'opus' })).model).toBe('opus');
+    const result = await audit($);
+    expect(result.records[0].action).toBe('observe');
+    expect(JSON.stringify(result).includes('/private/')).toBe(false);
+  });
+
+  test('an absent wrapper policy uses only the bundled policy path', async ($, on) => {
+    mock.store(on);
+    mock.env(on, {});
+    const paths = [];
+    on('fs.read', ($, e) => { paths.push(e.path); return { value: JSON.stringify(policy) }; });
+    on('agent.spawn', ($, e) => ({ model: e.model }));
+    expect((await $.agent.spawn({ ...spawn, model: 'sonnet' })).model).toBe('sonnet');
+    expect(paths.length).toBe(1);
+    expect(paths[0].endsWith('/policies/balanced.json')).toBe(true);
+  });
+
+  test('a relative wrapper policy path fails safely before reading files', async ($, on) => {
+    mock.store(on);
+    mock.env(on, { AGENT_POLICY_PATH: '../private/policy.json' });
+    let reads = 0;
+    on('fs.read', () => { reads += 1; return { value: JSON.stringify(policy) }; });
+    on('agent.spawn', () => ({ model: 'BAD' }));
+    expect(await $.agent.spawn({ ...spawn, model: 'sonnet' })).toEqual({ deny: 'Agent policy refused this subagent spawn.' });
+    expect(reads).toBe(0);
+  });
+
   test('routes Explore to Haiku before starting the downstream subagent', async ($, on) => {
     setup(on);
     on('agent.spawn', ($, e) => ({ model: e.model, agentId: 'private-child' }));
@@ -92,6 +125,7 @@ describe('native subagent policy', () => {
 
   test('read errors fail closed without disclosing error or path', async ($, on) => {
     mock.store(on);
+    mock.env(on, {});
     on('fs.read', () => { throw new Error('/private/SECRET POLICY missing'); });
     on('agent.spawn', () => ({ model: 'BAD' }));
     const result = await $.agent.spawn(spawn);
@@ -100,6 +134,7 @@ describe('native subagent policy', () => {
 
   test('malformed JSON policy does not escape as an exception or raw context', async ($, on) => {
     mock.store(on);
+    mock.env(on, {});
     on('fs.read', () => ({ value: '{"PRIVATE /private/policy":' }));
     on('agent.spawn', () => ({ model: 'BAD' }));
     expect(await $.agent.spawn(spawn)).toEqual({ deny: 'Agent policy refused this subagent spawn.' });
@@ -124,6 +159,7 @@ describe('native subagent policy', () => {
     on('store.get', ($, e) => ({ value: values.get(e.key) }));
     on('store.keys', () => ({ value: [...values.keys()] }));
     on('store.delete', ($, e) => { values.delete(e.key); return { value: undefined }; });
+    mock.env(on, {});
     on('fs.read', () => ({ value: JSON.stringify({ ...policy, mode: 'observe' }) }));
     on('agent.spawn', () => ({ model: 'PRIVATE RESULT MODEL' }));
     await $.agent.spawn({ ...spawn, model: 'PRIVATE UNKNOWN MODEL' });
@@ -137,6 +173,7 @@ describe('native subagent policy', () => {
   });
 
   test('audit store failure cannot bypass enforce checks or block an observing spawn', async ($, on) => {
+    mock.env(on, {});
     on('fs.read', () => ({ value: JSON.stringify({ ...policy, mode: 'observe' }) }));
     on('store.keys', () => { throw new Error('PRIVATE STORE ERROR'); });
     on('agent.spawn', ($, e) => ({ model: e.model }));
@@ -144,6 +181,7 @@ describe('native subagent policy', () => {
   });
 
   test('store failure cannot make enforce mode allow a forbidden model', async ($, on) => {
+    mock.env(on, {});
     on('fs.read', () => ({ value: JSON.stringify(policy) }));
     on('store.set', () => { throw new Error('PRIVATE STORE ERROR'); });
     on('agent.spawn', () => ({ model: 'BAD' }));
@@ -162,6 +200,7 @@ describe('native subagent policy', () => {
   test('a validated observe dispatch stays observing if the policy read later fails', async ($, on) => {
     mock.store(on);
     let reads = 0;
+    mock.env(on, {});
     on('fs.read', () => {
       reads += 1;
       if (reads > 1) throw new Error('policy changed during dispatch');
@@ -217,6 +256,7 @@ describe('native subagent policy', () => {
     const listed = new Promise(resolve => { snapshotTaken = resolve; });
     const resume = new Promise(resolve => { resumeExport = resolve; });
     let pauseNextList = true;
+    mock.env(on, {});
     on('fs.read', () => ({ value: JSON.stringify(policy) }));
     on('store.set', ($, e) => { values.set(e.key, e.value); return { value: undefined }; });
     on('store.get', ($, e) => ({ value: values.get(e.key) }));
@@ -254,6 +294,7 @@ describe('native subagent policy', () => {
       },
       'private-id-key': { prompt: 'PRIVATE' },
     });
+    mock.env(on, {});
     on('fs.read', () => ({ value: JSON.stringify(policy) }));
     const result = await audit($);
     expect(result.records).toEqual([{
@@ -275,6 +316,7 @@ describe('native subagent policy', () => {
 
   test('session startup registers the local command and keeps the session cwd', async ($, on) => {
     mock.store(on);
+    mock.env(on, {});
     on('fs.read', () => ({ value: JSON.stringify(policy) }));
     const commands = [];
     on('command.register', ($, e) => { commands.push(e.name); return { value: { command: e.name } }; });
@@ -285,6 +327,7 @@ describe('native subagent policy', () => {
 
   test('status errors disclose only a fixed unavailable reason', async ($, on) => {
     mock.store(on);
+    mock.env(on, {});
     on('fs.read', () => { throw new Error('PRIVATE /private/policy'); });
     expect(JSON.parse((await $.command.run({ command: 'agent-policy-status' })).text)).toEqual({
       schemaVersion: 1, client: 'claude', status: 'unavailable', reason: 'policy_or_audit_unavailable',

@@ -33,7 +33,8 @@ function metadata(value) {
 }
 
 async function readPolicy($, options) {
-  const custom = options.policyPath ?? '';
+  let custom = options.policyPath ?? '';
+  if (custom === '') custom = (await $.env.get('AGENT_POLICY_PATH')) ?? '';
   if (typeof custom !== 'string' || custom.includes('\0')
     || (custom && (!/^(?:\/(?!\/)|[A-Za-z]:[\\/])/.test(custom)))) throw new Error('Invalid policy.');
   const raw = await $.fs.read(custom || `${$.plugin.root}/policies/balanced.json`);

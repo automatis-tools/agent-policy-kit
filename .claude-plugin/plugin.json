@@ -8,7 +8,7 @@
     "policyPath": {
       "type": "string",
       "title": "Policy path",
-      "description": "Absolute local policy JSON path; empty uses the bundled balanced policy",
+      "description": "Absolute local policy JSON path; empty uses AGENT_POLICY_PATH when set, otherwise the bundled balanced policy",
       "default": ""
     }
   }
