@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Choose native subagent model preferences for your coding tools. Copy one pinned setup command, run it once, and get back to work.">
+<title>Agent Policy Kit — make delegation your own</title>
+<style>
+:root{--ink:#1c2928;--muted:#64716c;--line:#dce2db;--paper:#fafbf7;--green:#24664e;--mint:#edf4eb;--serif:Georgia,'Times New Roman',serif;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);background:var(--paper);font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button,a,input,select,textarea,summary{-webkit-tap-highlight-color:transparent}button,summary{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.5}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #72a78c;outline-offset:4px}input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--green);outline-offset:2px}button{transition:background .15s,color .15s}header,main,footer{max-width:1240px;margin:auto;padding-left:42px;padding-right:42px}header{height:96px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:16px}.brand{display:flex;align-items:center;gap:11px;font-size:14px;letter-spacing:-.2px;font-weight:650}.brand-mark{display:grid;place-items:center;background:var(--ink);color:var(--paper);width:36px;height:36px;border-radius:10px;font-size:12px;letter-spacing:-.5px}.version{font:11px var(--mono);color:var(--muted);padding:5px 8px;border:1px solid var(--line);border-radius:5px}.header-note{color:var(--muted);font-size:12px}.hero{padding-top:50px;padding-bottom:35px;max-width:830px}.eyebrow{font-size:10px;line-height:1.5;font-weight:750;letter-spacing:1.9px;text-transform:uppercase;color:var(--green)}h1{font:normal clamp(38px,4.1vw,54px)/1.08 var(--serif);letter-spacing:-1.9px;margin:15px 0 18px}h1 em{font-weight:normal;color:var(--green)}.intro{font-size:15px;line-height:1.7;color:var(--muted);max-width:660px;margin:0}.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(340px,1fr);gap:36px;align-items:start}.settings{min-width:0}.section-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:17px}.section-title{font-size:14px;font-weight:650;margin:0;letter-spacing:-.15px}.step{display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid #c9d5c9;border-radius:50%;margin-right:8px;font:11px var(--mono);color:var(--green)}.text-button{border:0;background:none;padding:4px 0;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}.text-button:hover{color:var(--green)}.tool-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:27px}.tool-option{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;min-width:0}.tool-option:has(input:checked){background:var(--mint);border-color:#a9bea7}.tool-option input{width:14px;height:14px;margin:0;accent-color:var(--green);cursor:pointer}.editor{border:1px solid var(--line);border-radius:13px;background:#fff;overflow:hidden}.tabs{display:flex;background:#f3f5f0;border-bottom:1px solid var(--line);padding:0 15px;gap:20px;overflow:auto}.tab{padding:17px 0 14px;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);font-size:12px;white-space:nowrap}.tab[aria-selected=true]{border-bottom-color:var(--green);color:var(--ink);font-weight:650}.tool-context{padding:19px 20px 15px;border-bottom:1px solid #edf0e9;min-height:85px}.tool-context strong{font-size:12px;font-weight:650}.tool-context p{font-size:11px;line-height:1.6;color:var(--muted);margin:6px 0 0}.task-row{padding:18px 20px;border-bottom:1px solid #edf0e9;display:grid;grid-template-columns:100px minmax(0,1fr) 100px;gap:13px;align-items:center}.task-row:last-child{border-bottom:0}.task-name{font-size:12px;font-weight:650;margin-bottom:4px}.task-hint{font-size:10px;color:var(--muted)}.field-label{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}input[type=text],input[type=number],select{width:100%;height:36px;border:1px solid #d9dfd5;border-radius:6px;background:#fff;color:var(--ink);padding:0 9px;font-size:11px;min-width:0}input[type=text]{font-family:var(--mono);font-size:10px}input[aria-invalid=true],select[aria-invalid=true]{border-color:#b24939;background:#fff8f5}.native-effort{font-size:10px;line-height:1.5;color:var(--muted)}.model-note{font-size:10px;line-height:1.6;color:var(--muted);padding:13px 20px;background:#fcfdf9;border-top:1px solid #edf0e9}.empty-state{padding:30px 20px;color:var(--muted);font-size:12px;line-height:1.7}.parallel{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:25px 0 12px}.parallel-copy strong{font-size:12px}.parallel-copy p{font-size:11px;line-height:1.6;color:var(--muted);max-width:340px;margin:6px 0 0}.parallel-control{display:flex;align-items:center;gap:8px;flex-shrink:0}.parallel-control input{width:63px;font-family:var(--mono);font-size:13px}.parallel-control span{font-size:10px;color:var(--muted)}.delegation-note{display:flex;gap:10px;align-items:start;border-top:1px solid var(--line);padding-top:17px;margin-top:22px;color:var(--muted);font-size:11px;line-height:1.7}.note-icon{color:var(--green);font:15px var(--serif);flex-shrink:0}.output{position:sticky;top:24px;min-width:0}.command-card{border-radius:13px;padding:25px;background:#1e302a;color:#eef4ed;box-shadow:0 10px 35px #1e302a0c}.command-card .eyebrow{color:#a9c6b1;font-size:9px;letter-spacing:1.4px}.command-card h2{font:normal 27px/1.2 var(--serif);letter-spacing:-.65px;margin:12px 0 10px}.command-description{font-size:11px;line-height:1.8;color:#b8c8be;margin:0 0 19px}.command-meta{display:flex;justify-content:space-between;gap:10px;font:9px var(--mono);letter-spacing:.3px;color:#b8c8be;margin-bottom:9px}.command-shell{background:#14251f;border:1px solid #3c5145;border-radius:8px;overflow:hidden}.command-preview{padding:15px 15px 6px;font:11px/1.8 var(--mono);overflow-wrap:anywhere;color:#e1ece1}.command-preview .prompt{color:#8fbc9c;user-select:none}.payload-label{display:block;color:#8fa69a;font:9px/1.7 var(--mono);padding:0 15px 12px}.raw-command{display:block;border:0;border-top:1px solid #2c4035;background:transparent;color:#aec3b5;resize:vertical;font:9px/1.6 var(--mono);width:100%;padding:10px 14px;min-height:82px;max-height:185px;overflow-wrap:anywhere}.copy{border:0;border-radius:7px;background:#e2edda;color:#183526;width:100%;padding:13px 16px;font-size:12px;font-weight:650;margin-top:15px}.copy:hover{background:#f1f6ea}.copy-symbol{padding-right:6px}.feedback{min-height:20px;font-size:10px;line-height:1.6;margin:9px 0 0;color:#b8d3bf}.error{margin:13px 0 0;padding:12px;border:1px solid #b27b66;border-radius:7px;background:#452f27;color:#ffe1d2;font-size:11px;line-height:1.6}.release-warning{color:#d8c5a4;font-size:10px;line-height:1.7;margin:13px 0 0}.run-note{font-size:10px;line-height:1.7;color:#adc0b3;margin:11px 0 0}.json-details{margin-top:17px;border-top:1px solid #405146;padding-top:15px}.json-details summary{font-size:11px;color:#d7e4d7;list-style-position:outside;margin-left:12px}.json-details pre{font:10px/1.7 var(--mono);color:#c2d4c4;max-height:350px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:0}.after-command{padding:23px 2px 0}.flow-title{font-size:12px;font-weight:650;margin-bottom:13px}.flow{display:flex;align-items:center;gap:11px;font-size:11px;color:var(--muted)}.flow .arrow{color:#a9b8aa}.flow .last{color:var(--green)}.after-command p{font-size:10px;line-height:1.8;color:var(--muted);margin:14px 0 0}.release-details{border-top:1px solid var(--line);margin-top:21px;padding-top:16px}.release-details summary{font-size:11px;color:var(--muted)}.release-details pre{font-family:inherit;font-size:11px;line-height:1.8;color:var(--muted);max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}.footer{margin-top:53px;padding-top:23px;padding-bottom:29px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;color:var(--muted);font-size:10px;line-height:1.8}.footer strong{font-weight:600;color:var(--ink)}[hidden]{display:none!important}@media(min-width:1450px){.hero{padding-top:65px;padding-bottom:42px}}@media(max-width:1000px){header,main,footer{padding-left:25px;padding-right:25px}.layout{gap:24px;grid-template-columns:minmax(0,1.35fr) minmax(305px,1fr)}.task-row{grid-template-columns:78px minmax(0,1fr) 81px;gap:9px;padding:17px 14px}.tool-context,.model-note{padding-left:14px;padding-right:14px}.tool-option{padding:11px 8px;font-size:11px}.command-card{padding:22px}.tabs{gap:16px}}@media(max-width:780px){header{height:78px}.header-note{display:none}.hero{padding-top:35px;padding-bottom:28px}h1{letter-spacing:-1.3px}.layout{grid-template-columns:1fr;gap:30px}.output{position:static}.task-row{grid-template-columns:100px minmax(0,1fr) 100px;gap:13px;padding:18px 20px}.tool-context,.model-note{padding-left:20px;padding-right:20px}.command-card{padding:25px}.raw-command{min-height:68px}.footer{margin-top:35px}}@media(max-width:440px){header,main,footer{padding-left:18px;padding-right:18px}.brand{font-size:12px;gap:8px}.brand-mark{width:31px;height:31px}.version{font-size:9px}h1{font-size:37px}.intro{font-size:13px}.tool-picker{grid-template-columns:repeat(2,1fr);gap:8px}.tool-option{padding:12px;font-size:12px}.section-head{align-items:baseline}.section-title{font-size:12px}.text-button{font-size:10px}.task-row{grid-template-columns:minmax(0,1fr) 85px;gap:11px;padding:17px 15px}.task-identity{grid-column:1/-1;display:flex;align-items:baseline;gap:8px}.task-name{margin:0}.task-hint{font-size:10px}.tool-context,.model-note{padding-left:15px;padding-right:15px}.tabs{justify-content:space-between;gap:13px}.parallel{gap:14px}.parallel-control{gap:5px}.parallel-control span{display:none}.footer{flex-direction:column;gap:5px}.command-card{padding:21px}.flow{gap:9px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="brand-mark" aria-hidden="true">apk</span><span>Agent Policy Kit</span><span class="version" id="release-version"></span></div>
+  <span class="header-note">Native settings. One setup. Yours to keep.</span>
+</header>
+<main>
+  <noscript><p class="error" style="color:#723f2d;background:#fff4ec">Enable JavaScript to choose models and generate your local setup command. This page does not send your choices anywhere.</p></noscript>
+  <div class="hero">
+    <div class="eyebrow">A little intention. Better delegation.</div>
+    <h1>The right model<br>for <em>each kind of work.</em></h1>
+    <p class="intro">Set your subagent preferences across coding tools. Start with our recommendations, make them your own, then apply them with one command.</p>
+  </div>
+  <div class="layout">
+    <section class="settings" aria-label="Configure subagent preferences">
+      <div class="section-head"><h2 class="section-title"><span class="step" aria-hidden="true">1</span>Choose your tools & models</h2><button class="text-button" id="reset" type="button">Reset recommendations</button></div>
+      <div class="tool-picker" id="tool-picker" role="group" aria-label="Tools to configure"></div>
+      <div class="editor">
+        <div class="tabs" id="tabs" role="tablist" aria-label="Selected tools"></div>
+        <div id="tool-panel" role="tabpanel" tabindex="0"></div>
+      </div>
+      <div class="parallel">
+        <div class="parallel-copy"><label for="parallel"><strong>Parallel subagents</strong></label><p>A shared concurrency target. Each tool’s native limits still apply; support varies by tool.</p></div>
+        <div class="parallel-control"><input type="number" id="parallel" min="1" max="32" step="1" inputmode="numeric" aria-describedby="parallel-limit"><span id="parallel-limit">1–32</span></div>
+      </div>
+      <div class="delegation-note"><span class="note-icon" aria-hidden="true">↳</span><span>These preferences apply <strong>only when your main agent chooses to delegate.</strong> Your primary model stays as it is. Choosing a model here does not grant access to it.</span></div>
+    </section>
+    <aside class="output" aria-label="Your setup command">
+      <div class="command-card">
+        <div class="eyebrow">Your configuration, ready to go</div>
+        <h2>Copy. Run once. Carry on.</h2>
+        <p class="command-description">APK configures your tools’ native files, then exits. Nothing from APK runs during your normal agent work.</p>
+        <div class="command-meta"><span>TERMINAL</span><span id="command-version"></span></div>
+        <div class="command-shell" id="command-shell">
+          <div class="command-preview"><span class="prompt" aria-hidden="true">$ </span><span id="command-preview"></span></div>
+          <span class="payload-label">+ your encoded preferences · --apply</span>
+          <label class="field-label" for="command" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Full setup command</label>
+          <textarea class="raw-command" id="command" readonly spellcheck="false" aria-label="Full setup command"></textarea>
+        </div>
+        <p id="config-error" class="error" role="alert" hidden></p>
+        <button type="button" class="copy" id="copy"><span class="copy-symbol" aria-hidden="true">⧉</span>Copy setup command</button>
+        <p class="feedback" id="copy-feedback" role="status" aria-live="polite"></p>
+        <p class="run-note">Run in your terminal with Node.js 22.13+ or 24+. The command applies your choices to native tool configuration.</p>
+        <p class="release-warning" id="release-warning" hidden></p>
+        <details class="json-details"><summary>Inspect the configuration</summary><pre id="config-json"></pre></details>
+      </div>
+      <div class="after-command">
+        <div class="flow-title">A setup step, then out of the way.</div>
+        <div class="flow" aria-label="Choose, copy, run once, APK exits"><span>Choose</span><span class="arrow" aria-hidden="true">→</span><span>Copy</span><span class="arrow" aria-hidden="true">→</span><span>Run once</span><span class="arrow" aria-hidden="true">→</span><span class="last">APK exits</span></div>
+        <p>Your native settings remain independent of APK. No background service, API keys, or extra runtime to maintain.</p>
+        <details class="release-details"><summary id="notes-title">About this release</summary><pre id="release-notes"></pre></details>
+      </div>
+    </aside>
+  </div>
+</main>
+<footer class="footer"><span><strong>Small setup. Lasting preferences.</strong> You stay in control.</span><span>Runs locally in your browser · no data sent</span></footer>
+<script>
+'use strict';
+const RELEASE = __APK_RELEASE_DATA__;
+(() => {
+  const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
+  const ROLES = ['worker', 'reviewer', 'explorer', 'routine'];
+  const EFFORTS = ['low', 'medium', 'high'];
+  const TIERS = ['pro', 'flash', 'inherit'];
+  const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}$/;
+  const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'agy'};
+  const TASKS = {worker: ['Code', 'Build & implement'], reviewer: ['Review', 'Check & reason'], explorer: ['Search', 'Explore & find'], routine: ['Routine', 'Small, clear tasks']};
+  const INFO = {
+    codex: ['Codex', 'Native agent roles with a model and reasoning effort for each kind of work.'],
+    claude: ['Claude Code', 'Native subagent definitions with a model and effort for each kind of work.'],
+    kimi: ['Kimi Code', 'Effort belongs to a model alias. If jobs share an alias, they must share its effort.'],
+    agy: ['Antigravity (agy)', 'Native tiers only: pro, flash, or inherit. agy does not expose per-role effort.']
+  };
+  const clone = value => JSON.parse(JSON.stringify(value));
+  function effective(config, role) {
+    return config.roles?.[role] ?? config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
+  }
+  function initialState(preferences) {
+    return {selected: CLIENTS.filter(client => preferences.clients[client]), active: CLIENTS.find(client => preferences.clients[client]), maxConcurrent: preferences.maxConcurrent,
+      jobs: Object.fromEntries(CLIENTS.filter(client => preferences.clients[client]).map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
+  }
+  function buildConfig(state, preferences) {
+    const errors = [];
+    const maxConcurrent = Number(state.maxConcurrent);
+    if (!Number.isInteger(maxConcurrent) || maxConcurrent < 1 || maxConcurrent > 32) errors.push('Choose a whole number from 1 to 32 for parallel subagents.');
+    if (!Array.isArray(state.selected) || !state.selected.length) errors.push('Choose at least one tool to generate your setup command.');
+    const clients = {};
+    for (const client of CLIENTS.filter(client => state.selected?.includes(client))) {
+      if (!preferences.clients[client]) { errors.push(`${LABELS[client]} has no release recommendations.`); continue; }
+      const config = clone(preferences.clients[client]);
+      config.roles = {};
+      for (const role of ROLES) {
+        const choice = state.jobs[client]?.[role];
+        if (!choice || typeof choice.model !== 'string' || !IDENTIFIER.test(choice.model)) {
+          errors.push(`${LABELS[client]} · ${TASKS[role][0]}: enter a model identifier (1–128 characters; letters, numbers, . _ : / [ ] -).`);
+          continue;
+        }
+        if (client === 'agy' && (!TIERS.includes(choice.model) || choice.effort !== null)) {
+          errors.push(`agy · ${TASKS[role][0]}: choose pro, flash, or inherit; per-role effort is unavailable.`); continue;
+        }
+        if (client !== 'agy' && !EFFORTS.includes(choice.effort)) {
+          errors.push(`${LABELS[client]} · ${TASKS[role][0]}: choose low, medium, or high effort.`); continue;
+        }
+        if (client === 'kimi' && choice.model === 'primary') {
+          errors.push(`Kimi · ${TASKS[role][0]}: use an explicit model alias instead of primary, so your primary model stays unchanged.`); continue;
+        }
+        config.roles[role] = {model: choice.model, effort: choice.effort};
+      }
+      if (client === 'kimi') {
+        const aliases = new Map();
+        for (const choice of Object.values(config.roles)) {
+          if (aliases.has(choice.model) && aliases.get(choice.model) !== choice.effort) {
+            errors.push(`Kimi: “${choice.model}” has different effort settings. Use the same effort for this alias in every job, or choose another alias.`);
+            break;
+          }
+          aliases.set(choice.model, choice.effort);
+        }
+      }
+      const chosen = new Set([config.code.model, config.light.model, ...Object.values(config.roles).map(choice => choice.model)]);
+      config.avoidModels = config.avoidModels.filter(model => !chosen.has(model));
+      clients[client] = config;
+    }
+    return {config: errors.length ? null : {schemaVersion: preferences.schemaVersion, maxConcurrent, clients}, errors};
+  }
+  function encodeConfig(config) {
+    const bytes = new TextEncoder().encode(JSON.stringify(config));
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function buildCommand(config, release) {
+    if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(release.version)) throw new Error('This page has invalid release metadata.');
+    return `npx --yes --ignore-scripts --package agent-policy-kit@${release.version} agent-policy setup --config ${encodeConfig(config)} --apply`;
+  }
+  globalThis.APKConfigurator = Object.freeze({initialState, effective, buildConfig, encodeConfig, buildCommand});
+  if (typeof document === 'undefined') return;
+  const $ = id => document.getElementById(id);
+  let state = initialState(RELEASE.preferences);
+  let currentCommand = '';
+  let revision = 0;
+  $('release-version').textContent = `v${RELEASE.version}`;
+  $('command-version').textContent = `PINNED v${RELEASE.version}`;
+  $('notes-title').textContent = `Release notes · v${RELEASE.version}`;
+  $('release-notes').textContent = typeof RELEASE.notes === 'string' ? RELEASE.notes : JSON.stringify(RELEASE.notes, null, 2);
+  if (RELEASE.unreleased) {
+    $('release-warning').hidden = false;
+    $('release-warning').textContent = 'Release preview: this version may not be on npm yet. The pinned command works after the package is published.';
+  }
+  function element(tag, props = {}, text) {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(props)) node.setAttribute(key, value);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+  function updateResult() {
+    revision++;
+    $('copy-feedback').textContent = '';
+    document.querySelectorAll('[aria-invalid=true]').forEach(node => node.removeAttribute('aria-invalid'));
+    const {config, errors} = buildConfig(state, RELEASE.preferences);
+    if (errors.length) {
+      currentCommand = '';
+      $('command').value = '';
+      $('command-preview').textContent = 'Finish your choices to create a command';
+      $('command-shell').hidden = true;
+      $('config-json').textContent = 'Your configuration will appear here when all choices are valid.';
+      $('config-error').textContent = errors.join(' ');
+      $('config-error').hidden = false;
+      $('copy').disabled = true;
+      if (!Number.isInteger(Number(state.maxConcurrent)) || Number(state.maxConcurrent) < 1 || Number(state.maxConcurrent) > 32) $('parallel').setAttribute('aria-invalid', 'true');
+      document.querySelectorAll('[data-model]').forEach(node => {
+        const choice = state.jobs[node.dataset.client]?.[node.dataset.role];
+        if (!choice || !IDENTIFIER.test(choice.model) || (node.dataset.client === 'kimi' && choice.model === 'primary')) node.setAttribute('aria-invalid', 'true');
+      });
+      return;
+    }
+    try { currentCommand = buildCommand(config, RELEASE); }
+    catch (error) {
+      currentCommand = ''; $('command').value = ''; $('command-shell').hidden = true; $('config-json').textContent = '';
+      $('config-error').textContent = error.message; $('config-error').hidden = false; $('copy').disabled = true; return;
+    }
+    $('command-shell').hidden = false;
+    $('command').value = currentCommand;
+    $('command-preview').textContent = `npx --yes --ignore-scripts --package agent-policy-kit@${RELEASE.version} agent-policy setup`;
+    $('config-json').textContent = JSON.stringify(config, null, 2);
+    $('config-error').hidden = true;
+    $('copy').disabled = false;
+  }
+  function renderPanel() {
+    const panel = $('tool-panel'); panel.replaceChildren();
+    if (!state.active) {
+      panel.append(element('div', {class: 'empty-state'}, 'Choose a tool above to configure its subagent models. Your other choices are kept while you decide.'));
+      panel.removeAttribute('aria-labelledby'); return;
+    }
+    const client = state.active;
+    panel.setAttribute('aria-labelledby', `tab-${client}`);
+    const context = element('div', {class: 'tool-context'});
+    context.append(element('strong', {}, INFO[client][0]), element('p', {}, INFO[client][1])); panel.append(context);
+    const suggestions = [...new Set([RELEASE.preferences.clients[client].code.model, RELEASE.preferences.clients[client].light.model, ...ROLES.map(role => effective(RELEASE.preferences.clients[client], role).model)])];
+    const datalist = element('datalist', {id: `models-${client}`});
+    suggestions.forEach(model => datalist.append(element('option', {value: model}))); panel.append(datalist);
+    for (const role of ROLES) {
+      const row = element('div', {class: 'task-row'});
+      const identity = element('div', {class: 'task-identity'});
+      identity.append(element('div', {class: 'task-name'}, TASKS[role][0]), element('div', {class: 'task-hint'}, TASKS[role][1])); row.append(identity);
+      const modelField = element('div');
+      const modelId = `model-${client}-${role}`;
+      modelField.append(element('label', {class: 'field-label', for: modelId}, client === 'agy' ? 'Native tier' : 'Model'));
+      const modelInput = client === 'agy' ? element('select', {id: modelId, 'aria-label': `${LABELS[client]} ${TASKS[role][0]} native tier`}) : element('input', {id: modelId, type: 'text', list: `models-${client}`, maxlength: '128', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', 'aria-label': `${LABELS[client]} ${TASKS[role][0]} model`});
+      if (client === 'agy') TIERS.forEach(tier => modelInput.append(element('option', {value: tier}, tier)));
+      modelInput.value = state.jobs[client][role].model;
+      modelInput.dataset.model = 'true'; modelInput.dataset.client = client; modelInput.dataset.role = role;
+      modelInput.addEventListener(client === 'agy' ? 'change' : 'input', () => {state.jobs[client][role].model = modelInput.value; updateResult();});
+      modelField.append(modelInput); row.append(modelField);
+      const effortField = element('div');
+      if (client === 'agy') {
+        effortField.append(element('span', {class: 'field-label'}, 'Effort'), element('span', {class: 'native-effort'}, 'Managed by agy'));
+      } else {
+        const effortId = `effort-${client}-${role}`;
+        effortField.append(element('label', {class: 'field-label', for: effortId}, 'Effort'));
+        const select = element('select', {id: effortId, 'aria-label': `${LABELS[client]} ${TASKS[role][0]} effort`});
+        EFFORTS.forEach(effort => select.append(element('option', {value: effort}, effort[0].toUpperCase() + effort.slice(1))));
+        select.value = state.jobs[client][role].effort;
+        select.addEventListener('change', () => {state.jobs[client][role].effort = select.value; updateResult();});
+        effortField.append(select);
+      }
+      row.append(effortField); panel.append(row);
+    }
+    panel.append(element('div', {class: 'model-note'}, client === 'agy' ? 'pro favors capability · flash favors speed · inherit uses the tool’s inherited tier.' : 'Choose a recommendation or type a native model identifier. Availability depends on your tool and account.'));
+  }
+  function renderTabs(focusClient) {
+    $('tabs').replaceChildren();
+    for (const client of state.selected) {
+      const tab = element('button', {type: 'button', role: 'tab', id: `tab-${client}`, 'aria-selected': String(state.active === client), 'aria-controls': 'tool-panel', tabindex: state.active === client ? '0' : '-1', class: 'tab'}, LABELS[client]);
+      tab.addEventListener('click', () => {state.active = client; renderTabs(client); renderPanel();});
+      tab.addEventListener('keydown', event => {
+        const index = state.selected.indexOf(client);
+        const next = event.key === 'ArrowRight' ? (index + 1) % state.selected.length : event.key === 'ArrowLeft' ? (index - 1 + state.selected.length) % state.selected.length : event.key === 'Home' ? 0 : event.key === 'End' ? state.selected.length - 1 : null;
+        if (next !== null) {event.preventDefault(); state.active = state.selected[next]; renderTabs(state.active); renderPanel();}
+      });
+      $('tabs').append(tab);
+    }
+    $('tabs').hidden = !state.selected.length;
+    if (focusClient) $(`tab-${focusClient}`)?.focus();
+  }
+  function renderPicker() {
+    $('tool-picker').replaceChildren();
+    for (const client of CLIENTS.filter(client => RELEASE.preferences.clients[client])) {
+      const label = element('label', {class: 'tool-option'});
+      const checkbox = element('input', {type: 'checkbox', value: client, 'aria-label': `Configure ${LABELS[client]}`}); checkbox.checked = state.selected.includes(client);
+      label.append(element('span', {}, LABELS[client]), checkbox);
+      checkbox.addEventListener('change', () => {
+        state.selected = CLIENTS.filter(name => name === client ? checkbox.checked : state.selected.includes(name));
+        if (!state.selected.includes(state.active)) state.active = state.selected[0];
+        renderTabs(); renderPanel(); updateResult();
+      });
+      $('tool-picker').append(label);
+    }
+  }
+  $('parallel').addEventListener('input', event => {state.maxConcurrent = event.target.value; updateResult();});
+  $('reset').addEventListener('click', () => {
+    state = initialState(RELEASE.preferences); $('parallel').value = state.maxConcurrent;
+    renderPicker(); renderTabs(); renderPanel(); updateResult(); $('copy-feedback').textContent = 'Recommendations restored.';
+  });
+  $('copy').addEventListener('click', async () => {
+    if (!currentCommand) return;
+    const command = currentCommand; const copiedRevision = revision;
+    let copied = false;
+    try {if (navigator.clipboard?.writeText) {await navigator.clipboard.writeText(command); copied = true;}} catch {}
+    if (copiedRevision !== revision) return;
+    if (!copied) {
+      const previous = document.activeElement; $('command').focus(); $('command').select();
+      try {copied = document.execCommand('copy');} catch {}
+      if (copied) previous?.focus();
+    }
+    $('copy-feedback').textContent = copied ? 'Copied. Paste into your terminal when you’re ready.' : 'Command selected. Press ⌘C on Mac or Ctrl+C to copy.';
+  });
+  $('parallel').value = state.maxConcurrent;
+  renderPicker(); renderTabs(); renderPanel(); updateResult();
+})();
+</script>
+</body>
+</html>
