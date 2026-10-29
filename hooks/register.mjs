@@ -59,7 +59,12 @@ async function appendAudit($, record) {
 async function readAudit($) {
   const keys = (await $.store.keys()).filter(key => KEY.test(key)).slice(-RETENTION);
   const records = [];
-  for (const key of keys) records.push(metadata(await $.store.get(key)));
+  for (const key of keys) {
+    const value = await $.store.get(key);
+    // Retention may remove a snapshotted key while this export is reading.
+    // Missing samples are not evidence that any policy decision occurred.
+    if (value !== undefined) records.push(metadata(value));
+  }
   const actions = { allow: 0, rewrite: 0, deny: 0, observe: 0 };
   for (const record of records) actions[record.action] += 1;
   return { records, actions, retentionLimit: RETENTION, completeLedger: false, persistence: 'native_plugin_store' };

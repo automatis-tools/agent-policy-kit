@@ -204,6 +204,48 @@ describe('native subagent policy', () => {
     expect((await audit($)).records.length).toBe(12);
   });
 
+  test('concurrent retention during export cannot fabricate a denial', async ($, on) => {
+    const record = {
+      schemaVersion: 1, client: 'claude', action: 'allow', reason: 'profile_allowed',
+      profile: 'code', requestedModel: 'sonnet', reportedModel: 'sonnet', source: 'client_reported',
+    };
+    const values = new Map(Array.from({ length: 128 }, (_, index) => [
+      `audit-v1:${index.toString(16).padStart(8, '0')}-1111-4111-8111-111111111111`, record,
+    ]));
+    let snapshotTaken;
+    let resumeExport;
+    const listed = new Promise(resolve => { snapshotTaken = resolve; });
+    const resume = new Promise(resolve => { resumeExport = resolve; });
+    let pauseNextList = true;
+    on('fs.read', () => ({ value: JSON.stringify(policy) }));
+    on('store.set', ($, e) => { values.set(e.key, e.value); return { value: undefined }; });
+    on('store.get', ($, e) => ({ value: values.get(e.key) }));
+    on('store.delete', ($, e) => { values.delete(e.key); return { value: undefined }; });
+    on('store.keys', async () => {
+      const keys = [...values.keys()];
+      if (pauseNextList) {
+        pauseNextList = false;
+        snapshotTaken();
+        await resume;
+      }
+      return { value: keys };
+    });
+    on('agent.spawn', ($, e) => ({ model: e.model }));
+
+    const pendingExport = audit($);
+    await listed;
+    // This real policy dispatch appends record 129 and prunes the first key
+    // from the snapshot the export is about to read.
+    await $.agent.spawn({ ...spawn, model: 'sonnet' });
+    resumeExport();
+    const result = await pendingExport;
+    expect(result.records.length).toBe(127);
+    expect(result.actions).toEqual({ allow: 127, rewrite: 0, deny: 0, observe: 0 });
+    expect(result.completeLedger).toBe(false);
+    expect(JSON.stringify(result).includes('audit-v1:')).toBe(false);
+    expect(JSON.stringify(result).includes('PRIVATE')).toBe(false);
+  });
+
   test('audit export strips poisoned old record fields and strings', async ($, on) => {
     mock.store(on, {
       'audit-v1:11111111-1111-4111-8111-111111111111': {
