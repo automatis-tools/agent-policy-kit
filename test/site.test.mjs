@@ -193,3 +193,21 @@ test('Kimi model selection reuses its alias effort; independent client roles kee
   assert.equal(api.preferenceForModel(preferences.clients.kimi, 'routine', 'catalog/shared', jobs, catalog, true).effort, 'high');
   assert.equal(api.preferenceForModel(preferences.clients.codex, 'routine', 'catalog/shared', jobs, catalog).effort, 'low');
 });
+
+test('all three real release presets are valid with the shipped native catalog', () => {
+  const catalog = JSON.parse(fs.readFileSync(new URL('../models/catalog.json', import.meta.url), 'utf8'));
+  for (const id of ['fast', 'balanced', 'quality']) {
+    const preset = JSON.parse(fs.readFileSync(new URL(`../policies/${id}.json`, import.meta.url), 'utf8'));
+    const result = plain(api.buildConfig(api.initialState(preset), preset, catalog));
+    assert.deepEqual(result.errors, [], id);
+    assert.deepEqual(result.config, preset, id);
+  }
+});
+
+test('Kimi native default can share an alias with one explicit effort pin', () => {
+  const state = api.initialState(preferences);
+  state.jobs.kimi.reviewer.effort = null;
+  assert.deepEqual(plain(api.buildConfig(state, preferences)).errors, []);
+  state.jobs.kimi.explorer = {...state.jobs.kimi.worker, effort: 'low'};
+  assert.equal(api.buildConfig(state, preferences).config, null);
+});

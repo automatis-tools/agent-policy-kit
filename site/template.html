@@ -40,7 +40,7 @@ const RELEASE = __APK_RELEASE_DATA__;
 (() => {
   const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
   const ROLES = ['worker', 'reviewer', 'explorer', 'routine'];
-  const TIERS = ['pro', 'flash', 'inherit'];
+  const TIERS = ['pro', 'flash', 'flash_lite', 'inherit'];
   const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}$/;
   const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'Antigravity'};
   const TASKS = {worker: 'Code', reviewer: 'Review', explorer: 'Search', routine: 'Routine'};
@@ -99,7 +99,7 @@ const RELEASE = __APK_RELEASE_DATA__;
           errors.push(`${LABELS[client]} ${TASKS[role]}: enter a valid model ID (1–128 ASCII characters, no spaces).`); continue;
         }
         if (client === 'agy' && (!TIERS.includes(choice.model) || choice.effort !== null)) {
-          errors.push(`agy ${TASKS[role]}: choose pro, flash, or inherit.`); continue;
+          errors.push(`Antigravity ${TASKS[role]}: choose a supported native tier.`); continue;
         }
         if (client !== 'agy' && !allowedEfforts(clientCatalog(client, preferences, catalog), choice.model).includes(choice.effort)) {
           errors.push(`${LABELS[client]} ${TASKS[role]}: choose a supported effort or Native default.`); continue;
@@ -115,6 +115,7 @@ const RELEASE = __APK_RELEASE_DATA__;
       if (client === 'kimi') {
         const aliases = new Map();
         for (const choice of choices) {
+          if (choice.effort === null) continue;
           if (aliases.has(choice.model) && aliases.get(choice.model) !== choice.effort) {
             errors.push(`Kimi: tasks using the same alias must use the same effort.`); break;
           }
@@ -214,7 +215,7 @@ const RELEASE = __APK_RELEASE_DATA__;
       function populateEffort() {
         effort.replaceChildren();
         const levels = client === 'agy' ? [null] : allowedEfforts(catalog, state.jobs[client][role].model);
-        levels.forEach(level => effort.append(element('option', {value: level ?? ''}, level === null ? 'Native default' : level[0].toUpperCase() + level.slice(1))));
+        levels.forEach(level => effort.append(element('option', {value: level ?? ''}, level === null ? 'Native default' : level === 'xhigh' ? 'Extra high' : level[0].toUpperCase() + level.slice(1))));
         effort.value = state.jobs[client][role].effort ?? '';
         effort.disabled = levels.length === 1;
       }
