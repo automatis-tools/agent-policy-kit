@@ -376,3 +376,15 @@ test('different shared preferences refuse planning and owned policy drift refuse
 test('Kimi keeps unrelated native pool entries, provider settings, hooks and later edits',async t=>{
  const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');const original=modelConfig+'[secondary_model]\ndefault_model = "kimi-code/k3"\n[secondary_model.models]\n"kimi-code/k3" = "user code hint"\n"other" = "preserve other model"\n[models.other]\nprovider = "fixture"\nmodel = "other"\nmax_context_size = 100\n[[hooks]]\nevent = "Stop"\ncommand = "user command"\n';await put(target,original);await applyInstall(await planInstall(f));let native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.secondary_model.models.other,'preserve other model');assert.deepEqual(native.hooks,parseToml(original).hooks);await fs.appendFile(target,'\n[user_settings]\nlater = true\n');await uninstall({...f,apply:true});native=parseToml(await fs.readFile(target,'utf8'));assert.deepEqual(native,{...parseToml(original),user_settings:{later:true}});
 });
+
+for(const kind of ['code','light']) test(`Kimi ${kind} reserved primary alias refuses installation despite complete provisioning`,async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');
+ const original=modelConfig+'[models.primary]\nprovider = "fixture"\nmodel = "fully-provisioned-primary"\nmax_context_size = 262144\nsupport_efforts = ["low", "high"]\n';
+ await put(target,original);
+ const preferences=JSON.parse(await fs.readFile(f.policyPath));preferences.clients.kimi.avoidModels=[];preferences.clients.kimi[kind].model='primary';await fs.writeFile(f.policyPath,JSON.stringify(preferences));
+ await assert.rejects(planInstall(f),{code:'INVALID_POLICY'});
+ assert.equal(await fs.readFile(target,'utf8'),original);
+ await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+ await assert.rejects(fs.stat(rolePath(f,'worker')),{code:'ENOENT'});
+ await assert.rejects(fs.stat(instructionPath(f)),{code:'ENOENT'});
+});
