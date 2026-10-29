@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { ROLES } from './policy.mjs';
+import { ROLES, rolePreference } from './policy.mjs';
 
 export const BEGIN = '<!-- BEGIN agent-policy-kit -->';
 export const END = '<!-- END agent-policy-kit -->';
@@ -30,8 +30,8 @@ export function nativeLocations(client,home) {
   };
 }
 export function nativeRoles(client,config) {
-  return Object.entries(ROLES).map(([role,kind])=>{
-    const selected=config[kind],name='apk-'+role;
+  return Object.keys(ROLES).map(role=>{
+    const selected=rolePreference(config,role),name='apk-'+role;
     const prompt=prompts[role]+' Do not create child agents; return any need for further delegation to the parent.';
     if(client==='codex') return Object.entries({name,description:descriptions[role],model:selected.model,model_reasoning_effort:selected.effort,developer_instructions:prompt}).map(([k,v])=>`${k} = ${JSON.stringify(v)}\n`).join('');
     const fields=[`name: ${name}`,`description: ${JSON.stringify(descriptions[role])}`];
@@ -50,8 +50,13 @@ export function nativeRoles(client,config) {
 }
 export function instructionBlock(client,config,maxConcurrent) {
   const text=[BEGIN,'These preferences apply only if you choose to delegate to subagents. They do not require delegation or change how you handle work directly.','When delegating, use apk-worker for implementation and difficult analysis, apk-reviewer for review, apk-explorer for read-only search and fact gathering, and apk-routine for explicitly defined mechanical tasks.',`When delegating, run at most ${maxConcurrent} subagents concurrently in this session. Give each agent one concrete result and explicit file ownership. Preserve other agents' work. Child agents must return further delegation to the parent.`];
-  if(client==='kimi') text.push(`For apk-worker and apk-reviewer, select pool alias ${config.code.model} (effort ${config.code.effort}); for apk-explorer and apk-routine, select pool alias ${config.light.model} (effort ${config.light.effort}). Use the Agent tool's model selection when spawning; the role file alone does not select a model. The concurrency limit is guidance; no native Agent cap is configured.`);
-  else if(client==='agy')text.push(`When delegating, use model tier ${config.code.model} for implementation and review and tier ${config.light.model} for search and mechanical work. Per-role effort and a hard concurrency cap are not supported by the documented native agent settings.`);
+  if(client==='kimi') {
+    for(const role of Object.keys(ROLES)) {const selected=rolePreference(config,role);text.push(`For apk-${role}, select pool alias ${selected.model} (effort ${selected.effort}).`);}
+    text.push("Use the Agent tool's model selection when spawning; the role file alone does not select a model. The concurrency limit is guidance; no native Agent cap is configured.");
+  } else if(client==='agy') {
+    for(const role of Object.keys(ROLES))text.push(`When delegating to apk-${role}, use model tier ${rolePreference(config,role).model}.`);
+    text.push('Per-role effort and a hard concurrency cap are not supported by the documented native agent settings.');
+  }
   else if(client==='claude')text.push('Use the named role definitions for model and effort selection. Session, project, managed settings, environment overrides and some spawn paths can supersede these user defaults; the native cap applies to ordinary Agent-tool spawns with documented exceptions.');
   else text.push('Use the named role definitions for model and effort selection. Explicit spawn settings and higher-priority instructions can supersede user defaults.');
   if(config.avoidModels.length)text.push(`Avoid these models when delegating: ${config.avoidModels.join(', ')}. This is routing guidance.`);

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { constants } from 'node:fs';
-import { validatePolicy } from './policy.mjs';
+import { validatePolicy, ROLES, rolePreference } from './policy.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
 import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
@@ -145,11 +145,14 @@ async function context({client,home,stateDir}) {
 function change(plan,target,before,after,mode=0o600) {
   if (before.text !== after) plan.changes.push({path:target,before:before.text,after,beforeHash:digest(before.text),afterHash:digest(after),mode,beforeMode:before.mode});
 }
+function effectiveRoles(preferences) {return Object.keys(ROLES).map(role=>({role,...rolePreference(preferences,role)}));}
+function selectedAliases(preferences) {return [...new Map(effectiveRoles(preferences).map(selected=>[selected.model,selected])).values()];}
 function tomlSettings(client,preferences,maxConcurrent) {
-  if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],preferences.code.model],[['agents','default_subagent_reasoning_effort'],preferences.code.effort]];
+  const worker=rolePreference(preferences,'worker');
+  if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],worker.model],[['agents','default_subagent_reasoning_effort'],worker.effort]];
   if(client!=='kimi')return [];
-  const selected=[...new Map([preferences.code,preferences.light].map(v=>[v.model,v])).values()];
-  return [[['secondary_model','default_model'],preferences.code.model],...selected.map(v=>[['secondary_model','models',v.model],v.model===preferences.code.model?'Implementation and difficult analysis; apk-worker and apk-reviewer.':'Search and mechanical tasks; apk-explorer and apk-routine.']),...selected.map(v=>[['models',v.model,'overrides','default_effort'],v.effort])];
+  const selected=selectedAliases(preferences),roles=effectiveRoles(preferences);
+  return [[['secondary_model','default_model'],worker.model],...selected.map(value=>[['secondary_model','models',value.model],'Use for '+roles.filter(role=>role.model===value.model).map(role=>'apk-'+role.role).join(', ')+'.']),...selected.map(value=>[['models',value.model,'overrides','default_effort'],value.effort])];
 }
 const HASH=/^[a-f0-9]{64}$/;
 const validHash=value=>typeof value==='string'&&HASH.test(value);
@@ -172,7 +175,7 @@ function scalar(op,target,type) {
   literalValue(op.before,type,true);
   return literalValue(op.after,type);
 }
-function validateTomlSnapshot(file,client) {
+function validateTomlSnapshot(file,client,schemaVersion) {
   if(!Array.isArray(file.ops)||!file.ops.every(object))fail('INVALID_RECEIPT');
   if(client==='codex') {
     if(file.ops.length!==3)fail('INVALID_RECEIPT');
@@ -181,7 +184,7 @@ function validateTomlSnapshot(file,client) {
     scalar(file.ops[1],['agents','default_subagent_model'],'string');scalar(file.ops[2],['agents','default_subagent_reasoning_effort'],'string');
     return;
   }
-  if(client!=='kimi'||![4,6].includes(file.ops.length))fail('INVALID_RECEIPT');
+  if(client!=='kimi'||!(schemaVersion===2?[4,6]:[4,6,8,10]).includes(file.ops.length))fail('INVALID_RECEIPT');
   const removed=file.ops[0];fields(removed,['kind','path','before']);
   if(removed.kind!=='removed'||!equal(removed.path,['secondary_model','default_effort']))fail('INVALID_RECEIPT');
   literalValue(removed.before,'string',true);
@@ -221,7 +224,7 @@ function validateReceipt(r,plan) {
     } else if(plan.client==='claude') {
       fields(file,['path','type','existed','ops','created']);if(file.type!=='json')fail('INVALID_RECEIPT');validateJsonSnapshot(file);
     } else {
-      fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client);
+      fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client,r.schemaVersion);
     }
   }
   return r;
@@ -261,7 +264,7 @@ export async function inspectConfiguration(options) {
 function prerequisite(plan,warning) {return {...plan,status:'prerequisite',warnings:[warning],changes:[]};}
 function kimiPrerequisite(native,preferences) {
   if(native.thinking?.enabled===false)return 'kimi-thinking-disabled';
-  for(const selected of [preferences.code,preferences.light]) {
+  for(const selected of selectedAliases(preferences)) {
     const model=native.models?.[selected.model];
     if(!object(model)||typeof model.provider!=='string'||typeof model.model!=='string'||!Number.isSafeInteger(model.max_context_size)||model.max_context_size<1||!object(native.providers?.[model.provider]))return 'kimi-provisioned-models-required';
     const effective={...model,...model.overrides};
@@ -312,7 +315,7 @@ export async function planInstall(options) {
   }
   const files=[];plan.warnings=nativeWarnings(plan.client);
   if(plan.client==='claude') {
-    const edited=jsonInstall(config.text,maxConcurrent,selected.code.model);nativeChange(l.config,config,edited.text);
+    const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,'worker').model);nativeChange(l.config,config,edited.text);
     files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
   } else if(config) {
     let text=config.text??'';const ops=[];

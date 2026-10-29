@@ -2,6 +2,7 @@ import { detectClients, resolveClient, summarizeDetection } from './detect.mjs';
 import { planInstall, applyInstall, summarizePlan, inspectConfiguration } from './install.mjs';
 import { nativeHomeConflict } from './native.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
+import { CLIENTS } from './policy.mjs';
 
 const ERRORS = new Set(['INVALID_RELEASE','LEGACY_RUNTIME_RECEIPT','INVALID_CLIENT','INVALID_POLICY','INVALID_JSON','INVALID_TOML','UNSUPPORTED_CONFIG','UNSUPPORTED_TOML_STRUCTURE','UNSUPPORTED_TOML_VALUE','CODEX_CAP_ALIAS_CONFLICT','OWNERSHIP_CONFLICT','INVALID_RECEIPT','OWNED_DRIFT','INSTALLATION_CONFLICT','POLICY_CONFLICT','UNSAFE_PATH','UNSAFE_FILE','STALE_PLAN','RECOVERY_REQUIRED','ROLLBACK_CONFLICT','INVALID_PLAN','PLATFORM_UNSUPPORTED','INSTALL_LOCKED','INSTALL_FAILED','EACCES','EPERM','ENOENT','ENOSPC','EIO','EROFS']);
 const safeError = error => ERRORS.has(error?.code) ? error.code : 'SETUP_FAILED';
@@ -12,11 +13,18 @@ function actions(client,warnings) {
 const RELEASE_FIELDS=['targetReleaseVersion','targetSource','previousReleaseVersion','previousSource','appliedReleaseVersion','appliedSource'];
 function releaseMetadata(value) {return Object.fromEntries(RELEASE_FIELDS.map(key=>[key,value[key]??null]));}
 
-export async function setupDetected({home,stateDir,policyPath,apply=false,client=null,env=process.env,hostHome,explicitHome=false,releaseVersion,replace=false,source='release'} = {}) {
+export async function setupDetected({home,stateDir,policyPath,apply=false,client=null,env=process.env,hostHome,explicitHome=false,releaseVersion,replace=false,source='release',enabledClients=CLIENTS} = {}) {
+  if(!Array.isArray(enabledClients)||enabledClients.some(value=>!CLIENTS.includes(value))||new Set(enabledClients).size!==enabledClients.length)throw Object.assign(new Error('INVALID_CLIENT'),{code:'INVALID_CLIENT'});
+  const selectionConflict=client!==null&&!enabledClients.includes(client);
   const records = client === null ? await detectClients({env,hostHome}) : [await resolveClient(client,{env,hostHome})];
   const detected = summarizeDetection(records), results = [], requiredActions = [];
-  const available = records.filter(r=>r.status === 'detected');
+  const available = records.filter(r=>r.status === 'detected'&&enabledClients.includes(r.client));
   for (const record of records) {
+    if(!enabledClients.includes(record.client)) {
+      if(selectionConflict) {const warnings=['client-not-selected'];results.push({client:record.client,status:'prerequisite',warnings});requiredActions.push(...actions(record.client,warnings));}
+      else results.push({client:record.client,status:'not_selected'});
+      continue;
+    }
     let retained;
     if(record.status!=='detected'||(!explicitHome&&nativeHomeConflict(record.client,home,env))) {
       try {
@@ -54,5 +62,5 @@ export async function setupDetected({home,stateDir,policyPath,apply=false,client
     }
   }
   const failed = results.some(r=>['error','prerequisite','invalid','timeout'].includes(r.status));
-  return {schemaVersion:1,status:available.length === 0 ? 'no_clients' : failed ? 'partial' : apply ? 'configured' : 'planned',detected,results,requiredActions,exitCode:available.length === 0 || failed ? 3 : 0};
+  return {schemaVersion:1,status:selectionConflict ? 'partial' : available.length === 0 ? 'no_clients' : failed ? 'partial' : apply ? 'configured' : 'planned',detected,results,requiredActions,exitCode:available.length === 0 || failed ? 3 : 0};
 }
