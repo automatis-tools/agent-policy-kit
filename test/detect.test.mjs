@@ -121,3 +121,19 @@ test('oversized semver metadata cannot disagree with the sanitized detected stat
   await executable(path.join(f.bin,'codex'),`console.log(${JSON.stringify('codex-cli 1.2.3-'+ 'a'.repeat(64)+'+'+'b'.repeat(64))});`);
   assert.equal((await resolveClient('codex',f)).status,'invalid');
 });
+
+import { spawn } from 'node:child_process';
+test('each POSIX probe cleans its own descendants on timeout, overflow and completion', {skip:process.platform === 'win32'}, async t=>{
+  const unrelated=spawn(process.execPath,['-e','setInterval(()=>{},1000);'],{stdio:'ignore'});
+  t.after(()=>{try{unrelated.kill('SIGKILL');}catch{}});
+  for(const mode of ['timeout','overflow','complete']){
+    const f=await fixture(t),pidFile=path.join(f.root,'descendant.pid');
+    await executable(path.join(f.bin,'codex'),`import fs from 'node:fs';import {spawn} from 'node:child_process';const child=spawn(process.execPath,['-e','setInterval(()=>{},1000);'],{stdio:'ignore'});fs.writeFileSync(${JSON.stringify(pidFile)},String(child.pid));${mode==='complete'?'console.log("codex-cli 0.165.0");process.exit(0);':mode==='overflow'?'console.log("X".repeat(100000));setInterval(()=>{},1000);':'setInterval(()=>{},1000);'}`);
+    const result=await resolveClient('codex',{...f,timeoutMs:500});
+    const pid=Number(await fs.readFile(pidFile,'utf8'));
+    t.after(()=>{try{process.kill(pid,'SIGKILL');}catch{}});
+    assert.equal(result.status,mode==='timeout'?'timeout':mode==='complete'?'detected':'invalid');
+    assert.throws(()=>process.kill(pid,0),{code:'ESRCH'},`${mode} probe leaked a descendant`);
+    assert.doesNotThrow(()=>process.kill(unrelated.pid,0),'probe killed an unrelated process');
+  }
+});

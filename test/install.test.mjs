@@ -94,7 +94,7 @@ test('Kimi preserves model pool and main settings, uses an owned launcher and wa
   assert.ok(plan.warnings.includes('kimi-native-pool-unverified'));
   await applyInstall(plan);
   assert.ok((await fs.readFile(target, 'utf8')).startsWith(original));
-  assert.match(await fs.readFile(path.join(f.stateDir, 'bin/kimi-policy'), 'utf8'), /KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY=3/);
+  assert.ok((await fs.readFile(path.join(f.stateDir, 'bin/kimi-policy'), 'utf8')).includes("'run' '--client' 'kimi'"));
   await uninstall({...f,apply:true});
   assert.equal((await fs.readFile(target, 'utf8')).trim(), original.trim());
 });
@@ -235,7 +235,10 @@ test('validated concurrency changes drive all native caps and uninstall restores
     await applyInstall(await planInstall(f));
     if (client === 'codex') assert.match(await fs.readFile(path.join(f.home,'.codex/config.toml'),'utf8'),/max_concurrent_threads_per_session = 2/);
     else if (client === 'claude') assert.equal(JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'))).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'2');
-    else assert.match(await fs.readFile(path.join(f.stateDir,'bin/kimi-policy'),'utf8'),/MAX_CONCURRENCY=2/);
+    else {
+      assert.equal(JSON.parse(await fs.readFile(path.join(f.stateDir,'policy.json'))).clients.kimi.maxConcurrent,2);
+      assert.ok((await fs.readFile(path.join(f.stateDir,'bin/kimi-policy'),'utf8')).includes("'run' '--client' 'kimi'"));
+    }
     assert.equal((await planInstall(f)).status,'unchanged');
     await uninstall({...f,apply:true});
   }

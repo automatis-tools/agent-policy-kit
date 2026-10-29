@@ -294,7 +294,8 @@ export async function planInstall(options) {
     files.push({path:l.config,type:'toml',existed:config.text !== null,ops:[edit.ownership]});
     const launcher = await readDependency(plan,l.launcher,plan.stateDir);
     if (launcher.text !== null) fail('OWNERSHIP_CONFLICT');
-    const launcherText = `#!/bin/sh\n# Owned by agent-policy-kit\nexport KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY=${maxConcurrent}\nexec kimi "$@"\n`;
+    const launch = [plan.nodePath,path.join(plan.packageRoot,'bin/agent-policy.mjs'),'run','--client','kimi','--home',plan.home,'--policy',l.policy,'--state-dir',plan.stateDir,'--'].map(shell).join(' ');
+    const launcherText = `#!/bin/sh\n# Owned by agent-policy-kit\nexec ${launch} "$@"\n`;
     change(plan,l.launcher,launcher,launcherText,0o700);
     files.push({path:l.launcher,type:'owned',existed:false,afterHash:digest(launcherText)});
   }

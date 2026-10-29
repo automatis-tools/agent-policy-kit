@@ -7,6 +7,7 @@ function actions(client,warnings) {
   if (client === 'agy') return [{client,code:'exact_model_enforcement_unsupported',automatable:false}];
   const result = [{client,code:client === 'codex' ? 'native_hook_trust_required' : 'native_hook_load_check_required',automatable:client !== 'codex'}];
   if (warnings.includes('kimi-native-pool-unverified')) result.push({client,code:'kimi_native_pool_required',automatable:true});
+  if (warnings.includes('kimi-swarm-cap-launcher-only')) result.push({client,code:'kimi_policy_launcher_required',automatable:true});
   return result;
 }
 
@@ -28,7 +29,7 @@ export async function setupDetected({home,stateDir,policyPath,packageRoot,nodePa
       if (plan.status === 'unsupported') { results.push({client:record.client,status:'unsupported',plan:summarizePlan(plan)}); continue; }
       if (apply) {
         const result = await applyInstall(plan);
-        results.push({client:record.client,status:result.status === 'unchanged' ? 'unchanged' : 'configured',changedFiles:result.changedFiles});
+        results.push({client:record.client,status:result.status === 'unchanged' ? 'unchanged' : 'configured',changedFiles:result.changedFiles,warnings:[...result.warnings]});
       } else results.push({client:record.client,status:'planned',plan:summarizePlan(plan)});
     } catch (error) {
       const code = safeError(error);

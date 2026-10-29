@@ -41,22 +41,37 @@ async function inspect(file) {
 function probe(executable,arg,{env,timeoutMs}) {
   return new Promise(resolve => {
     let child, timer, settled = false, size = 0;
+    const ownGroup = process.platform !== 'win32';
     const buffers = [];
-    const finish = (status) => {
+    const killOwned = () => {
+      if (!child?.pid) return;
+      try { if (ownGroup) process.kill(-child.pid,'SIGKILL'); else child.kill('SIGKILL'); } catch {}
+    };
+    const alive = () => {
+      if (!child?.pid) return false;
+      if (!ownGroup) return child.exitCode === null && child.signalCode === null;
+      try { process.kill(-child.pid,0); return true; } catch (error) { return error.code !== 'ESRCH'; }
+    };
+    const finish = async (status) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      if (status !== 'ok') child?.kill('SIGKILL');
+      killOwned();
       child?.stdout?.destroy(); child?.stderr?.destroy();
+      for (let elapsed = 0; alive() && elapsed < 500; elapsed += 20) await new Promise(done=>setTimeout(done,20));
+      if (status === 'ok' && alive()) status = 'invalid';
       resolve({status,output:status === 'ok' ? Buffer.concat(buffers).toString('utf8') : ''});
     };
-    try { child = spawn(executable,[arg],{env,stdio:['ignore','pipe','pipe'],shell:false,windowsHide:true}); }
+    try { child = spawn(executable,[arg],{env,stdio:['ignore','pipe','pipe'],shell:false,windowsHide:true,detached:ownGroup}); }
     catch { finish('invalid'); return; }
     timer = setTimeout(()=>finish('timeout'),timeoutMs);
     for (const stream of [child.stdout,child.stderr]) stream.on('data',chunk=>{
       size += chunk.length;
       if (size > OUTPUT_LIMIT) finish('invalid'); else buffers.push(chunk);
     });
+    // A wrapper can exit successfully while descendants retain inherited pipes.
+    // Its dedicated POSIX group remains ours; stop it before waiting for close.
+    child.on('exit',killOwned);
     child.on('error',()=>finish('invalid'));
     child.on('close',code=>finish(code === 0 ? 'ok' : 'invalid'));
   });

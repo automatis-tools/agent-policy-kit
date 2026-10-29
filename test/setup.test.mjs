@@ -8,7 +8,7 @@ import { setupDetected } from '../src/setup.mjs';
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(),'policy-setup-')));
   t.after(()=>fs.rm(root,{recursive:true,force:true}));
-  const home = path.join(root,'target'), hostHome=path.join(root,'host'), bin=path.join(root,'bin');
+  const home = path.join(root,"target's home"), hostHome=path.join(root,'host'), bin=path.join(root,'bin');
   await fs.mkdir(home); await fs.mkdir(hostHome); await fs.mkdir(bin);
   const policyPath=path.join(root,'policy.json');
   await fs.copyFile(new URL('../policies/balanced.json',import.meta.url),policyPath);
@@ -93,4 +93,40 @@ test('an unverifiable executable makes a detected subset partial while preservin
   assert.equal(result.results.find(r=>r.client === 'claude').status,'invalid');
   assert.ok(result.requiredActions.some(a=>a.client === 'claude' && a.code === 'native_client_identity_unverified' && a.automatable === true));
   await assert.rejects(fs.stat(path.join(f.home,'.claude')),{code:'ENOENT'});
+});
+
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+const execute=promisify(execFile);
+test('conventional-only Kimi setup creates a working resolver-based launcher and retains limitations',async t=>{
+  const f=await fixture(t);
+  const kimi=path.join(f.hostHome,'.kimi-code/bin/kimi');
+  await fs.mkdir(path.dirname(kimi),{recursive:true});
+  await fs.writeFile(kimi,`#!${process.execPath}\nif(process.argv[2]==='--version'){console.log('kimi 2.4.0');}else{console.log(JSON.stringify({args:process.argv.slice(2),cap:process.env.KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY,clientHome:process.env.KIMI_CODE_HOME}));}\n`,{mode:0o700});
+  const result=await setupDetected({...f,client:'kimi',apply:true});
+  assert.equal(result.status,'configured');
+  const launcher=path.join(f.stateDir,'bin/kimi-policy');
+  const output=await execute('/bin/sh',[launcher,'--fixture-launch',"argument's spaces"],{env:{PATH:f.bin,HOME:f.hostHome}});
+  assert.deepEqual(JSON.parse(output.stdout),{args:['--fixture-launch',"argument's spaces"],cap:'3',clientHome:path.join(f.home,'.kimi-code')});
+  const applied=result.results.find(r=>r.client==='kimi');
+  for(const warning of ['kimi-swarm-cap-launcher-only','kimi-ordinary-agent-concurrency-unsupported']) assert.ok(applied.warnings.includes(warning));
+  assert.ok(result.requiredActions.some(a=>a.code==='kimi_policy_launcher_required'&&a.automatable));
+  const repeated=await setupDetected({...f,client:'kimi',apply:true});
+  assert.equal(repeated.results[0].status,'unchanged');
+  assert.ok(repeated.results[0].warnings.includes('kimi-ordinary-agent-concurrency-unsupported'));
+  const policy=JSON.parse(await fs.readFile(path.join(f.stateDir,'policy.json'),'utf8'));
+  policy.clients.kimi.maxConcurrent=2;
+  await fs.writeFile(path.join(f.stateDir,'policy.json'),JSON.stringify(policy));
+  const updated=await execute('/bin/sh',[launcher,'--fixture-launch'],{env:{PATH:f.bin,HOME:f.hostHome}});
+  assert.equal(JSON.parse(updated.stdout).cap,'2');
+});
+
+test('applied and unchanged setup JSON retains safe Kimi concurrency warnings',async t=>{
+  const f=await fixture(t);await binary(f,'kimi','kimi 2.4.0');
+  for(const attempt of [1,2]){
+    const result=await setupDetected({...f,client:'kimi',apply:true});
+    assert.ok(Array.isArray(result.results[0].warnings),'applied setup omitted safe warnings');
+    assert.ok(result.results[0].warnings.includes('kimi-swarm-cap-launcher-only'));
+    assert.ok(result.results[0].warnings.includes('kimi-ordinary-agent-concurrency-unsupported'));
+  }
 });
