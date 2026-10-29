@@ -4,16 +4,16 @@ import { nativeHomeConflict } from './native.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
 import { CLIENTS } from './policy.mjs';
 
-const ERRORS = new Set(['INVALID_RELEASE','LEGACY_RUNTIME_RECEIPT','INVALID_CLIENT','INVALID_POLICY','INVALID_JSON','INVALID_TOML','UNSUPPORTED_CONFIG','UNSUPPORTED_TOML_STRUCTURE','UNSUPPORTED_TOML_VALUE','CODEX_CAP_ALIAS_CONFLICT','OWNERSHIP_CONFLICT','INVALID_RECEIPT','OWNED_DRIFT','INSTALLATION_CONFLICT','POLICY_CONFLICT','UNSAFE_PATH','UNSAFE_FILE','STALE_PLAN','RECOVERY_REQUIRED','ROLLBACK_CONFLICT','INVALID_PLAN','PLATFORM_UNSUPPORTED','INSTALL_LOCKED','INSTALL_FAILED','EACCES','EPERM','ENOENT','ENOSPC','EIO','EROFS']);
+const ERRORS = new Set(['INVALID_PRESET','INVALID_RELEASE','LEGACY_RUNTIME_RECEIPT','INVALID_CLIENT','INVALID_POLICY','INVALID_JSON','INVALID_TOML','UNSUPPORTED_CONFIG','UNSUPPORTED_TOML_STRUCTURE','UNSUPPORTED_TOML_VALUE','CODEX_CAP_ALIAS_CONFLICT','OWNERSHIP_CONFLICT','INVALID_RECEIPT','OWNED_DRIFT','INSTALLATION_CONFLICT','POLICY_CONFLICT','UNSAFE_PATH','UNSAFE_FILE','STALE_PLAN','RECOVERY_REQUIRED','ROLLBACK_CONFLICT','INVALID_PLAN','PLATFORM_UNSUPPORTED','INSTALL_LOCKED','INSTALL_FAILED','EACCES','EPERM','ENOENT','ENOSPC','EIO','EROFS']);
 const safeError = error => ERRORS.has(error?.code) ? error.code : 'SETUP_FAILED';
 function actions(client,warnings) {
   return warnings.map(code=>({client,code,automatable:false}));
 }
 
-const RELEASE_FIELDS=['targetReleaseVersion','targetSource','previousReleaseVersion','previousSource','appliedReleaseVersion','appliedSource'];
+const RELEASE_FIELDS=['targetReleaseVersion','targetSource','previousReleaseVersion','previousSource','appliedReleaseVersion','appliedSource','targetPreset','previousPreset','appliedPreset'];
 function releaseMetadata(value) {return Object.fromEntries(RELEASE_FIELDS.map(key=>[key,value[key]??null]));}
 
-export async function setupDetected({home,stateDir,policyPath,apply=false,client=null,env=process.env,hostHome,explicitHome=false,releaseVersion,replace=false,source='release',enabledClients=CLIENTS} = {}) {
+export async function setupDetected({home,stateDir,policyPath,apply=false,client=null,env=process.env,hostHome,explicitHome=false,releaseVersion,replace=false,source='release',enabledClients=CLIENTS,preset=null} = {}) {
   if(!Array.isArray(enabledClients)||enabledClients.some(value=>!CLIENTS.includes(value))||new Set(enabledClients).size!==enabledClients.length)throw Object.assign(new Error('INVALID_CLIENT'),{code:'INVALID_CLIENT'});
   const selectionConflict=client!==null&&!enabledClients.includes(client);
   const records = client === null ? await detectClients({env,hostHome}) : [await resolveClient(client,{env,hostHome})];
@@ -29,7 +29,7 @@ export async function setupDetected({home,stateDir,policyPath,apply=false,client
     if(record.status!=='detected'||(!explicitHome&&nativeHomeConflict(record.client,home,env))) {
       try {
         const applied=await inspectConfiguration({client:record.client,home,stateDir});
-        retained={targetReleaseVersion:releaseVersion??PACKAGE_VERSION,targetSource:source,previousReleaseVersion:applied.releaseVersion,previousSource:applied.source,appliedReleaseVersion:applied.releaseVersion,appliedSource:applied.source};
+        retained={targetReleaseVersion:releaseVersion??PACKAGE_VERSION,targetSource:source,previousReleaseVersion:applied.releaseVersion,previousSource:applied.source,appliedReleaseVersion:applied.releaseVersion,appliedSource:applied.source,targetPreset:preset,previousPreset:applied.preset,appliedPreset:applied.preset};
       } catch(error) {
         const code=safeError(error);results.push({client:record.client,status:'error',error:code});requiredActions.push({client:record.client,code,automatable:false});continue;
       }
@@ -48,7 +48,7 @@ export async function setupDetected({home,stateDir,policyPath,apply=false,client
     try {
       // Planning and applying are sequential per client: the preceding transaction
       // can create shared policy/receipts that the next plan must capture afresh.
-      const plan = await planInstall({client:record.client,home,stateDir,policyPath,releaseVersion,replace,source});
+      const plan = await planInstall({client:record.client,home,stateDir,policyPath,releaseVersion,replace,source,preset});
       requiredActions.push(...actions(record.client,plan.warnings));
       if (plan.status === 'prerequisite') { results.push({client:record.client,status:'prerequisite',plan:summarizePlan(plan),...releaseMetadata(plan)}); continue; }
       if (apply) {

@@ -121,3 +121,7 @@ test('only eligible selected detections count toward no_clients',async t=>{
 test('explicit client excluded from desired preferences returns a zero-write selection prerequisite',async t=>{
  const f=await fixture(t);await binary(f,'codex','codex-cli 0.165.0');await binary(f,'claude','2.1.312 (Claude Code)');const result=await setupDetected({...f,client:'codex',enabledClients:['claude'],apply:true});assert.equal(result.status,'partial');assert.equal(result.exitCode,3);assert.equal(result.results.length,1);assert.equal(result.results[0].status,'prerequisite');assert.ok(result.requiredActions.some(a=>a.code==='client-not-selected'));await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});await assert.rejects(fs.stat(path.join(f.home,'.codex')),{code:'ENOENT'});await assert.rejects(fs.stat(path.join(f.home,'.claude')),{code:'ENOENT'});
 });
+
+test('setup forwards preset labels and reports actual provenance across explicit replacement',async t=>{
+ const f=await fixture(t);await binary(f,'codex','codex-cli 0.165.0');const initial=await setupDetected({...f,client:'codex',preset:'fast',apply:true});assert.equal(initial.results[0].appliedPreset,'fast');const changed=await setupDetected({...f,client:'codex',preset:'quality',replace:true,apply:true});assert.equal(changed.results[0].targetPreset,'quality');assert.equal(changed.results[0].previousPreset,'fast');assert.equal(changed.results[0].appliedPreset,'quality');
+});

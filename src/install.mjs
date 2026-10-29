@@ -5,6 +5,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { constants } from 'node:fs';
 import { validatePolicy, ROLES, rolePreference } from './policy.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
+import catalog from '../models/catalog.json' with {type:'json'};
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
 import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
 
@@ -146,18 +147,23 @@ function change(plan,target,before,after,mode=0o600) {
   if (before.text !== after) plan.changes.push({path:target,before:before.text,after,beforeHash:digest(before.text),afterHash:digest(after),mode,beforeMode:before.mode});
 }
 function effectiveRoles(preferences) {return Object.keys(ROLES).map(role=>({role,...rolePreference(preferences,role)}));}
-function selectedAliases(preferences) {return [...new Map(effectiveRoles(preferences).map(selected=>[selected.model,selected])).values()];}
+function selectedAliases(preferences) {
+  const aliases=new Map();
+  for(const selected of effectiveRoles(preferences))if(!aliases.has(selected.model)||selected.effort!==null)aliases.set(selected.model,selected);
+  return [...aliases.values()];
+}
 function tomlSettings(client,preferences,maxConcurrent) {
   const worker=rolePreference(preferences,'worker');
-  if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],worker.model],[['agents','default_subagent_reasoning_effort'],worker.effort]];
+  if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],worker.model],...(worker.effort===null?[]:[[['agents','default_subagent_reasoning_effort'],worker.effort]])];
   if(client!=='kimi')return [];
   const selected=selectedAliases(preferences),roles=effectiveRoles(preferences);
-  return [[['secondary_model','default_model'],worker.model],...selected.map(value=>[['secondary_model','models',value.model],'Use for '+roles.filter(role=>role.model===value.model).map(role=>'apk-'+role.role).join(', ')+'.']),...selected.map(value=>[['models',value.model,'overrides','default_effort'],value.effort])];
+  return [[['secondary_model','default_model'],worker.model],...selected.map(value=>[['secondary_model','models',value.model],'Use for '+roles.filter(role=>role.model===value.model).map(role=>'apk-'+role.role).join(', ')+'.']),...selected.filter(value=>value.effort!==null).map(value=>[['models',value.model,'overrides','default_effort'],value.effort])];
 }
 const HASH=/^[a-f0-9]{64}$/;
 const validHash=value=>typeof value==='string'&&HASH.test(value);
 const VERSION=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const SOURCES=['release','custom','saved'];
+const validPreset=value=>value===null||(typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(value));
 function version(value) {return typeof value==='string'&&value.length<=128&&VERSION.test(value);}
 function fields(value,allowed) {if(!object(value)||Object.keys(value).some(key=>!allowed.includes(key)))fail('INVALID_RECEIPT');}
 function literalValue(raw,type,nullable=false) {
@@ -176,27 +182,47 @@ function scalar(op,target,type) {
   return literalValue(op.after,type);
 }
 function validateTomlSnapshot(file,client,schemaVersion) {
-  if(!Array.isArray(file.ops)||!file.ops.every(object))fail('INVALID_RECEIPT');
+  if(!Array.isArray(file.ops)||!file.ops.every(op=>object(op)&&Array.isArray(op.path)&&op.path.every(key=>typeof key==='string')&&op.path.length<=4))fail('INVALID_RECEIPT');
   if(client==='codex') {
-    if(file.ops.length!==3)fail('INVALID_RECEIPT');
+    if(!(schemaVersion===2?[3]:[2,3]).includes(file.ops.length))fail('INVALID_RECEIPT');
     const cap=scalar(file.ops[0],['agents','max_concurrent_threads_per_session'],'number');
     if(cap<1||cap>32)fail('INVALID_RECEIPT');
-    scalar(file.ops[1],['agents','default_subagent_model'],'string');scalar(file.ops[2],['agents','default_subagent_reasoning_effort'],'string');
+    scalar(file.ops[1],['agents','default_subagent_model'],'string');if(file.ops.length===3)scalar(file.ops[2],['agents','default_subagent_reasoning_effort'],'string');
     return;
   }
-  if(client!=='kimi'||!(schemaVersion===2?[4,6]:[4,6,8,10]).includes(file.ops.length))fail('INVALID_RECEIPT');
-  const removed=file.ops[0];fields(removed,['kind','path','before']);
-  if(removed.kind!=='removed'||!equal(removed.path,['secondary_model','default_effort']))fail('INVALID_RECEIPT');
-  literalValue(removed.before,'string',true);
-  const defaultAlias=scalar(file.ops[1],['secondary_model','default_model'],'string');
-  const count=(file.ops.length-2)/2,aliases=[];
-  for(let i=0;i<count;i++) {
-    const op=file.ops[2+i],name=op.path?.[2];
-    if(!alias(name)||aliases.includes(name))fail('INVALID_RECEIPT');aliases.push(name);
-    scalar(op,['secondary_model','models',name],'string');
+  if(client!=='kimi')fail('INVALID_RECEIPT');
+  if(schemaVersion===2) {
+    if(![4,6].includes(file.ops.length))fail('INVALID_RECEIPT');
+    const removed=file.ops[0];fields(removed,['kind','path','before']);
+    if(removed.kind!=='removed'||!equal(removed.path,['secondary_model','default_effort']))fail('INVALID_RECEIPT');
+    literalValue(removed.before,'string',true);
+    const defaultAlias=scalar(file.ops[1],['secondary_model','default_model'],'string');
+    const count=(file.ops.length-2)/2,aliases=[];
+    for(let i=0;i<count;i++) {
+      const op=file.ops[2+i],name=op.path?.[2];
+      if(!alias(name)||aliases.includes(name))fail('INVALID_RECEIPT');aliases.push(name);scalar(op,['secondary_model','models',name],'string');
+    }
+    if(!aliases.includes(defaultAlias))fail('INVALID_RECEIPT');
+    for(let i=0;i<count;i++)scalar(file.ops[2+count+i],['models',aliases[i],'overrides','default_effort'],'string');
+    return;
   }
-  if(!aliases.includes(defaultAlias))fail('INVALID_RECEIPT');
-  for(let i=0;i<count;i++)scalar(file.ops[2+count+i],['models',aliases[i],'overrides','default_effort'],'string');
+  if(file.ops.length<2||file.ops.length>10)fail('INVALID_RECEIPT');
+  let at=0;
+  if(file.ops[0].kind==='removed') {
+    const removed=file.ops[at++];fields(removed,['kind','path','before']);
+    if(!equal(removed.path,['secondary_model','default_effort']))fail('INVALID_RECEIPT');literalValue(removed.before,'string',true);
+  }
+  const defaultAlias=scalar(file.ops[at++],['secondary_model','default_model'],'string'),aliases=[];
+  while(at<file.ops.length&&equal(file.ops[at].path?.slice(0,2),['secondary_model','models'])) {
+    const op=file.ops[at++],name=op.path[2];
+    if(!alias(name)||aliases.includes(name)||aliases.length===4)fail('INVALID_RECEIPT');aliases.push(name);scalar(op,['secondary_model','models',name],'string');
+  }
+  if(!aliases.length||!aliases.includes(defaultAlias))fail('INVALID_RECEIPT');
+  const pinned=new Set();
+  while(at<file.ops.length) {
+    const op=file.ops[at++],name=op.path?.[1];
+    if(!aliases.includes(name)||pinned.has(name))fail('INVALID_RECEIPT');pinned.add(name);scalar(op,['models',name,'overrides','default_effort'],'string');
+  }
 }
 function validateJsonSnapshot(file) {
   if(!Array.isArray(file.ops)||file.ops.length!==2||!Array.isArray(file.created)||file.created.length>1||!file.created.every(keys=>equal(keys,['env'])))fail('INVALID_RECEIPT');
@@ -208,10 +234,10 @@ function validateJsonSnapshot(file) {
 }
 function validateReceipt(r,plan) {
   if(object(r)&&(r.schemaVersion===1||own(r,'packageRoot')||own(r,'nodePath')||own(r,'mode')||(Array.isArray(r.files)&&r.files.some(file=>object(file)&&(['owned','hook'].includes(file.type)||(Array.isArray(file.ops)&&file.ops.some(op=>object(op)&&['hook','entry'].includes(op.kind))))))))fail('LEGACY_RUNTIME_RECEIPT');
-  fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source'])]);
+  fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source','preset'])]);
   const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l);
   if(![2,3].includes(r.schemaVersion)||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!validHash(r.policyHash)||!Array.isArray(r.warnings)||r.warnings.length>32||!r.warnings.every(w=>typeof w==='string'&&/^[a-z][a-z0-9-]{0,127}$/.test(w))||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(file=>object(file)&&allowed.includes(file.path))||new Set(r.files.map(file=>file.path)).size!==allowed.length)fail('INVALID_RECEIPT');
-  if(r.schemaVersion===3) {if(!version(r.releaseVersion)||!SOURCES.includes(r.source))fail('INVALID_RECEIPT');}
+  if(r.schemaVersion===3) {if(!version(r.releaseVersion)||!SOURCES.includes(r.source)||(own(r,'preset')&&!validPreset(r.preset)))fail('INVALID_RECEIPT');}
   else if(!object(r.preferences)||!Number.isInteger(r.maxConcurrent)||r.maxConcurrent<1||r.maxConcurrent>32)fail('INVALID_RECEIPT');
   for(const file of r.files) {
     if(typeof file.existed!=='boolean')fail('INVALID_RECEIPT');
@@ -229,13 +255,13 @@ function validateReceipt(r,plan) {
   }
   return r;
 }
-function appliedRecord(r) {return r?{version:r.schemaVersion===3?r.releaseVersion:null,source:r.schemaVersion===3?r.source:'unknown'}:{version:null,source:null};}
+function appliedRecord(r) {return r?{version:r.schemaVersion===3?r.releaseVersion:null,source:r.schemaVersion===3?r.source:'unknown',preset:r.schemaVersion===3?r.preset??null:null}:{version:null,source:null,preset:null};}
 function releaseMetadata(plan,completed=false) {
-  return {targetReleaseVersion:plan.targetReleaseVersion??null,targetSource:plan.targetSource??null,previousReleaseVersion:plan.previousReleaseVersion??null,previousSource:plan.previousSource??null,appliedReleaseVersion:completed?(plan.kind==='uninstall'?null:plan.targetReleaseVersion??null):plan.appliedReleaseVersion??null,appliedSource:completed?(plan.kind==='uninstall'?null:plan.targetSource??null):plan.appliedSource??null};
+  return {targetReleaseVersion:plan.targetReleaseVersion??null,targetSource:plan.targetSource??null,previousReleaseVersion:plan.previousReleaseVersion??null,previousSource:plan.previousSource??null,appliedReleaseVersion:completed?(plan.kind==='uninstall'?null:plan.targetReleaseVersion??null):plan.appliedReleaseVersion??null,appliedSource:completed?(plan.kind==='uninstall'?null:plan.targetSource??null):plan.appliedSource??null,targetPreset:plan.targetPreset??null,previousPreset:plan.previousPreset??null,appliedPreset:completed?(plan.kind==='uninstall'?null:plan.targetPreset??null):plan.appliedPreset??null};
 }
 function recordMetadata(plan,r) {
   const previous=appliedRecord(r);
-  Object.assign(plan,{previousReleaseVersion:previous.version,previousSource:previous.source,appliedReleaseVersion:previous.version,appliedSource:previous.source});
+  Object.assign(plan,{previousReleaseVersion:previous.version,previousSource:previous.source,appliedReleaseVersion:previous.version,appliedSource:previous.source,previousPreset:previous.preset,appliedPreset:previous.preset});
 }
 async function undoFiles(plan,r,writeChanges=true) {
   const baselines=new Map();
@@ -255,31 +281,58 @@ async function undoFiles(plan,r,writeChanges=true) {
 }
 export async function inspectConfiguration(options) {
   const {result:plan,receipt}=await context(options);
-  if(receipt.text===null)return {status:'not_configured',releaseVersion:null,source:null,warnings:[]};
+  if(receipt.text===null)return {status:'not_configured',releaseVersion:null,source:null,preset:null,warnings:[]};
   const record=validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
   await undoFiles(plan,record,false);await verifyDependencies(plan);
   const applied=appliedRecord(record);
-  return {status:'verified',releaseVersion:applied.version,source:applied.source,warnings:[...record.warnings]};
+  return {status:'verified',releaseVersion:applied.version,source:applied.source,preset:applied.preset,warnings:[...record.warnings]};
 }
 function prerequisite(plan,warning) {return {...plan,status:'prerequisite',warnings:[warning],changes:[]};}
+function resolveKimiAliases(native,preferences) {
+  const roles={},pins=new Map();let changed=false;
+  for(const selected of effectiveRoles(preferences)) {
+    let actual=selected.model;
+    if(!object(native.models)||!own(native.models,actual)) {
+      const known=catalog.clients.kimi.models.find(value=>value.id===actual&&typeof value.upstreamModelId==='string');
+      if(!known)return {prerequisite:'kimi-provisioned-models-required'};
+      const matches=Object.entries(object(native.models)?native.models:{}).filter(([,entry])=>object(entry)&&entry.model===known.upstreamModelId);
+      if(matches.length!==1)return {prerequisite:matches.length?'kimi-catalog-alias-ambiguous':'kimi-provisioned-models-required'};
+      actual=matches[0][0];changed=true;
+    }
+    if(!alias(actual)||actual==='primary')return {prerequisite:'kimi-provisioned-models-required'};
+    if(preferences.avoidModels.includes(actual))return {prerequisite:'kimi-resolved-model-avoided'};
+    if(selected.effort!==null) {
+      if(pins.has(actual)&&pins.get(actual)!==selected.effort)return {prerequisite:'kimi-resolved-effort-conflict'};
+      pins.set(actual,selected.effort);
+    }
+    roles[selected.role]={model:actual,effort:selected.effort};
+  }
+  return {preferences:changed?{...preferences,roles}:preferences,changed};
+}
 function kimiPrerequisite(native,preferences) {
-  if(native.thinking?.enabled===false)return 'kimi-thinking-disabled';
-  for(const selected of selectedAliases(preferences)) {
-    const model=native.models?.[selected.model];
+  const selected=selectedAliases(preferences),pinned=selected.filter(value=>value.effort!==null);
+  for(const value of selected) {
+    const model=native.models?.[value.model];
     if(!object(model)||typeof model.provider!=='string'||typeof model.model!=='string'||!Number.isSafeInteger(model.max_context_size)||model.max_context_size<1||!object(native.providers?.[model.provider]))return 'kimi-provisioned-models-required';
-    const effective={...model,...model.overrides};
-    if(!Array.isArray(effective.support_efforts)||!effective.support_efforts.includes(selected.effort))return 'kimi-supported-effort-required';
+  }
+  if(!pinned.length)return null;
+  if(pinned.length<selected.length&&native.secondary_model?.default_effort!==undefined)return 'kimi-mixed-native-default-effort';
+  if(native.thinking?.enabled===false)return 'kimi-thinking-disabled';
+  for(const value of pinned) {
+    const model=native.models[value.model],effective={...model,...model.overrides};
+    if(!Array.isArray(effective.support_efforts)||!effective.support_efforts.includes(value.effort))return 'kimi-supported-effort-required';
     const globalEffort=native.thinking?.effort;
     const mainEffortPinned=['low','medium','high','xhigh','max'].includes(globalEffort)&&effective.support_efforts.includes(globalEffort);
-    if(selected.model===native.default_model&&effective.default_effort!==selected.effort&&!mainEffortPinned)return 'kimi-main-effort-conflict';
+    if(value.model===native.default_model&&effective.default_effort!==value.effort&&!mainEffortPinned)return 'kimi-main-effort-conflict';
   }
   return null;
 }
 export async function planInstall(options) {
-  const {releaseVersion=PACKAGE_VERSION,replace=false,source='release'}=options;
+  const {releaseVersion=PACKAGE_VERSION,replace=false,source='release',preset=null}=options;
+  if(!validPreset(preset))fail('INVALID_PRESET');
   if(!version(releaseVersion)||typeof replace!=='boolean'||!SOURCES.includes(source))fail('INVALID_RELEASE');
   const {result:plan,l,receipt}=await context(options);plan.kind='install';
-  plan.targetReleaseVersion=releaseVersion;plan.targetSource=source;
+  plan.targetReleaseVersion=releaseVersion;plan.targetSource=source;plan.targetPreset=preset;
   let record=null;
   if(receipt.text!==null)record=validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
   recordMetadata(plan,record);
@@ -287,7 +340,8 @@ export async function planInstall(options) {
   const input=await readDependency(plan,plan.policyPath,path.dirname(plan.policyPath));if(input.text===null)fail('INVALID_POLICY');
   const policy=parseJson(input.text,'INVALID_POLICY');try {validatePolicy(policy);}catch {fail('INVALID_POLICY');}
   if(!own(policy.clients,plan.client))fail('INVALID_POLICY');
-  const selected=policy.clients[plan.client],maxConcurrent=policy.maxConcurrent,policyHash=digest(json(canonical(policy)));
+  let selected=policy.clients[plan.client],resolvedAliases=false;
+  const maxConcurrent=policy.maxConcurrent,policyHash=digest(json(canonical(policy)));
   const policyBefore=await readDependency(plan,l.policy,plan.stateDir);
   const baselines=record?await undoFiles(plan,record,false):new Map();
   if(record&&!replace) {
@@ -306,20 +360,25 @@ export async function planInstall(options) {
     if(native.env?.CLAUDE_CODE_SUBAGENT_MODEL_FORCE==='1')return prerequisite(plan,'claude-force-model-conflict');
   } else if(config) {
     native=parseToml(config.text??'');
-    if(plan.client==='kimi'){const required=kimiPrerequisite(native,selected);if(required)return prerequisite(plan,required);if(native.secondary_model?.default_effort!==undefined&&typeof native.secondary_model.default_effort!=='string')fail('UNSUPPORTED_CONFIG');}
+    if(plan.client==='kimi') {
+      const resolved=resolveKimiAliases(native,selected);if(resolved.prerequisite)return prerequisite(plan,resolved.prerequisite);
+      selected=resolved.preferences;resolvedAliases=resolved.changed;
+      const required=kimiPrerequisite(native,selected);if(required)return prerequisite(plan,required);
+      if(selectedAliases(selected).some(value=>value.effort!==null)&&native.secondary_model?.default_effort!==undefined&&typeof native.secondary_model.default_effort!=='string')fail('UNSUPPORTED_CONFIG');
+    }
     if(plan.client==='codex') {
       if(native.agents&&own(native.agents,'max_threads'))fail('CODEX_CAP_ALIAS_CONFLICT');
       const cap=native.agents?.max_concurrent_threads_per_session;
       if(cap!==undefined&&(!Number.isSafeInteger(cap)||cap<1))fail('UNSUPPORTED_CONFIG');
     }
   }
-  const files=[];plan.warnings=nativeWarnings(plan.client);
+  const files=[];plan.warnings=[...nativeWarnings(plan.client),...(resolvedAliases?['kimi-catalog-alias-resolved']:[])];
   if(plan.client==='claude') {
     const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,'worker').model);nativeChange(l.config,config,edited.text);
     files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
   } else if(config) {
     let text=config.text??'';const ops=[];
-    if(plan.client==='kimi') {const edit=removeTomlValue(text,['secondary_model','default_effort']);text=edit.text;ops.push(edit.ownership);}
+    if(plan.client==='kimi'&&selectedAliases(selected).some(value=>value.effort!==null)) {const edit=removeTomlValue(text,['secondary_model','default_effort']);text=edit.text;ops.push(edit.ownership);}
     for(const[keys,value]of tomlSettings(plan.client,selected,maxConcurrent)) {
       const previous=keys.reduce((at,key)=>at?.[key],native);
       if(previous!==undefined&&typeof previous!==typeof value)fail('UNSUPPORTED_CONFIG');
@@ -337,7 +396,7 @@ export async function planInstall(options) {
   const prefix=!text||text.endsWith('\n\n')?'':text.endsWith('\n')?'\n':'\n\n',block=instructionBlock(plan.client,selected,maxConcurrent);
   nativeChange(l.instructions,before,text+prefix+block);
   files.push({path:l.instructions,type:'instructions',existed:before.text!==null,prefix,block});
-  const r={schemaVersion:3,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,releaseVersion,source,policyHash,warnings:plan.warnings,files};
+  const r={schemaVersion:3,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,releaseVersion,source,...(preset===null?{}:{preset}),policyHash,warnings:plan.warnings,files};
   validateReceipt(r,plan);
   let canonicalText=policyBefore.text;
   if(canonicalText===null||replace) {
@@ -486,7 +545,7 @@ export async function applyInstall(plan) {
 export async function uninstall(options) {
   const {result:plan,l,receipt} = await context(options);
   plan.kind = 'uninstall';
-  plan.targetReleaseVersion=null;plan.targetSource=null;recordMetadata(plan,null);
+  plan.targetReleaseVersion=null;plan.targetSource=null;plan.targetPreset=null;recordMetadata(plan,null);
   if (receipt.text === null) { plan.status = 'unchanged'; return options.apply ? applyInstall(plan) : plan; }
   const record = validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
   recordMetadata(plan,record);
