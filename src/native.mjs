@@ -16,6 +16,11 @@ const prompts = {
   routine:'Complete only the explicitly specified mechanical task. Preserve other agents\' work. If the task requires ambiguous decisions or behavior changes, return it to the parent for implementation by apk-worker.'
 };
 const directory = {codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
+export function nativeHomeConflict(client,home,env) {
+  const variable={codex:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME'}[client];
+  const active=variable&&env[variable];
+  return typeof active==='string'&&active.length>0&&path.resolve(active)!==path.resolve(home,directory[client]);
+}
 export function nativeLocations(client,home) {
   const root=path.join(home,directory[client]);
   return {
@@ -33,7 +38,7 @@ export function nativeRoles(client,config) {
     if(client==='kimi') {
       if(['reviewer','explorer'].includes(role))fields.push('tools: [Read, Grep, Glob]');
     } else {
-      fields.push(`model: ${selected.model}`);
+      fields.push(`model: ${JSON.stringify(selected.model)}`);
       if(client==='claude') {
         fields.push(`effort: ${selected.effort}`);
         if(['reviewer','explorer'].includes(role))fields.push('tools: Read, Grep, Glob');
@@ -44,9 +49,9 @@ export function nativeRoles(client,config) {
   });
 }
 export function instructionBlock(client,config,maxConcurrent) {
-  const text=[BEGIN,'Use apk-worker for implementation and difficult analysis, apk-reviewer for review, apk-explorer for read-only search and fact gathering, and apk-routine for explicitly defined mechanical tasks.',`Run at most ${maxConcurrent} subagents concurrently in this session. Give each agent one concrete result and explicit file ownership. Preserve other agents' work. Child agents must return further delegation to the parent.`];
+  const text=[BEGIN,'These preferences apply only if you choose to delegate to subagents. They do not require delegation or change how you handle work directly.','When delegating, use apk-worker for implementation and difficult analysis, apk-reviewer for review, apk-explorer for read-only search and fact gathering, and apk-routine for explicitly defined mechanical tasks.',`When delegating, run at most ${maxConcurrent} subagents concurrently in this session. Give each agent one concrete result and explicit file ownership. Preserve other agents' work. Child agents must return further delegation to the parent.`];
   if(client==='kimi') text.push(`For apk-worker and apk-reviewer, select pool alias ${config.code.model} (effort ${config.code.effort}); for apk-explorer and apk-routine, select pool alias ${config.light.model} (effort ${config.light.effort}). Use the Agent tool's model selection when spawning; the role file alone does not select a model. The concurrency limit is guidance; no native Agent cap is configured.`);
-  else if(client==='agy')text.push(`Use model tier ${config.code.model} for implementation and review and tier ${config.light.model} for search and mechanical work. Per-role effort and a hard concurrency cap are not supported by the documented native agent settings.`);
+  else if(client==='agy')text.push(`When delegating, use model tier ${config.code.model} for implementation and review and tier ${config.light.model} for search and mechanical work. Per-role effort and a hard concurrency cap are not supported by the documented native agent settings.`);
   else if(client==='claude')text.push('Use the named role definitions for model and effort selection. Session, project, managed settings, environment overrides and some spawn paths can supersede these user defaults; the native cap applies to ordinary Agent-tool spawns with documented exceptions.');
   else text.push('Use the named role definitions for model and effort selection. Explicit spawn settings and higher-priority instructions can supersede user defaults.');
   if(config.avoidModels.length)text.push(`Avoid these models when delegating: ${config.avoidModels.join(', ')}. This is routing guidance.`);

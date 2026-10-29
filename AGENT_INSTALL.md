@@ -42,7 +42,11 @@ A stable installation path, shell profile modification, sudo, or a background se
 
 Default operations are read-only plans. Review targets, warnings and requiredActions against the owner's request. Missing clients must not receive config files. --home changes the configuration target, not the executable discovery trust root.
 
-To customize defaults, create a preferences file with init --policy FILE, then edit only the requested settings. init never overwrites. The shared shape is schemaVersion:1, maxConcurrent, and per-client code/light model+effort plus avoidModels guidance. See docs/policy.md. Use provisioned model aliases in Kimi, not raw provider IDs. Never infer model entitlement from an alias.
+Automatic setup supports standard native profiles. If CODEX_HOME, CLAUDE_CONFIG_DIR, or KIMI_CODE_HOME names a different native root, that client receives the zero-write prerequisite native-home-override-unsupported; doctor reports NATIVE_HOME_OVERRIDE_UNSUPPORTED instead of verifying a dormant standard profile. Other clients continue. An environment path resolving to the standard native root is supported. An explicit --home intentionally targets the standard native layout under that home and bypasses this comparison; it does not remap an arbitrary native root.
+
+To customize defaults for a fresh installation, create a preferences file with init --policy FILE, then edit only the requested settings. init never overwrites. Pass that same --policy FILE to setup and doctor, including later read-only checks. The shared shape is schemaVersion:1, maxConcurrent, and per-client code/light model+effort plus avoidModels guidance. See docs/policy.md. Use provisioned model aliases in Kimi, not raw provider IDs. Never infer model entitlement from an alias.
+
+The canonical shared preferences are stateDir/policy.json: stateDir is --state-dir, AGENT_POLICY_HOME, or the selected home's .agent-policy-kit directory. Setup retains this file after uninstall. An external --policy source must remain semantically equal to that canonical file; editing only the external source is not an update.
 
 Kimi requires its native model entries to exist already. Missing aliases, invalid capabilities/effort metadata, or disabled thinking are prerequisites. Read only relevant model metadata, preserve secrets, and use the native client's ordinary setup if the owner has already authorized it. Otherwise report the exact missing prerequisite. Do not invent provider definitions or silently substitute another model.
 
@@ -57,7 +61,7 @@ Claude force-model settings can defeat per-role model selection. Resolve an expl
 "$AGENT_POLICY_CLI" doctor
 ```
 
-Already-authorized setup does not need another confirmation after you review the concrete plan. install --client CLIENT selects one detected tool. --home and --state-dir select canonical targets. Symlinks, stale plans and ownership conflicts are refused.
+Already-authorized setup does not need another confirmation after you review the concrete plan. install --client CLIENT selects one detected tool. --home and --state-dir select canonical targets; retain these exact targets for doctor and removal. If using an external preferences file, add the same --policy FILE to both commands above. Symlinks, stale plans and ownership conflicts are refused.
 
 Review every per-client result. A configured result means native files were written, not that a model task executed. Inspect the generated roles and managed instruction block, then verify idempotency with setup. Native clients may need a fresh session to load changes. Do not terminate the owner's active sessions automatically.
 
@@ -83,7 +87,14 @@ avoidModels is written as instruction guidance. There is no custom gate to block
 
 Receipts permit removal even when the native CLI or shared preferences are absent. Reinstall or invoke the configurator with npx when needed; it does not have to remain installed between operations. Preserve unrelated later edits. Owned drift, pending journals and active locks require precise reconciliation; never force-delete markers or restore an obsolete whole-file backup.
 
-For a preferences change that conflicts with existing receipts, plan removal for configured clients, apply owned removal, update the shared preferences, then rerun detected setup. Keep backups private and preserve unrelated edits throughout. Do not silently adopt changed ownership.
+For a preferences change, coordinate every receipt using the same canonical state preferences:
+
+1. Keep the installation's --home and --state-dir arguments for removal. Plan and apply owned uninstall for all affected configured clients, including clients whose executable is now missing.
+2. Confirm all receipts using that shared policy have been removed and no pending journal or active lock remains. Reconcile a blocked removal; do not delete receipts or transaction markers to proceed.
+3. Validate the replacement preferences against the shipped schema and validatePolicy. Update stateDir/policy.json to that validated value, preserving private backups. If --policy points to an external custom file, update it to the same value too. init does not overwrite either existing file.
+4. Rerun detected setup with the same target arguments and external --policy FILE if used; inspect the plan, apply, then run doctor with the same --policy FILE.
+
+Uninstall deliberately retains stateDir/policy.json, so uninstall followed by editing only an external custom.json still returns POLICY_CONFLICT. Do not weaken this ownership check or reset the entire state directory. Keep backups private and preserve unrelated edits throughout.
 
 Experimental runtime receipts from older unreleased development commits are incompatible. Use that version's owned uninstall before this configurator. Do not guess ownership from a command string or delete other plugins' hooks.
 

@@ -15,4 +15,8 @@ Codex defaults are Sol high for code and Luna high for light work. Claude defaul
 
 Kimi aliases must exist in native config with compatible model metadata. Different efforts require distinct aliases because overrides apply to a model entry. agy tiers do not prove a concrete provider model. Native precedence and capability limits are described in [support](compatibility.md).
 
-Old enforce/observe modes and audit allowlists are removed. There is no per-launch evaluator. Changing an incompatible installed preference requires an owned uninstall/update/reinstall sequence; the AI guide handles it without resetting unrelated settings.
+Old enforce/observe modes and audit allowlists are removed. There is no per-launch evaluator.
+
+The canonical shared preferences are stateDir/policy.json, where stateDir is --state-dir, AGENT_POLICY_HOME, or the selected home's .agent-policy-kit directory. Uninstall retains this file and private backups. An external --policy custom.json is a source for configuration and must remain semantically equal to the canonical file; pass the same --policy to setup and doctor.
+
+Before changing preferences, remove every affected receipt sharing that canonical policy with owned uninstall, using the installation's --home and --state-dir targets. Confirm no pending transaction or active lock remains. Validate the replacement against the shipped schema and validatePolicy, update the canonical file and any external source to the same value, then rerun setup and doctor with the same --policy. Editing only custom.json after uninstall still returns POLICY_CONFLICT. Do not bypass this check by deleting receipts, resetting state, or discarding backups. See the [AI operator guide](../AGENT_INSTALL.md#5-update-or-remove-configuration) for the coordinated sequence.

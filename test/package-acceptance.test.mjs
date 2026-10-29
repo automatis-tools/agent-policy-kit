@@ -84,7 +84,7 @@ const body=fs.readFileSync(file,'utf8');
 assert.ok(body.includes('apk-'+role));
 if(client==='codex')assert.match(body,new RegExp('model = '+JSON.stringify(${JSON.stringify(models.codex)}[i<2?0:1]).replaceAll('.','\\\\.')));
 else if(client==='kimi')assert.ok(body.includes(i<2?'kimi-code/k3':'kimi-code/kimi-for-coding'));
-else assert.ok(body.includes('model: '+${JSON.stringify(models[client]??[])}[i<2?0:1]));
+else assert.equal(JSON.parse(body.match(/^model: (.+)$/m)[1]),${JSON.stringify(models[client]??[])}[i<2?0:1]);
 assert.ok(!body.includes('node_modules')&&!body.includes('agent-policy.mjs'));
 }
 const instructions=fs.readFileSync(path.join(base,client==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');assert.ok(instructions.includes('apk-worker'));

@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parseArgs} from 'node:util';
 import {CLIENTS,validatePolicy} from '../src/policy.mjs';
+import {nativeHomeConflict} from '../src/native.mjs';
 import {detectClients,resolveClient,summarizeDetection} from '../src/detect.mjs';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'))).version;
@@ -74,7 +75,7 @@ async function main(){
   loadPolicy(policyPath);
   if(command==='setup'||command==='install'){
     const {setupDetected}=await import('../src/setup.mjs');
-    const result=await setupDetected({client:client??null,home,stateDir,policyPath,apply:opts.apply});
+    const result=await setupDetected({client:client??null,home,stateDir,policyPath,apply:opts.apply,explicitHome:Boolean(opts.home)});
     print(result);process.exitCode=result.exitCode;return;
   }
   const {planInstall}=await import('../src/install.mjs');
@@ -82,7 +83,9 @@ async function main(){
   for(const selected of client?[client]:CLIENTS){
     const detection=summarizeDetection([await resolveClient(selected)])[0];
     let configuration={status:'not_configured'};
-    if(fs.existsSync(path.join(stateDir,'installations',selected+'.json'))){
+    if(!opts.home&&nativeHomeConflict(selected,home,process.env)){
+      configuration={status:'attention',reason:'NATIVE_HOME_OVERRIDE_UNSUPPORTED'};
+    } else if(fs.existsSync(path.join(stateDir,'installations',selected+'.json'))){
       try{const plan=await planInstall({client:selected,home,stateDir,policyPath});configuration={status:plan.status==='unchanged'?'verified':'attention',warnings:plan.warnings};}
       catch(error){configuration={status:'attention',reason:safeCode(error.code)};}
     }

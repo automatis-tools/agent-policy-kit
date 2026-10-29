@@ -51,7 +51,7 @@ test('all four clients generate standalone native roles and no runtime files',as
    assert.match(content,new RegExp('apk-'+role));
    if(client==='codex') { const native=parseToml(content); assert.equal(native.name,'apk-'+role); assert.equal(native.model,selected.model); assert.equal(native.model_reasoning_effort,selected.effort); assert.ok(native.description&&native.developer_instructions); }
    else if(client==='kimi') { assert.ok(!/^model:/m.test(content)); assert.ok(content.includes(selected.model)); }
-   else { assert.ok(content.includes('model: '+selected.model)); if(client==='claude')assert.ok(content.includes('effort: '+selected.effort));else assert.ok(!/^effort:/m.test(content)); }
+   else { assert.equal(JSON.parse(content.match(/^model: (.+)$/m)[1]),selected.model); if(client==='claude')assert.ok(content.includes('effort: '+selected.effort));else assert.ok(!/^effort:/m.test(content)); }
    for(const forbidden of [f.packageRoot,f.nodePath,f.stateDir,'agent-policy.mjs','hook','launcher','plugin']) assert.ok(!content.includes(forbidden),forbidden);
   }
   assert.match(await fs.readFile(instructionPath(f),'utf8'),/at most 3/);
@@ -414,4 +414,17 @@ test('Kimi supported explicit global main effort permits per-alias subagent over
 });
 test('Kimi effort changes to a subagent alias leave an unselected current main alias unchanged',async t=>{
  const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=mainEffortConfig('kimi-code/k3').replace('default_model = "kimi-code/k3"','default_model = "separate-main"')+'\n[models.separate-main]\nprovider = "fixture"\nmodel = "main-id"\nmax_context_size = 262144\nsupport_efforts = ["high", "max"]\ndefault_effort = "max"\n';await put(target,original);const plan=await planInstall(f);assert.equal(plan.status,'planned');await applyInstall(plan);const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.default_model,'separate-main');assert.deepEqual(native.models['separate-main'],parseToml(original).models['separate-main']);assert.equal(native.models['kimi-code/k3'].overrides.default_effort,'high');
+});
+
+for(const value of ['custom:','null','true'])test(`Claude native role model ${JSON.stringify(value)} is a quoted string scalar`,async t=>{
+ const f=await fixture(t,'claude'),preferences=JSON.parse(await fs.readFile(f.policyPath));preferences.clients.claude.code.model=value;preferences.clients.claude.avoidModels=[];await fs.writeFile(f.policyPath,JSON.stringify(preferences));await applyInstall(await planInstall(f));for(const role of ['worker','reviewer']){const body=await fs.readFile(rolePath(f,role),'utf8'),scalar=body.match(/^model: (.+)$/m)?.[1];assert.equal(scalar,JSON.stringify(value));assert.equal(JSON.parse(scalar),value);assert.equal(typeof JSON.parse(scalar),'string');}
+});
+
+test('native routing preferences keep delegation optional and preserve disabled Codex agents',async t=>{
+ for(const client of ['codex','claude','kimi','agy']) {
+  const f=await fixture(t,client);if(client==='kimi')await provision(f);
+  const config=path.join(f.home,'.codex/config.toml'),original='model = "main"\n[agents]\nenabled = false\n';if(client==='codex')await put(config,original);
+  await applyInstall(await planInstall(f));const instructions=await fs.readFile(instructionPath(f),'utf8');assert.match(instructions,/preferences apply only if you choose to delegate to subagents/);assert.match(instructions,/do not require delegation or change how you handle work directly/);assert.match(instructions,/When delegating, use apk-worker/);
+  if(client==='codex'){const native=parseToml(await fs.readFile(config,'utf8'));assert.equal(native.agents.enabled,false);assert.equal(native.model,'main');assert.equal(native.features,undefined);await uninstall({...f,apply:true});assert.equal((await fs.readFile(config,'utf8')).trim(),original.trim());}
+ }
 });

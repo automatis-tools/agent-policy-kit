@@ -66,7 +66,7 @@ test('detected agy receives native roles with explicit tier and cap limitations'
   assert.equal(result.status,'configured'); assert.equal(result.exitCode,0);
   assert.equal(result.results[0].status,'configured');
   assert.ok(result.requiredActions.some(a=>a.code === 'agy-concurrency-guidance-only'));
-  assert.match(await fs.readFile(path.join(f.home,'.gemini/config/agents/apk-worker.md'),'utf8'),/model: pro/);
+  assert.match(await fs.readFile(path.join(f.home,'.gemini/config/agents/apk-worker.md'),'utf8'),/model: "pro"/);
 });
 
 test('requested missing clients do not touch present-but-unrequested clients',async t=>{
@@ -106,4 +106,8 @@ test('conventional-only Kimi gets native configuration without a launcher',async
 
 test('a per-client prerequisite preserves successful configuration of another client',async t=>{
  const f=await fixture(t);await binary(f,'codex','codex-cli 0.165.0');await binary(f,'kimi','kimi 2.4.0');const result=await setupDetected({...f,apply:true});assert.equal(result.status,'partial');assert.equal(result.results.find(r=>r.client==='codex').status,'configured');assert.equal(result.results.find(r=>r.client==='kimi').status,'prerequisite');await assert.rejects(fs.stat(path.join(f.stateDir,'installations/kimi.json')),{code:'ENOENT'});
+});
+
+test('an unsupported active native home preserves independently supported clients',async t=>{
+ const f=await fixture(t);await binary(f,'codex','codex-cli 0.165.0');await binary(f,'claude','2.1.312 (Claude Code)');const active=path.join(f.root,'active-claude');await fs.mkdir(active);const sentinel=path.join(active,'settings.json');await fs.writeFile(sentinel,'PRIVATE_ACTIVE');const result=await setupDetected({...f,env:{...f.env,CLAUDE_CONFIG_DIR:active},apply:true});assert.equal(result.status,'partial');assert.equal(result.results.find(r=>r.client==='claude').status,'prerequisite');assert.equal(result.results.find(r=>r.client==='codex').status,'configured');await assert.rejects(fs.stat(path.join(f.home,'.claude')),{code:'ENOENT'});assert.equal(await fs.readFile(sentinel,'utf8'),'PRIVATE_ACTIVE');assert.ok(!JSON.stringify(result).includes(active));
 });
