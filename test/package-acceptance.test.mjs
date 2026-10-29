@@ -40,10 +40,10 @@ test('packed package survives a fresh install without source access and preserve
   const packed = parse(command('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', root], { cwd: snapshot, env }));
   const names = packed[0].files.map(x => x.path);
   assert.ok(names.includes('AGENT_INSTALL.md'));
-  assert.ok(names.includes('docs/assets/overview.png'));
   for (const name of names) assert.equal(/(?:^|\/)(?:\.agent-work|\.superpowers|artifacts|node_modules)(?:\/|$)/.test(name), false, name);
   const tarball = path.join(root, packed[0].filename);
   parse(command('npm', ['install', '--prefix', consumer, tarball, '--ignore-scripts', '--no-audit', '--no-fund', '--offline', '--json'], { cwd: consumer, env }));
+  assert.match(fs.readFileSync(path.join(consumer, 'node_modules/agent-policy-kit/README.md'), 'utf8'), /```mermaid\nflowchart LR/);
   fs.rmSync(snapshot, { recursive: true, force: true });
   const bin = path.join(consumer, 'node_modules/.bin/agent-policy');
   assert.ok(fs.existsSync(bin));

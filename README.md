@@ -1,6 +1,14 @@
 # Agent Policy Kit
 
-![Your main agent delegates work; Agent Policy Kit checks your policy, routes supported launches to an allowed model or blocks them, and keeps metadata evidence.](https://unpkg.com/agent-policy-kit@0.1.0/docs/assets/overview.png)
+```mermaid
+flowchart LR
+    Main["Main coding agent"] -->|Delegates a task| Kit["Agent Policy Kit<br/>Checks supported launches"]
+    Policy["Your model rules"] --> Kit
+    Kit -->|Code and review| Code["Allowed capable model"]
+    Kit -->|Search and routine| Light["Allowed light model"]
+    Kit -->|Outside policy| Block["Launch blocked"]
+    Kit -.-> Audit["Metadata audit<br/>Requested / reported / unknown"]
+```
 
 Keep coding subagents on the models you choose.
 
