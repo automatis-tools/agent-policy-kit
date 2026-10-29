@@ -80,7 +80,9 @@ Native commands and trust rules differ by version. If a normal load/approval pat
 "$AGENT_POLICY_CLI" run --client kimi
 ```
 
-The run wrapper forwards argv directly. Kimi's native AgentSwarm ramp cap applies through this wrapper or the owned launcher; it is not an ordinary-Agent/lifetime quota limit. Do not change the main model unless the owner asks.
+The run wrapper forwards argv directly. In enforce mode, Kimi's native AgentSwarm ramp cap applies through this wrapper or the owned launcher; it is not an ordinary-Agent/lifetime quota limit. Do not change the main model unless the owner asks.
+
+Fresh observe installations and observe launches preserve user subagent defaults and limits; they add observation hooks and required activation only. Switching an existing installation between enforce and observe requires owned uninstall, a coordinated shared-policy update, then reinstall. For an installed client, a divergent `run --policy` returns `RUN_POLICY_CONFLICT` before launch; use the shared state policy. An explicit policy without an owned integration remains supported.
 
 ## 7. Audit safely
 
@@ -97,7 +99,7 @@ CLI audit is one private audit.jsonl file without session or agent IDs. --public
 "$AGENT_POLICY_CLI" uninstall --apply
 ```
 
-Auto-removal uses owned receipts, including integrations whose native executable was removed. Do not require that executable to clean an orphaned integration. A selected client can use --client CLIENT. Preserve unrelated later edits. Owned-value drift, pending journals or active locks require reconciliation; never delete markers blindly or restore a stale full backup.
+Auto-removal uses owned receipts, including integrations whose native executable was removed or shared policy is missing/corrupt. It does not load the policy or require that executable to clean an orphaned integration. A selected client can use --client CLIENT. Preserve unrelated later edits. Owned-value drift, pending journals or active locks require reconciliation; never delete markers blindly or restore a stale full backup.
 
 Policy/backups/audit remain private after uninstall. Remove the npm package only after its integrations are removed. Do not delete unrelated vendor configuration, credentials or sessions.
 

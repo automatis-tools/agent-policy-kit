@@ -70,3 +70,90 @@ test('explicit client install also refuses absent client executables', t => {
   assert.equal(got.status, 3); assert.equal(JSON.parse(got.stdout).status, 'no_clients');
   assert.equal(fs.existsSync(state), false);
 });
+
+import { planInstall, applyInstall } from '../src/install.mjs';
+const root = path.dirname(path.dirname(fileURLToPath(bin)));
+function policyFile(p,mode='enforce') {
+  const policy=JSON.parse(fs.readFileSync(path.join(root,'policies/balanced.json'),'utf8'));
+  policy.mode=mode;const file=path.join(p,mode+'.json');fs.writeFileSync(file,JSON.stringify(policy));return file;
+}
+async function configure(p,client,source=policyFile(p)) {
+  const stateDir=path.join(p,'state');
+  await applyInstall(await planInstall({client,home:p,stateDir,policyPath:source,packageRoot:root,nodePath:process.execPath}));
+  return stateDir;
+}
+function fakeClient(p,client) {
+  const folder=path.join(p,'bin');fs.mkdirSync(folder,{recursive:true});
+  const version={codex:'codex-cli 0.165.0',claude:'2.1.312 (Claude Code)',kimi:'kimi 2.4.0'}[client];
+  fs.writeFileSync(path.join(folder,client),`#!${process.execPath}\nimport fs from 'node:fs';if(process.argv[2]==='--version'){console.log(${JSON.stringify(version)});}else{fs.writeFileSync(process.env.LAUNCH_SENTINEL,'launched');console.log(JSON.stringify({args:process.argv.slice(2),claudeCap:process.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,claudeModel:process.env.CLAUDE_CODE_SUBAGENT_MODEL,kimiCap:process.env.KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY}));}\n`,{mode:0o700});
+  return {HOME:p,USERPROFILE:p,PATH:folder,LAUNCH_SENTINEL:path.join(p,'launched')};
+}
+
+test('CLI receipt-based uninstall works with corrupt or absent shared policy and no native executable',async t=>{
+  for(const broken of ['corrupt','absent']){
+    const p=temp(t),state=await configure(p,'claude');
+    if(broken==='corrupt')fs.writeFileSync(path.join(state,'policy.json'),'{ SECRET_BROKEN');else fs.unlinkSync(path.join(state,'policy.json'));
+    const got=run(['uninstall','--client','claude','--home',p,'--state-dir',state,'--apply'],undefined,{HOME:p,PATH:path.dirname(process.execPath)});
+    assert.equal(got.status,0);assert.equal(JSON.parse(got.stdout).status,'applied');
+    assert.equal(fs.existsSync(path.join(p,'.claude/settings.json')),false);
+    assert.equal((got.stdout+got.stderr).includes('SECRET_BROKEN'),false);
+  }
+});
+
+test('automatic uninstall ignores policy validity but keeps per-client ownership drift protection',async t=>{
+  const p=temp(t),source=policyFile(p),state=await configure(p,'codex',source);await configure(p,'claude',source);
+  const target=path.join(p,'.claude/settings.json'),settings=JSON.parse(fs.readFileSync(target));settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS='9';fs.writeFileSync(target,JSON.stringify(settings));
+  fs.writeFileSync(path.join(state,'policy.json'),'{broken');
+  const got=run(['uninstall','--home',p,'--state-dir',state,'--apply'],undefined,{HOME:p,PATH:path.dirname(process.execPath)});
+  assert.equal(got.status,3);const result=JSON.parse(got.stdout);assert.equal(result.status,'partial');
+  assert.equal(result.results.find(r=>r.client==='codex').status,'applied');
+  assert.equal(result.results.find(r=>r.client==='claude').error,'OWNED_DRIFT');
+  assert.equal(JSON.parse(fs.readFileSync(target)).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'9');
+  settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS='3';fs.writeFileSync(target,JSON.stringify(settings));
+  const retry=run(['uninstall','--home',p,'--state-dir',state,'--apply'],undefined,{HOME:p,PATH:path.dirname(process.execPath)});
+  assert.equal(retry.status,0);assert.equal(JSON.parse(retry.stdout).status,'completed');
+  assert.equal(fs.existsSync(path.join(state,'installations/claude.json')),false);
+});
+
+test('observe run preserves inherited subagent defaults and caps for every supported client',async t=>{
+  for(const client of ['codex','claude','kimi']){
+    const p=temp(t),source=policyFile(p,'observe'),env=fakeClient(p,client);
+    Object.assign(env,{CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS:'11',CLAUDE_CODE_SUBAGENT_MODEL:'user-choice',KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY:'12'});
+    const state=await configure(p,client,source);
+    const got=run(['run','--client',client,'--home',p,'--state-dir',state,'--policy',source,'--','--fixture'],undefined,env);
+    assert.equal(got.status,0);const observed=JSON.parse(got.stdout);
+    assert.equal(observed.claudeCap,'11');assert.equal(observed.claudeModel,'user-choice');assert.equal(observed.kimiCap,'12');
+    assert.equal(observed.args.some(a=>a.includes('agents.max_concurrent_threads_per_session=')),false);
+  }
+});
+
+test('run rejects divergent installed policy before native launch while the actual classic hook uses shared policy',async t=>{
+  for(const client of ['codex','claude','kimi']){
+    const p=temp(t),state=await configure(p,client),alternate=policyFile(p,'observe'),env=fakeClient(p,client);
+    if(client==='claude'){
+      const settings=JSON.parse(fs.readFileSync(path.join(p,'.claude/settings.json')));
+      const classic=spawnSync('/bin/sh',['-c',settings.hooks.PreToolUse[0].hooks[0].command],{encoding:'utf8',env:{...process.env,...env,AGENT_POLICY_PATH:alternate},input:JSON.stringify({hook_event_name:'PreToolUse',tool_name:'Agent',tool_input:{model:'opus',subagent_type:'worker'}})});
+      assert.equal(classic.status,0);assert.equal(JSON.parse(classic.stdout).hookSpecificOutput.permissionDecision,'deny');
+    }
+    const got=run(['run','--client',client,'--home',p,'--state-dir',state,'--policy',alternate,'--','--fixture'],undefined,env);
+    assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,'RUN_POLICY_CONFLICT');
+    assert.equal(fs.existsSync(env.LAUNCH_SENTINEL),false);
+  }
+});
+
+test('run rejects installed enforce-to-observe mode changes even at the shared policy path',async t=>{
+  const p=temp(t),state=await configure(p,'claude'),env=fakeClient(p,'claude');
+  const shared=path.join(state,'policy.json'),policy=JSON.parse(fs.readFileSync(shared));policy.mode='observe';fs.writeFileSync(shared,JSON.stringify(policy));
+  const got=run(['run','--client','claude','--home',p,'--state-dir',state,'--','--fixture'],undefined,env);
+  assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,'RUN_POLICY_CONFLICT');assert.equal(fs.existsSync(env.LAUNCH_SENTINEL),false);
+});
+
+test('matching explicit installed policy and alternate policy without integration remain supported',async t=>{
+  for(const installed of [false,true]){
+    const p=temp(t),source=policyFile(p,installed?'enforce':'observe'),env=fakeClient(p,'claude');
+    const state=installed?await configure(p,'claude',source):path.join(p,'state');
+    if(installed){const receipt=path.join(state,'installations/claude.json'),owned=JSON.parse(fs.readFileSync(receipt));delete owned.mode;fs.writeFileSync(receipt,JSON.stringify(owned));}
+    const got=run(['run','--client','claude','--home',p,'--state-dir',state,'--policy',source,'--','--fixture'],undefined,env);
+    assert.equal(got.status,0);assert.equal(fs.existsSync(env.LAUNCH_SENTINEL),true);
+  }
+});

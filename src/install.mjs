@@ -88,7 +88,7 @@ function ensureObject(parent, key) {
   if (!object(parent[key])) fail('UNSUPPORTED_CONFIG');
   return parent[key];
 }
-function jsonInstall(text, client, cmd, maxConcurrent, defaultModel) {
+function jsonInstall(text, client, cmd, maxConcurrent, defaultModel, mode) {
   const value = configJson(text), ops = [], created = [];
   if (!own(value,'hooks')) created.push(['hooks']);
   const hooks = ensureObject(value,'hooks');
@@ -100,7 +100,7 @@ function jsonInstall(text, client, cmd, maxConcurrent, defaultModel) {
     hooks[event].push(entry);
     ops.push({kind:'entry',path:['hooks',event],entry});
   }
-  if (client === 'claude') {
+  if (client === 'claude' && mode === 'enforce') {
     if (!own(value,'env')) created.push(['env']);
     const env = ensureObject(value,'env');
     for (const [key, after] of [['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS',String(maxConcurrent)],['CLAUDE_CODE_SUBAGENT_MODEL',defaultModel]]) {
@@ -172,6 +172,8 @@ function validateReceipt(r, plan) {
   const l = locations(plan.client,plan.home,plan.stateDir);
   const allowed = plan.client === 'codex' ? [l.config,l.hooks] : plan.client === 'claude' ? [l.config] : [l.config,l.launcher];
   if (!object(r) || r.schemaVersion !== 1 || r.client !== plan.client || r.home !== plan.home || r.stateDir !== plan.stateDir || !Array.isArray(r.files) || r.files.length !== allowed.length || !r.files.every(f => object(f) && allowed.includes(f.path)) || new Set(r.files.map(f=>f.path)).size !== allowed.length) fail('INVALID_RECEIPT');
+  if (r.mode !== undefined && !['enforce','observe'].includes(r.mode)) fail('INVALID_RECEIPT');
+  const observing = r.mode === 'observe';
   if (absolute(r.packageRoot) !== r.packageRoot || absolute(r.nodePath) !== r.nodePath || !Number.isInteger(r.maxConcurrent) || r.maxConcurrent < 1 || r.maxConcurrent > 32 || typeof r.defaultModel !== 'string' || !Array.isArray(r.warnings) || !r.warnings.every(w => ['codex-hook-trust-required','kimi-native-pool-unverified','kimi-swarm-cap-launcher-only','kimi-ordinary-agent-concurrency-unsupported'].includes(w))) fail('INVALID_RECEIPT');
   const cmd = command({...plan,packageRoot:r.packageRoot,nodePath:r.nodePath});
   for (const f of r.files) {
@@ -180,7 +182,7 @@ function validateReceipt(r, plan) {
     else if (f.type === 'json') {
       if (f.path !== (plan.client === 'codex' ? l.hooks : l.config) || !Array.isArray(f.ops) || !Array.isArray(f.created)) fail('INVALID_RECEIPT');
       if (!f.ops.every(object)) fail('INVALID_RECEIPT');
-      const expectedPaths = [['hooks','PreToolUse'],['hooks','SubagentStart'],['hooks','SubagentStop'],...(plan.client === 'claude' ? [['env','CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS'],['env','CLAUDE_CODE_SUBAGENT_MODEL']] : [])];
+      const expectedPaths = [['hooks','PreToolUse'],['hooks','SubagentStart'],['hooks','SubagentStop'],...(plan.client === 'claude' && !observing ? [['env','CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS'],['env','CLAUDE_CODE_SUBAGENT_MODEL']] : [])];
       if (f.ops.length !== expectedPaths.length || !expectedPaths.every(p => f.ops.filter(op => equal(op.path,p)).length === 1)) fail('INVALID_RECEIPT');
       for (const op of f.ops) {
         if (!object(op) || !Array.isArray(op.path) || op.path.length !== 2) fail('INVALID_RECEIPT');
@@ -205,7 +207,10 @@ function validateReceipt(r, plan) {
           }
         } else if (op.kind !== 'hook' || !equal(op.entry,{event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:cmd,timeout:10})) fail('INVALID_RECEIPT');
       }
-      if (plan.client === 'codex' ? (f.ops.length !== 2 || new Set(f.ops.map(o=>o.path.join('.'))).size !== 2) : f.ops.length !== 1) fail('INVALID_RECEIPT');
+      if (plan.client === 'codex') {
+        const expected = observing ? [['features','hooks']] : [['agents','max_concurrent_threads_per_session'],['features','hooks']];
+        if (f.ops.length !== expected.length || !expected.every(p => f.ops.some(o=>equal(o.path,p)))) fail('INVALID_RECEIPT');
+      } else if (f.ops.length !== 1) fail('INVALID_RECEIPT');
     } else fail('INVALID_RECEIPT');
   }
   return r;
@@ -257,7 +262,7 @@ export async function planInstall(options) {
   const policyBefore = await readDependency(plan,l.policy,plan.stateDir);
   if (receipt.text !== null) {
     const r = validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
-    if (r.packageRoot !== plan.packageRoot || r.nodePath !== plan.nodePath || r.policyHash !== policyHash) fail('INSTALLATION_CONFLICT');
+    if (r.packageRoot !== plan.packageRoot || r.nodePath !== plan.nodePath || r.policyHash !== policyHash || (r.mode ?? 'enforce') !== policy.mode) fail('INSTALLATION_CONFLICT');
     await undoFiles(plan,r,true);
     if (policyBefore.text === null || !equal(parseJson(policyBefore.text,'OWNED_DRIFT'),policy)) fail('OWNED_DRIFT');
     return {...plan,status:'unchanged',warnings:r.warnings ?? []};
@@ -268,18 +273,19 @@ export async function planInstall(options) {
   if (plan.client === 'claude' || plan.client === 'codex') {
     const target = plan.client === 'codex' ? l.hooks : l.config;
     const before = plan.client === 'codex' ? await readDependency(plan,target,plan.home) : config;
-    const edited = jsonInstall(before.text,plan.client,cmd,maxConcurrent,defaultModel);
+    const edited = jsonInstall(before.text,plan.client,cmd,maxConcurrent,defaultModel,policy.mode);
     change(plan,target,before,edited.text,before.mode);
     files.push({path:target,type:'json',existed:before.text !== null,ops:edited.ops,created:edited.created});
   }
   if (plan.client === 'codex') {
     let text = config.text ?? '';
     const native = parseToml(text);
-    if (native.agents && own(native.agents,'max_threads')) fail('CODEX_CAP_ALIAS_CONFLICT');
+    if (policy.mode === 'enforce' && native.agents && own(native.agents,'max_threads')) fail('CODEX_CAP_ALIAS_CONFLICT');
     const priorCap = native.agents?.max_concurrent_threads_per_session;
-    if ((priorCap !== undefined && (!Number.isSafeInteger(priorCap) || priorCap < 1)) || (native.features?.hooks !== undefined && typeof native.features.hooks !== 'boolean')) fail('UNSUPPORTED_CONFIG');
+    if ((policy.mode === 'enforce' && priorCap !== undefined && (!Number.isSafeInteger(priorCap) || priorCap < 1)) || (native.features?.hooks !== undefined && typeof native.features.hooks !== 'boolean')) fail('UNSUPPORTED_CONFIG');
     const ops = [];
-    for (const [keys,v] of [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['features','hooks'],true]]) {
+    const settings = [...(policy.mode === 'enforce' ? [[['agents','max_concurrent_threads_per_session'],maxConcurrent]] : []),[['features','hooks'],true]];
+    for (const [keys,v] of settings) {
       const edit = setTomlValue(text,keys,v); text = edit.text; ops.push(edit.ownership);
     }
     change(plan,l.config,config,text,config.mode);
@@ -287,8 +293,10 @@ export async function planInstall(options) {
     plan.warnings.push('codex-hook-trust-required');
   } else if (plan.client === 'kimi') {
     const text = config.text ?? '', native = parseToml(text);
-    if (!kimiPoolMatches(native,policy.clients.kimi)) plan.warnings.push('kimi-native-pool-unverified');
-    plan.warnings.push('kimi-swarm-cap-launcher-only','kimi-ordinary-agent-concurrency-unsupported');
+    if (policy.mode === 'enforce') {
+      if (!kimiPoolMatches(native,policy.clients.kimi)) plan.warnings.push('kimi-native-pool-unverified');
+      plan.warnings.push('kimi-swarm-cap-launcher-only','kimi-ordinary-agent-concurrency-unsupported');
+    }
     const edit = appendTomlHook(text,{event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:cmd,timeout:10});
     change(plan,l.config,config,edit.text,config.mode);
     files.push({path:l.config,type:'toml',existed:config.text !== null,ops:[edit.ownership]});
@@ -300,7 +308,7 @@ export async function planInstall(options) {
     files.push({path:l.launcher,type:'owned',existed:false,afterHash:digest(launcherText)});
   }
   change(plan,l.policy,policyBefore,policyBefore.text ?? policyText,0o600);
-  const record = {schemaVersion:1,client:plan.client,home:plan.home,stateDir:plan.stateDir,packageRoot:plan.packageRoot,nodePath:plan.nodePath,maxConcurrent,defaultModel,policyHash,warnings:plan.warnings,files};
+  const record = {schemaVersion:1,client:plan.client,home:plan.home,stateDir:plan.stateDir,packageRoot:plan.packageRoot,nodePath:plan.nodePath,mode:policy.mode,maxConcurrent,defaultModel,policyHash,warnings:plan.warnings,files};
   change(plan,l.receipt,receipt,json(record),0o600);
   return {...plan,status:'planned'};
 }

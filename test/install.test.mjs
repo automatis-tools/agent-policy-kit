@@ -422,3 +422,26 @@ test('failed recovery-journal recreation retains a private lock pointing to the 
   await assert.rejects(planInstall(f),{code:'RECOVERY_REQUIRED'});
   await assert.rejects(uninstall({...f,apply:true}),{code:'RECOVERY_REQUIRED'});
 });
+
+test('fresh observe installations preserve user delegated defaults and limits while activating hooks',async t=>{
+  for(const client of ['codex','claude','kimi']){
+    const f=await fixture(t,client),policy=JSON.parse(await fs.readFile(f.policyPath));policy.mode='observe';await fs.writeFile(f.policyPath,JSON.stringify(policy));
+    const target=path.join(f.home,client==='codex'?'.codex/config.toml':client==='claude'?'.claude/settings.json':'.kimi-code/config.toml');
+    const original=client==='claude'?JSON.stringify({model:'main',env:{CLAUDE_CODE_SUBAGENT_MODEL:'user-choice',CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS:'11',USER_SETTING:'preserve'}}):client==='codex'?'model = "main"\n[agents]\nmax_threads = 11\n[features]\nhooks = false\n':'default_model = "main"\n[secondary_model]\ndefault_model = "user-model"\n';
+    await put(target,original);await applyInstall(await planInstall(f));
+    const receipt=JSON.parse(await fs.readFile(path.join(f.stateDir,'installations',client+'.json')));
+    assert.equal(receipt.mode,'observe');
+    if(client==='claude')assert.deepEqual(JSON.parse(await fs.readFile(target)).env,JSON.parse(original).env);
+    if(client==='codex'){const text=await fs.readFile(target,'utf8');assert.match(text,/max_threads = 11/);assert.ok(!text.includes('max_concurrent_threads_per_session'));assert.match(text,/hooks = true/);}
+    if(client==='kimi')assert.ok((await fs.readFile(target,'utf8')).startsWith(original));
+    assert.equal((await planInstall(f)).status,'unchanged');await uninstall({...f,apply:true});
+    if(client==='claude')assert.deepEqual(JSON.parse(await fs.readFile(target)),JSON.parse(original));else assert.equal((await fs.readFile(target,'utf8')).trim(),original.trim());
+  }
+});
+
+test('observe install into empty Claude settings creates no default-model or concurrency env',async t=>{
+  const f=await fixture(t,'claude'),policy=JSON.parse(await fs.readFile(f.policyPath));policy.mode='observe';await fs.writeFile(f.policyPath,JSON.stringify(policy));
+  await applyInstall(await planInstall(f));const settings=JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json')));
+  assert.equal(settings.env,undefined);assert.ok(settings.hooks.PreToolUse.length);
+  await uninstall({...f,apply:true});
+});

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
+import { parseArgs, isDeepStrictEqual } from 'node:util';
 import { spawnSync } from 'node:child_process';
 import { CLIENTS, validatePolicy, evaluate } from '../src/policy.mjs';
 import { handleHook, denial } from '../src/adapters.mjs';
@@ -33,6 +33,20 @@ function loadPolicy(file) {
   return validatePolicy(JSON.parse(fs.readFileSync(file, 'utf8')));
 }
 const safeCode = code => typeof code === 'string' && /^[A-Za-z_]{1,64}$/.test(code) ? code : 'OPERATION_FAILED';
+function requireInstalledPolicy(client, home, stateDir, policy) {
+  const receipt = path.join(stateDir, 'installations', `${client}.json`);
+  let stat;
+  try { stat = fs.lstatSync(receipt); }
+  catch (error) { if (error.code === 'ENOENT') return; throw failure('RUN_POLICY_CONFLICT'); }
+  try {
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1024 * 1024) throw failure('RUN_POLICY_CONFLICT');
+    const owned = JSON.parse(fs.readFileSync(receipt, 'utf8'));
+    if (owned.schemaVersion !== 1 || owned.client !== client || owned.home !== home || owned.stateDir !== stateDir
+      || (owned.mode === undefined ? 'enforce' : owned.mode) !== policy.mode
+      || !isDeepStrictEqual(loadPolicy(path.join(stateDir, 'policy.json')), policy)) throw failure('RUN_POLICY_CONFLICT');
+  } catch { throw failure('RUN_POLICY_CONFLICT'); }
+}
+
 function help() {
   console.log(`Agent Policy Kit ${packageInfo.version}
 
@@ -123,6 +137,19 @@ async function main() {
     fs.writeFileSync(policyPath, content, { flag: 'wx', mode: 0o600 });
     print({ status: 'created', schemaVersion: 1 }); return;
   }
+  if (command === 'uninstall') {
+    const { uninstall, summarizePlan } = await import('../src/install.mjs');
+    const clients = client ? [client] : CLIENTS.filter(c => fs.existsSync(path.join(stateDir, 'installations', `${c}.json`)));
+    const results = [];
+    for (const selected of clients) {
+      try { const result = await uninstall({ client: selected, home, stateDir, apply: opts.apply }); results.push(opts.apply ? result : summarizePlan(result)); }
+      catch (error) { results.push({ client: selected, status: 'error', error: safeCode(error.code) }); }
+    }
+    if (client && results[0]?.status !== 'error') print(results[0]);
+    else print({ schemaVersion: 1, status: results.some(r => r.status === 'error') ? 'partial' : clients.length ? 'completed' : 'not_installed', results });
+    if (results.some(r => r.status === 'error')) process.exitCode = 3;
+    return;
+  }
   const policy = loadPolicy(policyPath);
   hookMode = policy.mode;
   if (opts.apply && ['setup', 'install'].includes(command)) {
@@ -160,24 +187,12 @@ async function main() {
     const result = await setupDetected({ client: client ?? null, home, stateDir, policyPath, packageRoot, nodePath: process.execPath, apply: opts.apply });
     print(result); process.exitCode = result.exitCode; return;
   }
-  if (command === 'uninstall') {
-    const { uninstall, summarizePlan } = await import('../src/install.mjs');
-    const clients = client ? [client] : CLIENTS.filter(c => fs.existsSync(path.join(stateDir, 'installations', `${c}.json`)));
-    const results = [];
-    for (const selected of clients) {
-      try { const result = await uninstall({ client: selected, home, stateDir, apply: opts.apply }); results.push(opts.apply ? result : summarizePlan(result)); }
-      catch (error) { results.push({ client: selected, status: 'error', error: safeCode(error.code) }); }
-    }
-    if (client && results[0]?.status !== 'error') print(results[0]);
-    else print({ schemaVersion: 1, status: results.some(r => r.status === 'error') ? 'partial' : clients.length ? 'completed' : 'not_installed', results });
-    if (results.some(r => r.status === 'error')) process.exitCode = 3;
-    return;
-  }
   if (command === 'record') { const record = await stdin(); appendRecord(stateDir, record, policy); print({ status: 'recorded', evidence: 'caller_supplied_not_provider_verified' }); return; }
   if (command === 'audit') { const records = readRecords(stateDir, policy); print(opts.public ? publicSummary(records) : records); return; }
   if (command === 'run') {
     if (!client || !policy.clients[client]) throw failure('CLIENT_REQUIRED');
     if (client === 'agy') throw failure('AGY_EXACT_MODEL_GUARD_UNSUPPORTED');
+    requireInstalledPolicy(client, home, stateDir, policy);
     const max = String(policy.clients[client].maxConcurrent);
     const env = { ...process.env };
     if (opts.home) {
@@ -186,9 +201,9 @@ async function main() {
       if (client === 'kimi') env.KIMI_CODE_HOME = path.join(home, '.kimi-code');
     }
     const args = [...passArgs];
-    if (client === 'kimi') env.KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY = max;
-    if (client === 'claude') env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS = max;
-    if (client === 'codex') args.unshift('--enable', 'hooks', '-c', `agents.max_concurrent_threads_per_session=${max}`);
+    if (policy.mode === 'enforce' && client === 'kimi') env.KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY = max;
+    if (policy.mode === 'enforce' && client === 'claude') env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS = max;
+    if (client === 'codex') args.unshift('--enable', 'hooks', ...(policy.mode === 'enforce' ? ['-c', `agents.max_concurrent_threads_per_session=${max}`] : []));
     const detected = await resolveClient(client);
     if (detected.status !== 'detected') throw failure('CLIENT_NOT_DETECTED');
     if (client === 'claude') { args.unshift('--plugin-dir', packageRoot); env.AGENT_POLICY_PATH = policyPath; }
