@@ -12,7 +12,7 @@ const preferences=validatePolicy(JSON.parse(fs.readFileSync(path.join(root,'poli
 const data={...release,packageSpec:`agent-policy-kit@${release.version}`,preferences,
   presets:release.presets.map(preset=>({...preset,preferences:presetPreferences(preset.id)})),catalog:modelCatalog(),
   unreleased:release.notes.includes(`## ${release.version} — Unreleased`)};
-const html=template.replace(marker,JSON.stringify(data).replaceAll('<','\\u003c'));
+const html=template.replace(marker,()=>JSON.stringify(data).replaceAll('<','\\u003c'));
 const destination=path.join(root,'site/index.html');
 if(process.argv.includes('--check')){
   if(!fs.existsSync(destination)||fs.readFileSync(destination,'utf8')!==html)throw new Error('Configuration page is stale; run npm run build:site');

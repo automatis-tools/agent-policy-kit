@@ -52,7 +52,7 @@ test('two real configuration packages upgrade and downgrade models and templates
   const compiler=path.join(snapshotB,'src/native.mjs'),originalCompiler=fs.readFileSync(compiler,'utf8');
   const changedCompiler=originalCompiler.replace('Implement the assigned change.','Fixture B worker. Implement the assigned change.').replace('text.push(END);',"text.push('Fixture B routing note.');text.push(END);");
   assert.notEqual(changedCompiler,originalCompiler);fs.writeFileSync(compiler,changedCompiler);
-  fs.writeFileSync(path.join(snapshotB,'CHANGELOG.md'),'# Changelog\\n\\n## 0.2.0 — Unreleased\\n\\n### Why this release\\nSynthetic test fixture, not a real release.\\n');
+  fs.writeFileSync(path.join(snapshotB,'CHANGELOG.md'),['# Changelog','','## 0.2.0 — Unreleased','','### Why this release',"Literal $& and $' in release notes must remain data.",'Synthetic test fixture, not a real release.',''].join('\n'));
   assert.equal(command(process.execPath,['scripts/build-site.mjs'],{cwd:snapshotB,env}).status,0);
   const packedB=parse(command('npm',['pack','--json','--ignore-scripts','--pack-destination',root],{cwd:snapshotB,env}));
   parse(command('npm',['install','--prefix',prefixB,path.join(root,packedB[0].filename),'--ignore-scripts','--no-audit','--no-fund','--offline','--json'],{cwd:consumer,env}));
@@ -73,6 +73,9 @@ test('two real configuration packages upgrade and downgrade models and templates
   const blocked = isolated(process.execPath, ['-e', `require('node:fs').readFileSync(${JSON.stringify(path.join(source, 'package.json'))})`]);
   assert.notEqual(blocked.status, 0, 'The consumer must be unable to read the source checkout.');
   const binB=path.join(prefixB,'node_modules/.bin/agent-policy');
+  const pageB=fs.readFileSync(path.join(prefixB,'node_modules/agent-policy-kit/site/index.html'),'utf8'),contextB=vm.createContext({TextEncoder,btoa});
+  vm.runInContext(pageB.match(/<script>([\s\S]*?)<\/script>/)[1],contextB);
+  assert.equal(typeof contextB.APKConfigurator.buildCommand,'function','release notes must not corrupt the generated page script');
   const run=(which,args,extra={})=>isolated(which==='A'?bin:binB,args,extra);
   assert.equal(parse(run('A',['release'])).version,'0.1.0');assert.equal(parse(run('B',['release'])).version,'0.2.0');
   const nativeBin=path.join(consumer,'native-bin');fs.mkdirSync(nativeBin);
