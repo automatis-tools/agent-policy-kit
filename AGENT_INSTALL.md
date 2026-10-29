@@ -46,6 +46,8 @@ Automatic setup supports standard native profiles. If CODEX_HOME, CLAUDE_CONFIG_
 
 To customize defaults for a fresh installation, create a preferences file with init --policy FILE, then edit only the requested settings. init never overwrites. Pass that same --policy FILE to setup and doctor, including later read-only checks. The shared shape is schemaVersion:1, maxConcurrent, and per-client code/light model+effort plus avoidModels guidance. See docs/policy.md. Use provisioned model aliases in Kimi, not raw provider IDs. Never infer model entitlement from an alias.
 
+Before applying defaults or an authorized model update, check the installed tool versions, native model availability and current official provider documentation. Model IDs, supported efforts and task suitability change. Follow [model maintenance](docs/model-updates.md); preserve explicit user choices rather than silently replacing them with a new preset. The configurator itself does not fetch recommendations or change models between configuration commands.
+
 The canonical shared preferences are stateDir/policy.json: stateDir is --state-dir, AGENT_POLICY_HOME, or the selected home's .agent-policy-kit directory. Setup retains this file after uninstall. An external --policy source must remain semantically equal to that canonical file; editing only the external source is not an update.
 
 Kimi requires its native model entries to exist already. Missing aliases, invalid capabilities/effort metadata, or disabled thinking are prerequisites. Read only relevant model metadata, preserve secrets, and use the native client's ordinary setup if the owner has already authorized it. Otherwise report the exact missing prerequisite. Do not invent provider definitions or silently substitute another model.
@@ -66,6 +68,8 @@ Already-authorized setup does not need another confirmation after you review the
 Review every per-client result. A configured result means native files were written, not that a model task executed. Inspect the generated roles and managed instruction block, then verify idempotency with setup. Native clients may need a fresh session to load changes. Do not terminate the owner's active sessions automatically.
 
 Generated roles are apk-worker, apk-reviewer, apk-explorer and apk-routine. Worker/reviewer use code preferences; explorer/routine use light preferences. Native global instructions route delegation and describe the shared parallelism target. No file may invoke/import Agent Policy Kit or refer to its executable, npm installation, source tree or state for normal operation.
+
+These preferences apply only when the main agent chooses to delegate. They must not require delegation, enable a disabled agent feature, or change ordinary direct work. Preserve that conditional scope when editing native instruction blocks.
 
 After verification, the npm package can be uninstalled or its owned temporary prefix removed. Keep private kit state if future removal is wanted. Normal client use must not launch this package or require a kit launcher.
 
