@@ -60,6 +60,18 @@ test('model changes use known model effort and custom models keep the original t
   assert.equal(api.buildConfig(state, preferences).config.clients.kimi.roles.routine.effort, config.code.effort);
 });
 
+test('sequential choices of one custom Kimi alias reuse its existing effort across all tasks', () => {
+  const state = api.initialState(preferences);
+  const config = preferences.clients.kimi;
+  for (const role of ['worker', 'reviewer', 'explorer', 'routine']) {
+    state.jobs.kimi[role] = api.preferenceForModel(config, role, 'custom/shared-alias', state.jobs.kimi);
+  }
+  assert.equal(new Set(Object.values(state.jobs.kimi).map(choice => choice.effort)).size, 1);
+  assert.deepEqual(plain(api.buildConfig(state, preferences)).errors, []);
+  // Recommended aliases still use their release effort, rather than a custom alias's effort.
+  assert.deepEqual(plain(api.preferenceForModel(config, 'routine', config.light.model, state.jobs.kimi)), config.light);
+});
+
 test('native role recommendations override code/light defaults', () => {
   const custom = structuredClone(preferences);
   custom.clients.codex.roles = {reviewer: {model: 'review/custom', effort: 'medium'}};

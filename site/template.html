@@ -54,9 +54,10 @@ const RELEASE = __APK_RELEASE_DATA__;
     return {selected: CLIENTS.filter(client => preferences.clients[client]), active: CLIENTS.find(client => preferences.clients[client]), maxConcurrent: preferences.maxConcurrent,
       jobs: Object.fromEntries(CLIENTS.filter(client => preferences.clients[client]).map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
   }
-  function preferenceForModel(config, role, model) {
+  function preferenceForModel(config, role, model, jobs = {}) {
     const recommended = [config.code, config.light, ...Object.values(config.roles ?? {})].find(choice => choice.model === model);
-    return {model, effort: (recommended ?? effective(config, role)).effort};
+    const shared = Object.entries(jobs).find(([otherRole, choice]) => otherRole !== role && choice.model === model)?.[1];
+    return {model, effort: (recommended ?? shared ?? effective(config, role)).effort};
   }
   function buildConfig(state, preferences) {
     const errors = [];
@@ -173,7 +174,7 @@ const RELEASE = __APK_RELEASE_DATA__;
       if (client === 'agy') TIERS.forEach(tier => input.append(element('option', {value: tier}, tier)));
       input.value = state.jobs[client][role].model; input.dataset.model = 'true';
       input.addEventListener(client === 'agy' ? 'change' : 'input', () => {
-        state.jobs[client][role] = preferenceForModel(config, role, input.value); updateResult();
+        state.jobs[client][role] = preferenceForModel(config, role, input.value, state.jobs[client]); updateResult();
       });
       row.append(input); panel.append(row);
     }
