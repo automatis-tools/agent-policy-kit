@@ -25,3 +25,5 @@ An uninstall conflict means an owned entry/value changed. Review and remove or r
 ## Package relocation/removal
 
 Uninstall integration before moving or uninstalling the npm package. If the package is already gone, restore it at the original stable prefix, inspect a plan, then uninstall normally. Native client hook crashes can fail open; a missing executable is not an enforcement guarantee.
+
+Generated commands also reference the Node executable used during setup. If a runtime upgrade removes that path, use the current Node/installed CLI to uninstall and reinstall integrations. Run a plan after package/runtime upgrades; do not infer working hooks from a surviving receipt alone.

@@ -8,4 +8,6 @@ CLI audit has a field allowlist. It excludes prompts, commands, full tool input/
 
 The optional Claude mod uses the host's private store, bounded samples and its own command export. It does not promise a complete durable ledger. A caller-supplied `record` is labelled caller-supplied, not provider-verified proof.
 
+The CLI journal has no automatic rotation. Reading/exporting is bounded to 16 MiB. Before that limit, an operator agent can stop active writers and move audit.jsonl into a private archive; the next hook creates a fresh file. Retain archives only as long as needed. Do not publish them or rotate while hooks are writing.
+
 The npm package uses a files allowlist. Development notes, artifacts, live logs, user paths and test outputs stay outside the distributable. `npm run check` inspects package contents; the acceptance gate installs a real tarball in fresh profiles and denies source access.
