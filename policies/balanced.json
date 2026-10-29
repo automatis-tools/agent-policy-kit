@@ -1,40 +1,59 @@
 {
   "schemaVersion": 1,
-  "mode": "enforce",
+  "maxConcurrent": 3,
   "clients": {
     "codex": {
-      "defaultProfile": "code", "maxConcurrent": 3,
-      "profiles": {
-        "code": { "model": "gpt-6.1-sol", "effort": "high", "roles": ["default", "worker", "reviewer"] },
-        "light": { "model": "gpt-6-luna", "effort": "high", "roles": ["explorer", "routine"] }
+      "code": {
+        "model": "gpt-6.1-sol",
+        "effort": "high"
       },
-      "deniedModels": ["gpt-6-astra"], "observedModels": ["gpt-6.1-sol", "gpt-6-luna"]
+      "light": {
+        "model": "gpt-6-luna",
+        "effort": "high"
+      },
+      "avoidModels": [
+        "gpt-6-astra"
+      ]
     },
     "claude": {
-      "defaultProfile": "code", "maxConcurrent": 3,
-      "profiles": {
-        "code": { "model": "sonnet", "effort": "high", "roles": ["default", "worker", "reviewer", "general-purpose", "Plan", "code-simplifier"] },
-        "light": { "model": "haiku", "effort": "high", "roles": ["Explore", "explorer", "routine"] }
+      "code": {
+        "model": "sonnet",
+        "effort": "high"
       },
-      "deniedModels": ["opus", "fable", "claude-opus-5-5", "claude-fable-5-1"],
-      "observedModels": ["claude-sonnet-5-5", "claude-haiku-5-5"]
+      "light": {
+        "model": "haiku",
+        "effort": "high"
+      },
+      "avoidModels": [
+        "opus",
+        "fable"
+      ]
     },
     "kimi": {
-      "defaultProfile": "code", "maxConcurrent": 3,
-      "profiles": {
-        "code": { "model": "subagent-code", "providerModel": "k3-256k", "effort": "high", "roles": ["coder", "worker", "reviewer", "plan"] },
-        "light": { "model": "subagent-light", "providerModel": "kimi-for-coding", "effort": "low", "roles": ["explore", "explorer", "routine"] }
+      "code": {
+        "model": "kimi-code/k3",
+        "effort": "high"
       },
-      "deniedModels": ["primary", "kimi-code/k3.1-pro-highspeed", "kimi-code/kimi-for-coding-highspeed"],
-      "observedModels": ["k3-256k", "kimi-for-coding"]
+      "light": {
+        "model": "kimi-code/kimi-for-coding",
+        "effort": "low"
+      },
+      "avoidModels": [
+        "primary",
+        "kimi-code/k3.1-pro-highspeed",
+        "kimi-code/kimi-for-coding-highspeed"
+      ]
     },
     "agy": {
-      "defaultProfile": "code", "maxConcurrent": 3,
-      "profiles": {
-        "code": { "model": "pro", "effort": null, "roles": ["worker", "reviewer"] },
-        "light": { "model": "flash", "effort": null, "roles": ["explorer", "routine"] }
+      "code": {
+        "model": "pro",
+        "effort": null
       },
-      "deniedModels": [], "observedModels": ["gemini-3.8-flash-tiered", "MODEL_PLACEHOLDER_M322"]
+      "light": {
+        "model": "flash",
+        "effort": null
+      },
+      "avoidModels": []
     }
   }
 }

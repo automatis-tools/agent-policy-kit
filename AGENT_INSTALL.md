@@ -1,108 +1,90 @@
-# Agent Policy Kit — LLM-first operator guide
+# Agent Policy Kit — AI operator guide
 
-Audience: the AI agent that the owner authorized to install, verify, upgrade or remove this package. Perform routine technical steps yourself. Do not hand the owner a checklist of shell commands. Do not open interactive prompts when a documented JSON/CLI path exists.
+This is a configuration-only tool. It writes native configuration and exits. It has no hooks, wrappers, plugins, service or audit process. After setup, the npm package and kit state are not needed for normal client operation.
 
-## Contract
+Perform authorized setup, validation, updates and removal yourself. Do not give the owner a shell checklist. Use JSON commands and continue unaffected clients when one has a prerequisite. Use the owner's normal approval mechanism only when the host actually requires it.
 
-- Install only clients positively detected from working executable/version probes. A config folder alone is not detection.
-- Use a stable npm installation, not a source checkout or temporary npx cache, for persistent hooks.
-- Default commands produce plans. After reviewing the plan against the owner's request, use --apply without asking again for already authorized routine changes.
-- Preserve main models, permissions, other plugins/hooks, native credentials and unrelated settings.
-- Never publish packages, log in, accept terms, bypass approval/trust, weaken sandboxes, or transfer credentials. The installer keeps private local backups of settings; those can contain existing secrets and must remain private.
-- All normal operations are headless JSON. Distinguish configured files, native trust/load, and model execution. Never promote one layer into another.
-- If the host requires an actual approval, use its normal approval mechanism when available. Otherwise return one precise machine-readable blocker; continue unaffected clients. Do not invent a trust hash or use a dangerous bypass flag to claim unattended success.
+## Boundaries
 
-## 1. Obtain a stable installed CLI
+- Detect working native CLI executables; stale config folders are not presence.
+- Preserve main models, permissions, providers, credentials, unrelated hooks/plugins, and later user edits.
+- Use native settings and plain agent/instruction files only. Do not install a runtime dependency into client configuration.
+- Never log in, collect credentials, accept terms, publish, change sandboxes, or start model tasks as installation shortcuts.
+- Shared settings mean the same task roles and preferences adapted to each native client. They do not guarantee identical provider models or universal enforcement.
+- Private receipts/backups support future updates/removal only. Backups may contain existing secrets. Do not publish state or raw config.
 
-Requires Node.js 22.x (22.13+) or 24+. Use npm normally configured by the owner. Package name: agent-policy-kit; baseline version: 0.1.0.
+## 1. Obtain the configurator
 
-After npm publication, install to a stable user-owned prefix:
+Requires Node.js 22.x (22.13+) or 24+. After npm publication, a one-shot invocation is supported:
 
 ```sh
-AGENT_POLICY_PREFIX="$HOME/.local/share/agent-policy-kit"
-npm install --prefix "$AGENT_POLICY_PREFIX" agent-policy-kit@0.1.0 --ignore-scripts --no-audit --no-fund
+npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy instructions
+npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup
+```
+
+Before publication, use the verified local .tgz instead of the registry spec. Never publish to make installation succeed. For several commands, install into a temporary or user-owned prefix:
+
+```sh
+AGENT_POLICY_PREFIX="$(mktemp -d)"
+npm install --prefix "$AGENT_POLICY_PREFIX" /absolute/path/agent-policy-kit-0.1.0.tgz --ignore-scripts --no-audit --no-fund
 AGENT_POLICY_CLI="$AGENT_POLICY_PREFIX/node_modules/.bin/agent-policy"
 "$AGENT_POLICY_CLI" --version
 ```
 
-Before publication, replace the registry package spec with the verified local .tgz. See docs/npm-release.md. Never publish to make an installation test pass.
+A stable installation path, shell profile modification, sudo, or a background service is not required. The package is used only while a configuration command runs.
 
-Do not use npx for persistent setup: its cache can be removed. npx is suitable for read-only instructions/evaluation only. Do not require a global sudo install or modify shell startup files.
-
-## 2. Detect and review
+## 2. Detect and prepare preferences
 
 ```sh
 "$AGENT_POLICY_CLI" detect
 "$AGENT_POLICY_CLI" setup
 ```
 
-Detection checks PATH and documented host-home locations, using bounded version/help probes without model requests. It returns sanitized status/version/origin. Target --home is a configuration target, not authority to execute arbitrary files found there. Skip not_found/invalid/timeout clients. Never create their config folders just because old files mention them.
+Default operations are read-only plans. Review targets, warnings and requiredActions against the owner's request. Missing clients must not receive config files. --home changes the configuration target, not the executable discovery trust root.
 
-Review the setup JSON plan, warnings and requiredActions. Exact-model agy integration is unsupported. Do not represent its tier selection as a guaranteed model split.
+To customize defaults, create a preferences file with init --policy FILE, then edit only the requested settings. init never overwrites. The shared shape is schemaVersion:1, maxConcurrent, and per-client code/light model+effort plus avoidModels guidance. See docs/policy.md. Use provisioned model aliases in Kimi, not raw provider IDs. Never infer model entitlement from an alias.
 
-## 3. Prepare policy and native prerequisites
+Kimi requires its native model entries to exist already. Missing aliases, invalid capabilities/effort metadata, or disabled thinking are prerequisites. Read only relevant model metadata, preserve secrets, and use the native client's ordinary setup if the owner has already authorized it. Otherwise report the exact missing prerequisite. Do not invent provider definitions or silently substitute another model.
 
-The bundled balanced policy is the default. For customization:
+A Kimi main-effort conflict means a selected alias is also the main model and changing its default could change the main session. Preserve main behavior. Prefer an existing separate native alias, or explicitly prepare a native model variant from provisioned metadata before applying. Never change global main effort to hide the conflict. The reserved pool key primary is invalid.
 
-```sh
-"$AGENT_POLICY_CLI" init --policy "$HOME/.agent-policy-kit/policy.json"
-```
+Claude force-model settings can defeat per-role model selection. Resolve an explicit native force conflict with the owner's intended settings; never claim per-role configuration succeeded while force still overrides it. Environment/project settings can also take native precedence.
 
-init never overwrites. If a policy already exists, read and preserve it. The policy is shared across client integrations. Do not replace an incompatible shared policy silently; inspect receipts and plan a coordinated change.
-
-Kimi requires a native secondary pool. Read only the relevant model metadata in its existing config; do not print provider credentials. Use examples/kimi-pool.toml as a shape, copying capabilities/provider metadata from that installed client's provisioned entries. Merge aliases subagent-code (k3-256k/high) and subagent-light (kimi-for-coding/low), per-entry overrides.default_effort, and secondary_model.models. Preserve native main model/provider/login and unrelated pool choices. Use a TOML-aware editor, validate with the detected client's doctor, and rerun the kit doctor. Do not append duplicate tables or assume an alias proves entitlement. If login/model metadata is absent, report that native prerequisite; do not collect passwords or invent credentials.
-
-## 4. Apply without an interactive installer
+## 3. Apply and verify
 
 ```sh
 "$AGENT_POLICY_CLI" setup --apply
 "$AGENT_POLICY_CLI" doctor
 ```
 
-The kit configures only detected clients. It may return configured with requiredActions: that is not runtime readiness. Per-client failures remain explicit; do not discard successfully completed independent work or overwrite conflicting settings to force green.
+Already-authorized setup does not need another confirmation after you review the concrete plan. install --client CLIENT selects one detected tool. --home and --state-dir select canonical targets. Symlinks, stale plans and ownership conflicts are refused.
 
-An explicitly selected client can use install --client CLIENT [--apply], but absence must not be treated as authorization to create a phantom integration. --home and --state-dir select explicit canonical targets; plan/apply refuses unsafe symlinks.
+Review every per-client result. A configured result means native files were written, not that a model task executed. Inspect the generated roles and managed instruction block, then verify idempotency with setup. Native clients may need a fresh session to load changes. Do not terminate the owner's active sessions automatically.
 
-## 5. Verify each layer
+Generated roles are apk-worker, apk-reviewer, apk-explorer and apk-routine. Worker/reviewer use code preferences; explorer/routine use light preferences. Native global instructions route delegation and describe the shared parallelism target. No file may invoke/import Agent Policy Kit or refer to its executable, npm installation, source tree or state for normal operation.
 
-1. Package: invoke the installed bin. Use evaluate for a permitted profile and a denied model; verify expected JSON and exit code. No model call is needed.
-2. Settings: inspect the ownership receipt and plan-only reinstall. Reinstall should be unchanged. Native parser/doctor checks should pass.
-3. Native load/trust: use documented client checks. Codex non-managed hooks require native trust review. Do not bypass it. For Claude's optional mod, use the kit's run wrapper, which supplies --plugin-dir and AGENT_POLICY_PATH for the selected shared policy; its local /agent-policy-status command verifies loading without inference. Kimi's doctor validates config; runtime callbacks remain separate evidence.
-4. Runtime/model: only run a bounded live smoke task if the owner's scope permits it. Preserve requested versus client/provider-reported models and unavailable evidence. Do not call a provider just to validate package syntax.
+After verification, the npm package can be uninstalled or its owned temporary prefix removed. Keep private kit state if future removal is wanted. Normal client use must not launch this package or require a kit launcher.
 
-Native commands and trust rules differ by version. If a normal load/approval path is unavailable in the host, report a precise required action and its evidence, not a false PASS or a broad request for manual terminal work.
+## 4. Understand native limits
 
-## 6. Use supported launchers
+- Codex role files pin requested model/effort and native defaults/cap are configured. Explicit/project settings have native precedence rules.
+- Claude role files and native defaults/cap are configured. Force flags, higher-priority settings and some native execution paths have exceptions.
+- Kimi uses its existing model pool, per-alias effort and routing guidance. Its role Markdown does not pin model selection. A max-three instruction is guidance, not a universal native cap.
+- agy uses native Pro/Flash tiers. Concrete provider identity, per-role effort and a hard concurrency cap are not supplied by these files.
 
-```sh
-"$AGENT_POLICY_CLI" run --client codex
-"$AGENT_POLICY_CLI" run --client claude
-"$AGENT_POLICY_CLI" run --client kimi
-```
+avoidModels is written as instruction guidance. There is no custom gate to block every explicit model override. Report requested native settings separately from actual model/provider execution. Do not add a hook to strengthen these limits.
 
-The run wrapper forwards argv directly. In enforce mode, Kimi's native AgentSwarm ramp cap applies through this wrapper or the owned launcher; it is not an ordinary-Agent/lifetime quota limit. Do not change the main model unless the owner asks.
-
-Fresh observe installations and observe launches preserve user subagent defaults and limits; they add observation hooks and required activation only. Switching an existing installation between enforce and observe requires owned uninstall, a coordinated shared-policy update, then reinstall. For an installed client, a divergent `run --policy` returns `RUN_POLICY_CONFLICT` before launch; use the shared state policy. An explicit policy without an owned integration remains supported.
-
-## 7. Audit safely
-
-```sh
-"$AGENT_POLICY_CLI" audit --public
-```
-
-CLI audit is one private audit.jsonl file without session or agent IDs. --public removes timestamps and aggregates. Unknown model/role strings are masked; missing token evidence is null. The optional native Claude mod uses its own bounded private store; /agent-policy-status audit exports a diagnostic sample, not a complete ledger. Caller-supplied record input is not provider proof. Never attach raw config backups, transcripts, prompts, credentials or private state to an issue/public repository.
-
-## 8. Remove automatically
+## 5. Update or remove configuration
 
 ```sh
 "$AGENT_POLICY_CLI" uninstall
 "$AGENT_POLICY_CLI" uninstall --apply
 ```
 
-Auto-removal uses owned receipts, including integrations whose native executable was removed or shared policy is missing/corrupt. It does not load the policy or require that executable to clean an orphaned integration. A selected client can use --client CLIENT. Preserve unrelated later edits. Owned-value drift, pending journals or active locks require reconciliation; never delete markers blindly or restore a stale full backup.
+Receipts permit removal even when the native CLI or shared preferences are absent. Reinstall or invoke the configurator with npx when needed; it does not have to remain installed between operations. Preserve unrelated later edits. Owned drift, pending journals and active locks require precise reconciliation; never force-delete markers or restore an obsolete whole-file backup.
 
-Policy/backups/audit remain private after uninstall. Remove the npm package only after its integrations are removed. Do not delete unrelated vendor configuration, credentials or sessions.
+For a preferences change that conflicts with existing receipts, plan removal for configured clients, apply owned removal, update the shared preferences, then rerun detected setup. Keep backups private and preserve unrelated edits throughout. Do not silently adopt changed ownership.
 
-## Return to the owner
+Experimental runtime receipts from older unreleased development commits are incompatible. Use that version's owned uninstall before this configurator. Do not guess ownership from a command string or delete other plugins' hooks.
 
-Give a concise per-client result with these separate layers: detected, configured, native trust/load, runtime/model. Include exactly what remains blocked/unsupported and why. State whether anything was published (normally nothing). Avoid unsupported savings or provider-model claims.
+Return a concise per-client report: detected, native configuration saved/verified, prerequisites/limits, and whether a new session is needed. State that no model task or publication was performed. Do not claim runtime/provider acceptance from a parser or fixture.

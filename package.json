@@ -1,22 +1,47 @@
 {
   "name": "agent-policy-kit",
   "version": "0.1.0",
-  "description": "Local policy checks and metadata audit for AI coding subagents",
+  "description": "Configure native subagent settings across coding tools, then exit",
   "type": "module",
   "license": "MIT",
   "author": "Agent Policy Kit contributors",
-  "keywords": ["codex", "claude-code", "kimi", "antigravity", "subagents", "model-policy", "hooks"],
-  "publishConfig": { "access": "public" },
-  "engines": { "node": "^22.13.0 || >=24.0.0" },
-  "bin": { "agent-policy": "bin/agent-policy.mjs" },
-  "files": ["bin/", "src/", "hooks/hooks.json", "hooks/register.mjs", ".claude-plugin/", "policies/", "schema/", "examples/", "docs/", "README.md", "AGENT_INSTALL.md", "LICENSE"],
+  "keywords": [
+    "codex",
+    "claude-code",
+    "kimi",
+    "antigravity",
+    "subagents",
+    "configuration",
+    "model-settings"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "bin": {
+    "agent-policy": "bin/agent-policy.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "policies/",
+    "schema/",
+    "examples/",
+    "docs/",
+    "README.md",
+    "AGENT_INSTALL.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "check": "node scripts/check.mjs",
     "test:package": "node --test test/package-acceptance.test.mjs",
     "test:unit": "node scripts/test-unit.mjs",
-    "test:claude": "claude plugin test .",
-    "prepublishOnly": "npm run check && npm run test:unit"
+    "prepublishOnly": "npm run check && npm test"
   },
-  "dependencies": { "toml-eslint-parser": "1.0.3" }
+  "dependencies": {
+    "toml-eslint-parser": "1.0.3"
+  }
 }

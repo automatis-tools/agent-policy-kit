@@ -1,30 +1,17 @@
-# Merge these tables into the config provisioned by Kimi; do not duplicate
-# existing tables. Preserve native provider/login entries and model metadata.
-# This example targets Kimi Code 2.4; it does not establish paid entitlement.
-
-[models.subagent-code]
-provider = "managed:kimi-code"
-model = "k3-256k"
-max_context_size = 262144
-capabilities = ["thinking", "always_thinking", "image_in", "tool_use"]
-support_efforts = ["low", "high", "max"]
-
-[models.subagent-code.overrides]
-default_effort = "high"
-
-[models.subagent-light]
-provider = "managed:kimi-code"
-model = "kimi-for-coding"
-max_context_size = 1048576
-capabilities = ["thinking", "always_thinking", "image_in", "video_in", "tool_use"]
-support_efforts = ["low", "high", "max"]
-
-[models.subagent-light.overrides]
-default_effort = "low"
+# Partial example: merge into the native config, never append duplicate tables.
+# The two aliases must already be provisioned with compatible model metadata.
+# Preserve provider/login entries. Remove a conflicting section-wide
+# secondary_model.default_effort so per-entry efforts can differ.
 
 [secondary_model]
-default_model = "subagent-code"
+default_model = "kimi-code/k3"
 
 [secondary_model.models]
-subagent-code = "Code, debugging and review. K3 high."
-subagent-light = "Search, extraction and mechanical tasks. K2.8 low."
+"kimi-code/k3" = "Code changes, debugging and review. Use high effort."
+"kimi-code/kimi-for-coding" = "File search, facts and routine work. Use low effort."
+
+[models."kimi-code/k3".overrides]
+default_effort = "high"
+
+[models."kimi-code/kimi-for-coding".overrides]
+default_effort = "low"

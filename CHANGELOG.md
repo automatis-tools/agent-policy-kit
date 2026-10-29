@@ -2,8 +2,9 @@
 
 ## 0.1.0 — unreleased
 
-- Shared subagent policy with explicit native capability limits.
-- Installed-client autodetection and non-interactive setup/removal.
-- Owned configuration edits, drift checks, private backups and rollback.
-- Minimal metadata audit and optional native Claude mod.
-- npm tarball acceptance gate and packaged AI operator guide.
+- One-shot configuration of native roles, model/effort preferences and delegation instructions for detected Codex, Claude Code, Kimi and agy.
+- Native concurrency settings where available; explicit guidance/limits elsewhere.
+- Owned settings, drift checks, private backups and transaction rollback.
+- Native configuration remains after the npm package is removed.
+- Packaged AI setup/removal guide and source-isolated tarball acceptance.
+- Removed experimental runtime hooks, wrappers, Claude mod and audit subsystem before the first public release.

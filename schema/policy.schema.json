@@ -1,49 +1,191 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Agent Policy Kit policy",
+  "title": "Agent Policy Kit configuration preferences",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "mode", "clients"],
+  "required": [
+    "schemaVersion",
+    "maxConcurrent",
+    "clients"
+  ],
   "properties": {
-    "schemaVersion": { "const": 1 },
-    "mode": { "enum": ["enforce", "observe"] },
+    "schemaVersion": {
+      "const": 1
+    },
+    "maxConcurrent": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 32
+    },
     "clients": {
-      "type": "object", "minProperties": 1, "additionalProperties": false,
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
       "properties": {
-        "codex": { "$ref": "#/$defs/client" },
-        "claude": { "$ref": "#/$defs/client" },
-        "kimi": { "$ref": "#/$defs/client" },
-        "agy": { "$ref": "#/$defs/client" }
+        "codex": {
+          "$ref": "#/$defs/client"
+        },
+        "claude": {
+          "$ref": "#/$defs/client"
+        },
+        "kimi": {
+          "$ref": "#/$defs/kimiClient"
+        },
+        "agy": {
+          "$ref": "#/$defs/tierClient"
+        }
       }
     }
   },
   "$defs": {
-    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/\\[\\]-]{0,127}$" },
-    "identifiers": { "type": "array", "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/\\[\\]-]{0,127}$"
+    },
     "profile": {
-      "type": "object", "additionalProperties": false, "required": ["model", "effort", "roles"],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
       "properties": {
-        "model": { "$ref": "#/$defs/identifier" },
-        "providerModel": { "$ref": "#/$defs/identifier" },
-        "effort": { "enum": ["low", "medium", "high", null] },
-        "roles": { "$ref": "#/$defs/identifiers" }
+        "model": {
+          "$ref": "#/$defs/identifier"
+        },
+        "effort": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      }
+    },
+    "tierProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "enum": [
+            "pro",
+            "flash",
+            "inherit"
+          ]
+        },
+        "effort": {
+          "type": "null"
+        }
       }
     },
     "client": {
-      "type": "object", "additionalProperties": false,
-      "required": ["defaultProfile", "maxConcurrent", "profiles", "deniedModels", "observedModels"],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
       "properties": {
-        "defaultProfile": { "$ref": "#/$defs/identifier" },
-        "maxConcurrent": { "type": "integer", "minimum": 1, "maximum": 32 },
-        "profiles": {
-          "type": "object", "minProperties": 1, "maxProperties": 16,
-          "propertyNames": { "allOf": [{ "$ref": "#/$defs/identifier" }, { "not": { "enum": ["__proto__", "constructor", "prototype"] } }] },
-          "additionalProperties": { "$ref": "#/$defs/profile" }
+        "code": {
+          "$ref": "#/$defs/profile"
         },
-        "deniedModels": { "$ref": "#/$defs/identifiers" },
-        "observedModels": { "$ref": "#/$defs/identifiers" }
+        "light": {
+          "$ref": "#/$defs/profile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "tierClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/tierProfile"
+        },
+        "light": {
+          "$ref": "#/$defs/tierProfile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "kimiProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/identifier"
+            },
+            {
+              "not": {
+                "const": "primary"
+              }
+            }
+          ]
+        },
+        "effort": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      }
+    },
+    "kimiClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/kimiProfile"
+        },
+        "light": {
+          "$ref": "#/$defs/kimiProfile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
       }
     }
   },
-  "$comment": "The runtime validator also checks default-profile existence, unique models/roles across profiles, and disjoint allowed/denied models."
+  "$comment": "The configuration validator also rejects avoided selected models and incompatible efforts for the same Kimi alias."
 }

@@ -1,29 +1,21 @@
-# Use cases
+# Examples
 
-## Keep file discovery on a light model
+## One role scheme across coding tools
 
-Evaluate `agent-policy evaluate --client codex --role explorer`. An unpinned supported spawn receives the light profile. A role file that secretly fixes another model is not repaired by changing a tool argument; the native binding check denies the conflict.
+Use a code model for apk-worker/apk-reviewer and a light model for apk-explorer/apk-routine. Each tool receives native definitions and delegation instructions; no central dispatcher runs between it and its provider.
 
-## Prevent expensive plugin defaults
+## Keep main chats unchanged
 
-A classic Claude `Agent` call with `model: opus` is denied. The native mod can pin an otherwise unpinned supported role before model resolution. A trusted installed mod and a classic hook cover different paths; confirm the active path in the capability report.
+Apply the shared preferences to delegated helpers while preserving each tool's main model, account, permissions and unrelated setup.
 
-## Keep Kimi's main model while reducing delegated work
+## Configure and discard the installer
 
-Retain the chosen main model. Use `subagent-code` for code/review and `subagent-light` for discovery/mechanical work. The guard verifies the selected alias's upstream model and per-entry effort. A missing/wrong alias yields a safe denial, not a fallback to the primary.
+Run detected setup with --apply, verify native files, remove the npm package, and start your coding tools normally. Saved role files and settings keep working through native features.
 
-## Bound a swarm
+## Customize model choices
 
-Start Kimi through the owned launcher or `agent-policy run --client kimi`. The native swarm ramp gets `KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY` from policy. This does not limit the lifetime total of subagents, ordinary Agent calls, or all background processes.
+Use init --policy FILE, choose models/efforts actually available in each account, then apply through the AI guide. Kimi needs provisioned aliases; agy choices are tiers. Higher-priority native settings can override global preferences.
 
-## Audit a tier mismatch
+## Remove after other settings changed
 
-Record only a normalized observation with `record` on stdin: client, requested model/tier, reported model, and observation source. Add a trusted reported ID to the policy's audit allowlist if necessary. Unknown strings are masked. A record supplied by a caller remains caller-supplied evidence. Do not substitute the tier name for a missing runtime model.
-
-## Try a policy without blocking
-
-Set a valid policy's mode to `observe`, then install it explicitly. Inspect private metadata or `audit --public`. Observe mode leaves calls unchanged. The optional native mod's bounded export has separate retention and is not a complete usage ledger.
-
-## Remove integration after other settings changed
-
-Edit an unrelated theme setting after install, then uninstall the client with `--apply`. That edit remains. An edited owned hook, changed owned scalar, or nested custom table under an owned Kimi hook stops removal with an ownership conflict.
+A later unrelated theme setting remains during owned uninstall. An edited generated role or managed block produces a drift conflict; the configurator preserves it for reconciliation.

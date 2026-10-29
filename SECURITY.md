@@ -1,7 +1,7 @@
 # Security reports
 
-This kit is a local policy aid, not a security boundary. Native hook failures/bypasses and unsupported execution paths are described in [capabilities](docs/compatibility.md).
+This tool changes local native configuration. Native role instructions are guidance, not a universal security or billing boundary. Higher-priority settings and explicit client options can override them.
 
-For ordinary defects, submit a minimal reproduction using a temporary profile and redacted fixture. Never attach credentials, account configuration, backups, prompts or raw audit logs.
+Report ordinary defects with a minimal temporary-profile reproduction. Never attach credentials, account configs, backups or private state.
 
-For a vulnerability that exposes private data or corrupts settings, use the public repository's private vulnerability reporting channel once the owner enables it. If no private channel is available, request a contact without publishing sensitive details. No reporting endpoint is configured before the repository is published.
+For a vulnerability exposing private data or corrupting settings, use the public repository's private reporting channel once enabled. If none is available, request a private contact without disclosing sensitive material. No reporting endpoint is configured before publication.

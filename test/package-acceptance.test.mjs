@@ -17,7 +17,7 @@ function command(exe, args, options = {}) {
 function parse(result) { assert.equal(result.status, 0, result.stdout + result.stderr); return JSON.parse(result.stdout); }
 function quoteSandbox(value) { return JSON.stringify(value); }
 
-test('packed package survives a fresh install without source access and preserves user config', { timeout: 180000 }, t => {
+test('packed configurator produces independent native files that survive npm and state removal', { timeout: 180000 }, t => {
   const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "agent package's "));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const snapshot = path.join(root, 'source snapshot'); const consumer = path.join(root, "consumer's prefix");
@@ -60,98 +60,140 @@ test('packed package survives a fresh install without source access and preserve
   assert.equal(isolationReady.status, 0, `Source-isolation environment unavailable: ${isolationReady.stderr}`);
   const blocked = isolated(process.execPath, ['-e', `require('node:fs').readFileSync(${JSON.stringify(path.join(source, 'package.json'))})`]);
   assert.notEqual(blocked.status, 0, 'The consumer must be unable to read the source checkout.');
-  const version = cli(['--version']);
-  assert.equal(version.status, 0, `Installed entry point failed: ${version.stderr}`);
-  assert.equal(version.stdout.trim(), packed[0].version);
-  const guide = cli(['instructions']); assert.equal(guide.status, 0); assert.match(guide.stdout, /LLM-first/);
-  const absent = isolated(bin, ['setup', '--apply'], { env: { ...env, PATH: path.dirname(process.execPath) } });
-  assert.equal(absent.status, 3); assert.equal(JSON.parse(absent.stdout).status, 'no_clients');
-  assert.equal(fs.existsSync(state), false, 'absent clients must not create state');
-  // These version/help-only fixtures establish package detection compatibility,
-  // not native client loading or provider-model execution.
-  const nativeBin = path.join(consumer, 'native-bin'); fs.mkdirSync(nativeBin);
-  const identities = {
-    codex: ['codex-cli 0.165.0', 'Usage: codex'],
-    claude: ['2.1.312 (Claude Code)', 'Usage: claude'],
-    kimi: ['2.4.0', 'Usage: kimi\nKimi Code CLI\nhttps://moonshotai.github.io/kimi-code/'],
-    agy: ['1.4.10', 'Usage of agy:\n--agent --model --effort\nAvailable subcommands: agent models plugin'],
-  };
-  for (const [name, [v, h]] of Object.entries(identities)) {
-    fs.writeFileSync(path.join(nativeBin, name), `#!/usr/bin/env node\nconsole.log(process.argv.includes('--version')?${JSON.stringify(v)}:${JSON.stringify(h)});\n`, { mode: 0o755 });
+  const installedRoot=path.join(consumer,'node_modules/agent-policy-kit');
+  assert.equal(cli(['--version']).stdout.trim(),packed[0].version);
+  const guide=cli(['instructions']);assert.equal(guide.status,0);assert.match(guide.stdout,/configuration-only/);
+  for(const name of names) assert.equal(/^(?:hooks\/|\.claude-plugin\/)|^src\/(?:audit|adapters|bindings)\.mjs$/.test(name),false,name);
+  const absent=isolated(bin,['setup','--apply'],{env:{...env,PATH:path.dirname(process.execPath)}});
+  assert.equal(absent.status,3);assert.equal(JSON.parse(absent.stdout).status,'no_clients');assert.equal(fs.existsSync(state),false);
+
+  // Identity + native-file consumer fixtures, never actual vendor/model execution.
+  const nativeBin=path.join(consumer,'native-bin');fs.mkdirSync(nativeBin);
+  const identities={codex:['codex-cli 0.165.0','Usage: codex'],claude:['2.1.312 (Claude Code)','Usage: claude'],
+    kimi:['2.4.0','Usage: kimi\nKimi Code CLI\nhttps://moonshotai.github.io/kimi-code/'],
+    agy:['1.4.10','Usage of agy:\n--agent --model --effort\nAvailable subcommands: agent models plugin']};
+  const dirs={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
+  const models={codex:['gpt-6.1-sol','gpt-6-luna'],claude:['sonnet','haiku'],agy:['pro','flash']};
+  for(const [client,[version,help]]of Object.entries(identities)) {
+    const inspect=`const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const client=${JSON.stringify(client)},base=path.join(process.env.HOME,${JSON.stringify(dirs[client])});
+const roles=['worker','reviewer','explorer','routine'];
+for(const [i,role]of roles.entries()){
+const file=path.join(base,client==='agy'?'config/agents':'agents','apk-'+role+(client==='codex'?'.toml':'.md'));
+const body=fs.readFileSync(file,'utf8');
+assert.ok(body.includes('apk-'+role));
+if(client==='codex')assert.match(body,new RegExp('model = '+JSON.stringify(${JSON.stringify(models.codex)}[i<2?0:1]).replaceAll('.','\\\\.')));
+else if(client==='kimi')assert.ok(body.includes(i<2?'kimi-code/k3':'kimi-code/kimi-for-coding'));
+else assert.ok(body.includes('model: '+${JSON.stringify(models[client]??[])}[i<2?0:1]));
+assert.ok(!body.includes('node_modules')&&!body.includes('agent-policy.mjs'));
+}
+const instructions=fs.readFileSync(path.join(base,client==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');assert.ok(instructions.includes('apk-worker'));
+if(client==='claude'){const config=JSON.parse(fs.readFileSync(path.join(base,'settings.json')));assert.equal(config.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'3');assert.equal(config.model,'opus');}
+if(client==='codex')assert.match(fs.readFileSync(path.join(base,'config.toml'),'utf8'),/max_concurrent_threads_per_session\\s*=\\s*3/);
+console.log(JSON.stringify({client,roles:4,configuration:'readable',evidence:'standalone_consumer_fixture'}));`;
+    fs.writeFileSync(path.join(nativeBin,client),`#!/usr/bin/env node\nif(process.argv.includes('--inspect-native')){${inspect}}else console.log(process.argv.includes('--version')?${JSON.stringify(version)}:${JSON.stringify(help)});\n`,{mode:0o755});
   }
-  env.PATH = [nativeBin, path.dirname(process.execPath), '/usr/bin', '/bin'].join(path.delimiter);
-  parse(cli(['init', '--policy', path.join(state, 'policy.json')]));
-  const doctor = parse(cli(['doctor', '--client', 'agy']));
-  assert.equal(doctor.package.mode, 'installed-package');
-  assert.equal(doctor.clients.agy.runtime.status, 'unsupported');
-  // A late filesystem fault is injected outside the product through Node's
-  // preloader. The package has no hidden failure flags or test-only API.
-  const faultHome = path.join(consumer, "rollback home's"); fs.mkdirSync(faultHome);
-  const faultState = path.join(faultHome, '.agent-policy-kit');
-  fs.mkdirSync(path.join(faultHome, '.codex'));
-  const originalConfig = '# retain my config\nmodel="gpt-6.1-sol"\n';
-  fs.writeFileSync(path.join(faultHome, '.codex/config.toml'), originalConfig);
-  const failureMarker = path.join(consumer, 'late-failure-observed');
-  const preloader = path.join(consumer, 'disk-failure.mjs');
-  fs.writeFileSync(preloader, `import fs from 'node:fs/promises';
-import {syncBuiltinESMExports} from 'node:module';
+  env.PATH=[nativeBin,path.dirname(process.execPath),'/usr/bin','/bin'].join(path.delimiter);
+  function put(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
+  const prerequisiteHome=path.join(consumer,'unprovisioned');fs.mkdirSync(prerequisiteHome);
+  const missing=cli(['install','--client','kimi','--home',prerequisiteHome,'--state-dir',path.join(prerequisiteHome,'.policy'),'--apply']);
+  assert.equal(missing.status,3);assert.equal(JSON.parse(missing.stdout).results[0].status,'prerequisite');
+  assert.deepEqual(fs.readdirSync(prerequisiteHome),[],'missing native metadata must create nothing');
+
+  // External late-fault injection, with no product test flags.
+  const faultHome=path.join(consumer,"rollback home's"),faultState=path.join(faultHome,'.agent-policy-kit');fs.mkdirSync(faultHome);
+  const originalConfig='# user settings\nmodel="gpt-6.1-sol"\n';
+  put(path.join(faultHome,'.codex/config.toml'),originalConfig);
+  const failureMarker=path.join(consumer,'late-failure-observed'),preloader=path.join(consumer,'disk-failure.mjs');
+  fs.writeFileSync(preloader,`import fs from 'node:fs/promises';import {syncBuiltinESMExports} from 'node:module';
 const rename=fs.rename;let failed=false;
-fs.rename=async(from,to)=>{if(to===${JSON.stringify(path.join(faultState, 'installations/codex.json'))}&&!failed){
-failed=true;await fs.access(${JSON.stringify(path.join(faultHome, '.codex/hooks.json'))});
-await fs.writeFile(${JSON.stringify(failureMarker)},'committed-files-observed');
-throw Object.assign(new Error('injected late disk fault'),{code:'EIO'});}return rename(from,to);};
-syncBuiltinESMExports();\n`);
-  const failedInstall = isolated(bin, ['install', '--client', 'codex', '--home', faultHome, '--state-dir', faultState, '--apply'],
-    { env: { ...env, NODE_OPTIONS: `--import=${pathToFileURL(preloader).href}` } });
-  assert.notEqual(failedInstall.status, 0);
-  assert.equal(fs.readFileSync(failureMarker, 'utf8'), 'committed-files-observed');
-  assert.equal(fs.readFileSync(path.join(faultHome, '.codex/config.toml'), 'utf8'), originalConfig);
-  assert.equal(fs.existsSync(path.join(faultHome, '.codex/hooks.json')), false);
-  assert.equal(fs.existsSync(path.join(faultState, 'installations/codex.json')), false);
-  assert.equal(parse(cli(['install', '--client', 'codex', '--home', faultHome, '--state-dir', faultState, '--apply'])).results[0].status, 'configured');
-  fs.mkdirSync(path.join(freshHome, '.claude'), { recursive: true });
-  fs.writeFileSync(path.join(freshHome, '.claude/settings.json'), JSON.stringify({ model: 'opus', env: { USER_TOKEN: 'PRIVATE_CREDENTIAL' }, theme: 'light' }));
-  fs.mkdirSync(path.join(freshHome, '.codex'), { recursive: true });
-  fs.writeFileSync(path.join(freshHome, '.codex/config.toml'), '# user comment\nmodel="gpt-6.1-sol"\n');
-  fs.mkdirSync(path.join(freshHome, '.kimi-code'), { recursive: true });
-  const installedRoot = path.join(consumer, 'node_modules/agent-policy-kit');
-  fs.writeFileSync(path.join(freshHome, '.kimi-code/config.toml'), fs.readFileSync(path.join(installedRoot, 'examples/kimi-pool.toml')));
-  for (const client of ['codex', 'claude', 'kimi']) {
-    const before = fs.existsSync(path.join(state, 'installations', `${client}.json`));
-    assert.equal(before, false);
-    const plan = parse(cli(['install', '--client', client]));
-    assert.equal(plan.status, 'planned');
-    assert.equal(fs.existsSync(path.join(state, 'installations', `${client}.json`)), false, 'plan-only must not install');
-    assert.equal(JSON.stringify(plan).includes('PRIVATE_CREDENTIAL'), false);
-    assert.equal(parse(cli(['install', '--client', client, '--apply'])).results[0].status, 'configured');
-    assert.equal(parse(cli(['install', '--client', client, '--apply'])).results[0].status, 'unchanged');
+fs.rename=async(from,to)=>{if(to===${JSON.stringify(path.join(faultState,'installations/codex.json'))}&&!failed){
+failed=true;await fs.access(${JSON.stringify(path.join(faultHome,'.codex/agents/apk-worker.toml'))});
+await fs.writeFile(${JSON.stringify(failureMarker)},'committed-files-observed');throw Object.assign(new Error('late fault'),{code:'EIO'});}return rename(from,to);};syncBuiltinESMExports();`);
+  const failed=isolated(bin,['install','--client','codex','--home',faultHome,'--state-dir',faultState,'--apply'],{env:{...env,NODE_OPTIONS:`--import=${pathToFileURL(preloader).href}`}});
+  assert.notEqual(failed.status,0);assert.equal(fs.readFileSync(failureMarker,'utf8'),'committed-files-observed');
+  assert.equal(fs.readFileSync(path.join(faultHome,'.codex/config.toml'),'utf8'),originalConfig);
+  assert.equal(fs.existsSync(path.join(faultHome,'.codex/agents/apk-worker.toml')),false);
+  assert.equal(fs.existsSync(path.join(faultState,'installations/codex.json')),false);
+  assert.equal(parse(cli(['install','--client','codex','--home',faultHome,'--state-dir',faultState,'--apply'])).results[0].status,'configured');
+  assert.equal(parse(cli(['uninstall','--client','codex','--home',faultHome,'--state-dir',faultState,'--apply'])).status,'applied');
+
+  const userHooks=JSON.stringify({hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'echo user_hook'}]}]}});
+  const codexConfig=path.join(freshHome,'.codex/config.toml'),claudeConfig=path.join(freshHome,'.claude/settings.json'),kimiConfig=path.join(freshHome,'.kimi-code/config.toml');
+  put(codexConfig,'# retain comment\nmodel="gpt-6.1-sol"\nmodel_reasoning_effort="ultra"\n');
+  put(path.join(freshHome,'.codex/hooks.json'),userHooks);
+  put(claudeConfig,JSON.stringify({model:'opus',effortLevel:'max',theme:'light',env:{USER_TOKEN:'PRIVATE_CREDENTIAL'},hooks:JSON.parse(userHooks).hooks}));
+  put(path.join(freshHome,'.claude/agents/user-role.md'),'User owned agent file.');
+  const kimiOriginal=`default_model="kimi-code/k3"
+[thinking]
+enabled=true
+effort="max"
+[providers."managed:kimi-code"]
+type="kimi"
+api_key="PRIVATE_KIMI_CREDENTIAL"
+[models."kimi-code/k3"]
+provider="managed:kimi-code"
+model="k3-256k"
+max_context_size=262144
+support_efforts=["low","high","max"]
+default_effort="high"
+[models."kimi-code/kimi-for-coding"]
+provider="managed:kimi-code"
+model="kimi-for-coding"
+max_context_size=262144
+support_efforts=["low","high","max"]
+default_effort="high"
+[secondary_model]
+default_effort="medium"
+[[hooks]]
+event="PreToolUse"
+command="echo user_hook"
+`;
+  put(kimiConfig,kimiOriginal);
+  const nativePaths=[];
+  for(const [client,dir]of Object.entries(dirs)) {
+    const instructions=path.join(freshHome,dir,client==='claude'?'CLAUDE.md':'AGENTS.md');put(instructions,'User instruction before setup.\n');nativePaths.push(instructions);
+    for(const role of ['worker','reviewer','explorer','routine'])nativePaths.push(path.join(freshHome,dir,client==='agy'?'config/agents':'agents',`apk-${role}.${client==='codex'?'toml':'md'}`));
   }
-  const settingsPath = path.join(freshHome, '.claude/settings.json');
-  const settings = JSON.parse(fs.readFileSync(settingsPath));
-  assert.equal(settings.model, 'opus'); assert.equal(settings.env.USER_TOKEN, 'PRIVATE_CREDENTIAL');
-  settings.theme = 'dark'; fs.writeFileSync(settingsPath, JSON.stringify(settings));
-  const hook = settings.hooks.PreToolUse.find(x => x.hooks?.some(h => h.command?.includes('agent-policy.mjs'))).hooks[0].command;
-  const gate = isolated('/bin/sh', ['-c', hook], { input: JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: 'Agent', session_id: 'PRIVATE_SESSION', tool_input: { prompt: 'PRIVATE_TASK', model: 'opus' } }) });
-  assert.equal(JSON.parse(gate.stdout).hookSpecificOutput.permissionDecision, 'deny');
-  const kimiText = fs.readFileSync(path.join(freshHome, '.kimi-code/config.toml'), 'utf8');
-  const kimiCommand = kimiText.match(/^command = ("(?:[^"\\]|\\.)*")$/m);
-  assert.ok(kimiCommand);
-  const kimiGate = isolated('/bin/sh', ['-c', JSON.parse(kimiCommand[1])], { input: JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: 'Agent', tool_input: { subagent_type: 'explore', model: 'subagent-light' } }) });
-  assert.equal(kimiGate.status, 0); assert.equal(kimiGate.stdout, '');
-  const audit = parse(cli(['audit', '--public']));
-  assert.equal(audit.records, 2); assert.equal(JSON.stringify(audit).includes('PRIVATE'), false);
-  assert.equal(parse(cli(['uninstall', '--client', 'claude', '--apply'])).status, 'applied');
-  const after = JSON.parse(fs.readFileSync(settingsPath));
-  assert.equal(after.theme, 'dark'); assert.equal(after.env.USER_TOKEN, 'PRIVATE_CREDENTIAL'); assert.equal(after.model, 'opus');
-  const codexConfig = path.join(freshHome, '.codex/config.toml');
-  fs.appendFileSync(codexConfig, '\n# unrelated later edit\n');
-  assert.equal(parse(cli(['uninstall', '--client', 'codex', '--apply'])).status, 'applied');
-  assert.match(fs.readFileSync(codexConfig, 'utf8'), /unrelated later edit/);
-  const kimiConfig = path.join(freshHome, '.kimi-code/config.toml');
-  fs.appendFileSync(kimiConfig, '\n[hooks.extra]\nprivate_user_value="preserve"\n');
-  const drift = cli(['uninstall', '--client', 'kimi', '--apply']);
-  assert.notEqual(drift.status, 0); assert.match(fs.readFileSync(kimiConfig, 'utf8'), /private_user_value/);
-  // Npm uninstall does not run an implicit client-settings mutator.
-  assert.equal(command('npm', ['uninstall', '--prefix', consumer, 'agent-policy-kit', '--ignore-scripts', '--offline', '--no-audit', '--no-fund'], { cwd: consumer, env }).status, 0);
-  assert.equal(fs.existsSync(bin), false);
+  parse(cli(['init','--policy',path.join(state,'policy.json')]));
+  const plan=parse(cli(['setup']));assert.equal(plan.status,'planned');assert.equal(JSON.stringify(plan).includes('PRIVATE_'),false);
+  assert.equal(fs.existsSync(path.join(state,'installations')),false,'plan-only must not write receipts');
+  const applied=parse(cli(['setup','--apply']));assert.equal(applied.status,'configured');assert.equal(applied.results.filter(r=>r.status==='configured').length,4);
+  const repeated=parse(cli(['setup','--apply']));assert.ok(repeated.results.every(r=>r.status==='unchanged'));
+  const doctor=parse(cli(['doctor']));assert.equal(doctor.mode,'configuration_only');
+  for(const client of Object.keys(dirs)){assert.equal(doctor.clients[client].configuration.status,'verified');assert.equal(doctor.clients[client].modelExecution,'not_checked');}
+  assert.equal(fs.readFileSync(path.join(freshHome,'.codex/hooks.json'),'utf8'),userHooks);
+  assert.deepEqual(JSON.parse(fs.readFileSync(claudeConfig)).hooks,JSON.parse(userHooks).hooks);
+  assert.match(fs.readFileSync(codexConfig,'utf8'),/model_reasoning_effort="ultra"/);
+  assert.match(fs.readFileSync(kimiConfig,'utf8'),/effort="max"/);
+  assert.doesNotMatch(fs.readFileSync(kimiConfig,'utf8'),/default_effort="medium"/);
+  assert.match(fs.readFileSync(kimiConfig,'utf8'),/echo user_hook/);
+  assert.equal(fs.readFileSync(path.join(freshHome,'.claude/agents/user-role.md'),'utf8'),'User owned agent file.');
+  assert.equal(fs.existsSync(path.join(state,'bin')),false);
+
+  // Unrelated later settings survive; changed owned roles fail removal without edits.
+  const settings=JSON.parse(fs.readFileSync(claudeConfig));settings.theme='dark';fs.writeFileSync(claudeConfig,JSON.stringify(settings));
+  const codexRole=path.join(freshHome,'.codex/agents/apk-worker.toml'),beforeRole=fs.readFileSync(codexRole,'utf8');fs.appendFileSync(codexRole,'# owned drift\n');
+  const drift=cli(['uninstall','--client','codex','--apply']);assert.equal(drift.status,3);assert.equal(JSON.parse(drift.stdout).results[0].error,'OWNED_DRIFT');
+  assert.match(fs.readFileSync(codexRole,'utf8'),/owned drift/);fs.writeFileSync(codexRole,beforeRole);
+  const removed=parse(cli(['uninstall','--apply']));assert.equal(removed.status,'completed');
+  const after=JSON.parse(fs.readFileSync(claudeConfig));assert.equal(after.theme,'dark');assert.equal(after.env.USER_TOKEN,'PRIVATE_CREDENTIAL');assert.equal(after.model,'opus');
+  // Surgical TOML restoration may change assignment spacing/trailing blank lines.
+  const layout=text=>text.split('\n').map(line=>line.replace(/\s*=\s*/,'=')).filter(line=>line.trim()).join('\n');
+  assert.equal(layout(fs.readFileSync(kimiConfig,'utf8')),layout(kimiOriginal));
+  for(const file of nativePaths.filter(f=>f.includes('apk-')))assert.equal(fs.existsSync(file),false);
+  parse(cli(['setup','--apply']));
+  for(const file of [...nativePaths,codexConfig,claudeConfig,kimiConfig]) {
+    const text=fs.readFileSync(file,'utf8');
+    for(const forbidden of [source,installedRoot,state,process.execPath,'node_modules','agent-policy.mjs','AGENT_POLICY_'])assert.equal(text.includes(forbidden),false,`${path.basename(file)} references ${forbidden}`);
+  }
+  const saved=new Map(nativePaths.map(file=>[file,fs.readFileSync(file,'utf8')]));
+  assert.equal(command('npm',['uninstall','--prefix',consumer,'agent-policy-kit','--ignore-scripts','--offline','--no-audit','--no-fund'],{cwd:consumer,env}).status,0);
+  assert.equal(fs.existsSync(bin),false);
+  fs.rmSync(state,{recursive:true,force:true});
+  for(const [file,text]of saved)assert.equal(fs.readFileSync(file,'utf8'),text);
+  for(const client of Object.keys(dirs)) {
+    const consumed=parse(isolated(path.join(nativeBin,client),['--inspect-native']));
+    assert.equal(consumed.roles,4);assert.equal(consumed.configuration,'readable');assert.equal(consumed.evidence,'standalone_consumer_fixture');
+  }
 });

@@ -1,7 +1,7 @@
 # Contributing
 
-Read [development](docs/development.md) and [capabilities](docs/compatibility.md). Keep changes small enough to audit. Prefer existing native client features to new infrastructure.
+Read [development](docs/development.md) and [native limits](docs/compatibility.md). Keep this a one-shot configurator with native files only. Add no custom runtime.
 
-For a behavior change, add a regression that fails first, make the smallest fix, and run the relevant checks plus the package gate. Report package, native-load and model-runtime evidence separately.
+For behavior changes, add a failing regression, make the smallest fix, and run unit plus packed-tarball acceptance. Test temporary homes and preserve unrelated settings. Native configuration must remain independent after npm/source/state removal.
 
-Use temporary profiles. Never attach account configuration, backups, prompts or raw logs. Update the AI operator guide when install/removal behavior changes. Keep the human README short and visual.
+Do not publish private configs, credentials, backups or raw logs. Keep the human README short and the AI operator guide precise. Report configuration/parser evidence separately from actual native/provider execution.

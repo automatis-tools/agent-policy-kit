@@ -2,50 +2,34 @@
 
 ```mermaid
 flowchart LR
-    subgraph Setup["1. Install and configure on your computer"]
-        Kit["Install Agent Policy Kit<br/>Local npm package"] --> Rules["Configure your coding tools<br/>Model rules and local checks"]
-    end
-    subgraph Work["2. Work in your existing coding tool"]
-        Main["Your main agent"] -->|Delegates work| Check["Local rule check<br/>At supported launches"]
-        Check -->|Allowed| Sub["Tool starts its subagent"]
-        Check -->|Denied| Block["Launch blocked"]
-    end
-    Rules -.-> Check
-    Sub --> Provider["Tool contacts its usual<br/>model provider directly"]
+    Preferences("Your preferences<br/>Code and review · Search and routine<br/>Models · Effort · Parallelism"):::preferences
+    Kit("Agent Policy Kit<br/>Configure once, then exit"):::kit
+    Tools("Your installed coding tools<br/>Codex · Claude Code · Kimi · agy<br/>Continue working on their own"):::tools
+    Preferences --> Kit
+    Kit -->|Writes native settings| Tools
+    classDef preferences fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    classDef kit fill:#2563eb,stroke:#1d4ed8,color:#ffffff
+    classDef tools fill:#f0fdf4,stroke:#86efac,color:#14532d
 ```
 
-**A local npm tool that sets model rules for your coding agent's helpers.**
+**Set up your coding tools once. They run on their own.**
 
-Install the package, then ask your AI agent to configure the coding tools already on your computer. The rules apply to their **subagents**: helpers that handle delegated work.
+Agent Policy Kit is an npm configurator that applies a shared setup to the coding tools already on your computer.
 
-During use, your coding tools invoke the kit's local checks before supported subagent launches. **Keep the package installed** so those checks can run.
+Choose models for code and review, lighter models for search and routine work, and a parallelism target. The kit translates those choices into each tool's own settings and agent files.
 
-Your tools send model requests directly to their usual providers, using your existing accounts. Your main conversation keeps its model. Some features require the supplied launcher; the [setup guide](AGENT_INSTALL.md) covers this for your agent.
+After setup, it exits. **You can remove the npm package.** Your tools keep their configuration and use their usual accounts and providers.
 
-## Why use it?
+## Let your AI agent handle setup
 
-- **Match models to the job.** Use a capable model for code and review, a light model for file searches, and rule out unwanted models.
-- **Keep your choices consistent.** Maintain one set of rules across your installed coding tools.
-- **Keep control of your setup.** Detect existing tools, preserve unrelated settings, and remove integrations when you choose.
+Share this repository with your coding agent:
 
-Works with **Codex, Claude Code and Kimi**. [Support varies by tool](docs/compatibility.md); exact-model control for Antigravity (agy) is currently unsupported.
+> Follow the [AI setup and removal guide](AGENT_INSTALL.md). Configure my installed coding tools with the default preferences. Verify the saved settings and report any unsupported options.
 
-## Ask your agent to set it up
+Your agent handles detection, configuration and checks. Your main model and unrelated settings stay unchanged. Ask the same agent to remove the configuration later if needed.
 
-Share this repository with your coding agent and ask:
+[Support and limits](docs/compatibility.md) · [Examples](docs/use-cases.md) · [Privacy](docs/privacy.md) · [Verified results](docs/verification.md)
 
-> Follow [AGENT_INSTALL.md](AGENT_INSTALL.md). Install Agent Policy Kit for the coding tools present on my computer. Use the balanced policy, verify what is active, and report anything unsupported.
-
-Your agent handles setup and checks using your existing tools and accounts. For removal, ask it to follow the same guide.
-
-Version 0.1.0 is a local release candidate. The guide covers local tarballs and npm releases.
-
-## What to expect
-
-Checks run locally and cover supported launches. Your provider controls model access, usage limits and billing. See [verified results](docs/verification.md) for what has actually been tested.
-
-Requires macOS or Linux and Node.js 22.x (22.13+) or 24+.
-
-[Examples](docs/use-cases.md) · [Support and limits](docs/compatibility.md) · [Privacy](docs/privacy.md) · [For contributors](docs/development.md) · [npm release](docs/npm-release.md)
+Requires macOS or Linux and Node.js 22.x (22.13+) or 24+. Version 0.1.0 is a local release candidate; the guide covers local tarballs and npm releases.
 
 MIT licensed. Independent of the client vendors.

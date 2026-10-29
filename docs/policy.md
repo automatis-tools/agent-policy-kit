@@ -1,17 +1,18 @@
-# Policy reference
+# Shared preferences
 
-[JSON Schema](../schema/policy.schema.json) describes the file shape. The runtime also validates relationships between profiles; it remains the authority for accepted policies.
+Start with policies/balanced.json. The [JSON Schema](../schema/policy.schema.json) describes the shape; the runtime validator is authoritative for accepted input during configuration.
 
-Start with `policies/balanced.json`. `schemaVersion` is `1`; unknown fields fail validation. `mode` is `enforce` or `observe`. Observe mode records decisions without rewriting or blocking calls when a valid observe policy is loaded. An unreadable or invalid policy cannot establish observe mode; the command guard returns a fixed denial.
+- schemaVersion is 1.
+- maxConcurrent is a shared target from 1 to 32.
+- clients contains codex, claude, kimi and/or agy.
+- Each client has code and light, each with model and effort, plus avoidModels.
+- effort is low, medium or high. agy uses null because its native role schema does not pin effort.
+- avoidModels is instruction guidance, not a universal deny gate.
 
-Fresh observe installations add observation hooks and required hook activation, without setting delegated model defaults or concurrency caps. Observe wrappers preserve inherited user limits and defaults. To change an existing installation between enforce and observe, uninstall its owned integration, update the shared policy, and reinstall; changing the mode underneath an existing receipt is not supported.
+The installer creates apk-worker and apk-reviewer from code, and apk-explorer and apk-routine from light. Same responsibilities are used across clients, while model identifiers follow each client's native API. Main chat models are preserved.
 
-Each configured client has `defaultProfile`, `maxConcurrent` (1–32), `profiles`, `deniedModels` and `observedModels`. Each profile defines `model`, `effort` (`low`, `medium`, `high`, or `null`) and unique `roles`. Kimi profiles may also specify `providerModel`, which the native binding check compares to the configured alias's upstream model.
+Codex defaults are Sol high for code and Luna high for light work. Claude defaults are Sonnet high and Haiku high. Kimi uses provisioned aliases kimi-code/k3 high and kimi-code/kimi-for-coding low. agy uses Pro and Flash tiers. Account access is a prerequisite, not something this file grants.
 
-Models must be explicitly available in a profile. `observedModels` is an audit allowlist; it does not grant request access. Claude full IDs in that list can resolve to their allowed Sonnet/Haiku family profile. Unknown role names are not copied to audit. Unknown audit model strings are masked.
+Kimi aliases must exist in native config with compatible model metadata. Different efforts require distinct aliases because overrides apply to a model entry. agy tiers do not prove a concrete provider model. Native precedence and capability limits are described in [support](compatibility.md).
 
-Known role bindings take precedence over another permitted model. Unknown roles can use an explicitly permitted model. Missing parameters receive a profile recommendation. Explicit unknown or forbidden models and efforts above `high` deny. Kimi's native pool must supply the expected effort because its `Agent` tool has no per-call effort field.
-
-Do not use `maxConcurrent` as a claimed universal limit. Codex/Claude native limits have documented exceptions. Kimi's wrapper caps the AgentSwarm ramp only. agy exact model enforcement and a universal cross-client scheduler are unsupported.
-
-Changing a shared policy can affect every configured adapter. Review a plan before applying it. Existing receipts detect incompatible policy changes; do not silently replace a shared policy beneath other installations.
+Old enforce/observe modes and audit allowlists are removed. There is no per-launch evaluator. Changing an incompatible installed preference requires an owned uninstall/update/reinstall sequence; the AI guide handles it without resetting unrelated settings.

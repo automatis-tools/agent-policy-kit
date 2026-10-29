@@ -1,37 +1,13 @@
 # Installation
 
-Follow [the operator guide](../AGENT_INSTALL.md) to install a registry release or local tarball. Keep the installation in a stable prefix; generated hooks reference that installed package. Moving/removing the package before uninstalling client integration breaks those hooks. Use `doctor` after upgrades.
+Use the [AI operator guide](../AGENT_INSTALL.md). The configurator can run from npx, a temporary npm prefix, a packed tarball or a checkout. Generated native files never depend on those locations.
 
-Examples use `agent-policy`; replace it with the quoted `AGENT_POLICY_CLI` variable from the operator guide when the bin is not on PATH.
+setup/install are plan-only until --apply. Autodetection requires a working CLI identity; a config directory is not enough. A missing CLI receives no files. Existing main models, providers, credentials, permissions and unrelated hooks/plugins are preserved.
 
-1. Run the client's normal setup/login. The kit does not copy credentials or test paid entitlement.
-2. Run `init --policy PATH`, then edit the models to match the account.
-3. Run `install --client CLIENT`. The plan prints target files and warnings, without configuration bodies.
-4. Review the plan and run the same command with `--apply`.
-5. Complete the native client's hook trust/load review and start a fresh client session. Run `doctor`; a written config is not model-execution evidence.
+All clients receive namespaced apk-worker, apk-reviewer, apk-explorer and apk-routine roles plus a managed global instruction block. Existing conflicting files/blocks are not silently adopted. Native settings differ by client; see [support](compatibility.md).
 
-`--home` selects the base containing `.codex`, `.claude` or `.kimi-code`; `--state-dir` selects private kit data. Use canonical absolute paths. The installer refuses symlink ancestors and unsafe structures instead of guessing. Non-default vendor configuration layouts require a compatible explicit base; they are not discovered by scraping credentials.
+Kimi needs its existing model aliases and supported effort metadata. Its pool defaults/hints and per-model effort overrides are configured without cloning provider credentials. A shared main-model alias with a conflicting effort default returns a zero-write prerequisite; use a separate compatible native alias. Claude force-model conflicts are reported rather than hidden.
 
-## Codex
+After setup, doctor verifies owned native configuration; it does not run a model. Start a new native session if required. The npm package may be removed immediately afterward. Keep the private state for future owned removal, or reinstall the configurator later. No kit launcher is needed.
 
-The installer adds owned command hooks and enables hooks. In enforce mode it also sets `agents.max_concurrent_threads_per_session` from policy; an existing `agents.max_threads` then produces an explicit conflict instead of duplicate native fields. Observe mode preserves existing limits. Main-model and permission settings are preserved.
-
-Review the command definitions in Codex's `/hooks`. Installing does not trust them automatically. Specialized tool paths may bypass ordinary hooks; this is not a security boundary.
-
-## Claude Code
-
-Classic installation adds the `Agent` command hook. Enforce mode also sets native subagent default/concurrency environment values; observe mode preserves those user values. It does not replace main Opus/effort settings, installed plugins or role definitions. Explicit Agent parameters are checked; the classic hook alone does not govern Workflow agents.
-
-Load the optional native mod with `agent-policy run --client claude`. The wrapper supplies the installed plugin directory and selected shared policy. Direct `claude --plugin-dir INSTALLED_PACKAGE_ROOT` is also possible, but needs an explicit plugin policyPath or AGENT_POLICY_PATH for a custom policy. Use `/agent-policy-status` and the native plugin UI to confirm loading. It handles `agent.spawn`, including supported workflow/team starts; it does not claim per-step or resume coverage. Native audit uses a bounded host store, distinct from the CLI audit file.
-
-For a client with an owned installation, `run --policy` must match the current shared state policy in content and the receipt's installed mode. A mismatch returns `RUN_POLICY_CONFLICT` before launching the client, so the wrapper and installed command hooks cannot use different policies. Use the shared policy, or uninstall and coordinate a fresh installation. An explicit policy remains supported when that client has no owned integration.
-
-## Kimi
-
-Merge `examples/kimi-pool.toml` into the native config after login. The aliases must exist in the pool, point at the expected upstream models, and have the expected effective effort. Preserve the metadata provisioned by the native client. The example is configuration, not proof of account quota.
-
-The installer appends an owned PreToolUse hook and creates a quoted launcher. In enforce mode, use that launcher or `agent-policy run --client kimi` to set the supported AgentSwarm ramp cap. Observe launches preserve inherited limits and model choices. Ordinary Agent concurrency is not universally capped by this kit. Relevant project-local model overrides are unsupported by the global binding checker and fail safely in enforce mode.
-
-## agy
-
-Exact model installation returns `unsupported` without modifying live settings. Native tier selection remains client/account-controlled. Caller-supplied normalized observations can be recorded, but they are not automatic provider proof.
+To remove native configuration, run uninstall, inspect the plan, then uninstall --apply. Receipts permit safe removal after a native executable or preferences file is gone. Drift and transaction conflicts preserve user data and require [reconciliation](recovery.md).

@@ -1,15 +1,10 @@
 # Prepare an npm release
 
-This repository is prepared for agent-policy-kit 0.1.0. Nothing here publishes automatically. The owner creates the public repository and authorizes publication separately.
+agent-policy-kit 0.1.0 is a local release candidate. The owner creates the public repository and authorizes publication separately. Nothing publishes automatically.
 
-## Before packing
+Add actual repository/bugs/homepage metadata once the repository exists. Confirm npm name ownership/availability; an earlier anonymous 404 is not a reservation. If the name changes, update package identity and instructions consistently.
 
-1. Use a clean branch. Add the actual public repository/bugs/homepage URLs to package.json once they exist. Do not invent them.
-2. Confirm ownership or availability of the npm name. A previous anonymous 404 is not a reservation. If the name changes, update package metadata, plugin identity, install guide and README CDN URLs together.
-3. Keep package.json, package-lock.json, plugin manifest, changelog and versioned README links aligned.
-4. Run the commands in [development](development.md), including native Claude checks when available. Review [capabilities](compatibility.md) and [verification](verification.md). Record actual versions and results.
-
-## Review the distributable
+Keep package.json, package-lock.json and changelog aligned. Run the [development checks](development.md), inspect [support](compatibility.md) and [verified evidence](verification.md), then review the distribution:
 
 ```sh
 npm pack --dry-run --json --ignore-scripts
@@ -18,16 +13,8 @@ npm publish --dry-run --ignore-scripts
 npm pack --ignore-scripts
 ```
 
-Inspect the listed files, tarball size and integrity. The files allowlist ships only runtime code, policy/schema/examples, plugin entry points and documentation. Tests, editor files, private profiles and development evidence must stay out. No lifecycle install script changes client settings.
+The real tarball gate uses fresh profiles, an installed bin and denied source access. After native setup it removes the package and private kit state, then verifies configuration independence. Its standalone consumer fixtures are not real client/model execution.
 
-The acceptance gate installs a real tarball, removes its build snapshot and denies the consumer access to the source checkout. It uses isolated homes and fixture client identities; it does not claim live provider calls. Preserve a redacted release result outside the package.
+No lifecycle installation script modifies client configuration. Explicit setup --apply is required. Generated native files must contain no package path/import/command; a temporary npm installation is safe.
 
-## Install before publication
-
-Use the tarball path from npm pack in the [operator guide](../AGENT_INSTALL.md) instead of agent-policy-kit@0.1.0. Keep a stable prefix; generated hooks contain installed paths. Uninstall integrations before removing that prefix.
-
-The README diagram is inline Mermaid, with no external image dependency. Its viewer must support Mermaid rendering. Documentation and the operator guide are bundled in the tarball and linked from the README. Check the rendered links before publication.
-
-## Publication boundary
-
-Publication is a separate owner-authorized step. Use npm's normal authenticated release process and account controls. Do not place registry tokens in this repository or create them for tests. This project has no publish workflow, remote creation or automatic merge. After an authorized release, verify the registry tarball and README asset URLs, then update the verification record.
+README has inline Mermaid and links to bundled documentation. Inspect rendered links before publication. Keep private backups, test profiles, development artifacts and evidence outside Git/npm. Publication, authentication and registry verification remain separate owner-authorized steps.

@@ -1,16 +1,21 @@
-# Capabilities and support boundaries
+# Native configuration support
 
-| Surface | Supported contract | Not claimed |
+| Client | Written native configuration | Limits |
 |---|---|---|
-| Codex local command hooks | PreToolUse requested model/effort checks, documented rewrites, supported role-file checks | Every specialized tool path, provider identity, arbitrary custom-role resolution |
-| Claude classic hook | Agent parameters and safe rewrites | Workflow/per-step/resume control |
-| Claude native mod | Supported agent.spawn starts, role model routing, fork denial, bounded host-store audit | Spawn effort mutation, resume/per-step enforcement, complete durable ledger |
-| Kimi hook | Explicit pool alias and supported global native binding checks | Silent input rewrite, account entitlement, unresolved project overrides |
-| Kimi run/launcher | Native AgentSwarm initial-ramp concurrency setting | Global ordinary-Agent or lifetime task cap |
-| agy | Unsupported exact-model report and normalized observation support | Concrete model pinning from tier names, tier guarantees |
+| Codex | User role TOMLs, native subagent defaults/concurrency, routing instructions | Higher-priority project/explicit settings still follow Codex rules |
+| Claude Code | User role Markdown with model/effort, native default/concurrency env, routing instructions | Force settings and native execution-path exceptions can override the intended mapping |
+| Kimi Code | User role Markdown, existing secondary-model pool, per-alias effort, routing instructions | Model-role selection and max concurrency are guidance; provisioned aliases/capabilities are required |
+| agy | User role Markdown with Pro/Flash tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
 
-Command guards emit a safe explicit denial for targeted invalid input or invalid policy. This does not change a vendor's behavior when a hook process crashes or times out. Kimi documents fail-open hook failures; Codex documents specialized bypass paths. Treat the kit as a local control, not a sandbox, quota contract or enterprise security boundary.
+These are preferences implemented through native features. APK does not participate in later agent operation and does not enforce policy on every request. avoidModels is guidance. No hook, wrapper or proxy is installed to bypass native limits.
 
-macOS is the local acceptance host. Linux has a package-isolation gate using bubblewrap; hosted CI runs are pending until a remote exists. Windows application is rejected explicitly. The policy core may run elsewhere, but that is not a settings-installation claim.
+Global configuration can be superseded by a project's native settings, session flags, environment or plugins. A fresh client session may be needed. Configured files, native loading and actual provider model execution are separate evidence.
 
-Client versions and actual check outcomes are listed in `verification.md`. A valid parser result, a loaded mod, and a model completing a task are three separate kinds of evidence. Future client versions must be rechecked; the kit does not assume hook schemas never change.
+macOS is the local acceptance host. Linux has a source-isolation gate using bubblewrap and a hosted workflow prepared; hosted runs are pending. Windows application is explicitly unsupported.
+
+Primary references checked for this design:
+
+- [Codex native subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents).
+- [Claude native subagents](https://code.claude.com/docs/en/sub-agents).
+- [Kimi configuration](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/configuration/config-files.md) and [agent definitions](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/agents.md).
+- [Antigravity native subagents](https://antigravity.google/docs/subagents?tab=cli).

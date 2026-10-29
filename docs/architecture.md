@@ -1,15 +1,13 @@
 # Architecture
 
-The pure evaluator validates the versioned JSON policy and chooses a known profile. It returns `allow`, `rewrite`, `deny`, or `unsupported`; it never invokes a model or receives account credentials. Known roles take their profile. Otherwise an explicitly allowed model selects a profile; an unpinned task takes the configured default. Unknown models and unsupported effort levels are denied.
+A configuration command reads shared preferences, detects installed native CLIs, generates native settings, writes owned changes and exits. No package code runs during subsequent client operation.
 
-Native adapters translate decisions to each client's protocol. Codex and classic Claude support `updatedInput`. Kimi's adapter returns a denial with the required alias rather than pretending it can rewrite parameters. agy does not receive an exact-model gate.
+src/policy.mjs validates preferences. src/detect.mjs performs bounded executable identity probes. The native generator/installer writes agent files, native scalar settings and one managed routing block in each client's global instructions. The CLI combines these operations and emits JSON.
 
-The CLI performs supported native-binding checks before approving Codex roles and Kimi aliases. Codex checks standard global/workspace role files. Kimi checks the global secondary pool, upstream model and effective per-entry effort. Relevant project-local overrides that cannot be resolved safely are unsupported. These checks do not verify an opaque provider's internal routing.
+The fixed roles are apk-worker/apk-reviewer for code and apk-explorer/apk-routine for light work. Their models and effort values are client-specific. Native clients load these files directly. Generated files contain no imports, commands or paths into the npm package or kit state.
 
-The installer reads shared settings through JSON/TOML parsers and applies localized changes. It captures its complete read dependency set, not just files that will change. Application rechecks preimages, takes an exclusive lock, stages writes, records a private journal, and commits atomic replacements. A failed commit restores matching postimages. A competing edit is preserved and forces explicit recovery.
+The installer preserves unrelated JSON/TOML values and text outside its managed block. Its transaction captures the complete read set, rejects stale plans, holds a lock, stages writes, records private backups and commits atomic replacements. Rollback restores only matching postimages; a competing edit survives and requires recovery. Uninstall uses granular ownership instead of restoring stale whole files.
 
-Ownership receipts identify exact inserted hooks and scalar settings. Uninstall uses current settings plus that receipt; it does not restore an obsolete whole-file backup over unrelated edits. Nested additions under an owned Kimi hook are ownership drift.
+Receipts, shared preferences and backups matter only to future configuration/removal commands. After setup, package, source and state can be unavailable while native files remain usable. This independence is part of the tarball acceptance gate.
 
-CLI audit uses one private JSONL file without session or agent identifiers. The optional Claude mod uses the host's bounded native store and has a separate export command. Both distinguish a requested model from a client report. Neither turns a selected model into provider-verified evidence.
-
-The root directory is also the Claude plugin root. Its mod imports only pure relative modules inside that root. Installer-only TOML dependencies are not loaded by the pure evaluator or mod.
+There is one parser dependency for safe TOML edits. There is no build step, proxy, hook, launcher, plugin, daemon or runtime audit subsystem.
