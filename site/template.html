@@ -4,24 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="Choose subagent models for your coding tools and copy one setup command.">
-<title>Agent Policy Kit — choose your models</title>
+<meta name="description" content="Configure subagent models for your coding tools with one setup command.">
+<title>Agent Policy Kit — configure subagent models</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#25342d;background:#fafbf8;font-synthesis:none;--muted:#718076;--line:#e0e6dc;--green:#315f47;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button,summary{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,summary:focus-visible{outline:3px solid #9eb69f;outline-offset:4px}input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #577e60;outline-offset:2px}header,main,footer{max-width:760px;margin:auto;padding-left:30px;padding-right:30px}header{height:100px;display:flex;align-items:center;gap:11px}.mark{background:#294736;color:#f7faf2;border-radius:8px;padding:8px 9px;font-weight:700;font-size:12px;letter-spacing:-.5px}.brand{font-size:13px;font-weight:600}.version{color:var(--muted);font:10px var(--mono);border:1px solid var(--line);border-radius:5px;padding:4px 6px;margin-left:auto}.heading{margin:23px 0 33px}h1{font:normal clamp(32px,5vw,40px)/1.18 Georgia,'Times New Roman',serif;letter-spacing:-1.1px;margin:0 0 11px}.heading p{font-size:13px;line-height:1.7;color:var(--muted);margin:0}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}.tool-field{display:flex;align-items:center;gap:11px}.tool-field label{font-size:12px;font-weight:600}.tool-field select{min-width:150px}.reset{border:0;background:none;padding:6px 0;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}.reset:hover{color:var(--green)}select,input[type=text]{height:38px;border:1px solid #d7dfd1;border-radius:7px;background:#fff;color:#25342d;padding:0 12px;min-width:0;width:100%;font-size:12px}input[type=text]{font-family:var(--mono);font-size:11px}input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}.models{background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}.table-head,.task-row{display:grid;grid-template-columns:125px minmax(0,1fr);align-items:center;gap:20px;padding:16px 22px}.table-head{background:#f3f6ef;padding-top:12px;padding-bottom:12px;color:var(--muted);font-size:10px;letter-spacing:.7px;text-transform:uppercase}.task-row{border-top:1px solid #edf0e9}.task-row label{font-size:12px;font-weight:550}.tool-note{font-size:11px;color:var(--muted);line-height:1.7;margin:11px 1px 0;min-height:19px}.result{margin-top:27px;border-top:1px solid var(--line);padding-top:24px}.command-line{display:flex;align-items:center;justify-content:space-between;gap:18px}.command-preview{font:11px/1.7 var(--mono);overflow-wrap:anywhere;color:#52664f;min-width:0}.copy{flex-shrink:0;background:#315f47;color:#fff;border:0;border-radius:7px;padding:12px 17px;font-size:12px;font-weight:600;white-space:nowrap}.copy:hover{background:#254c37}.feedback{font-size:11px;color:var(--green);line-height:1.6;min-height:18px;margin:9px 0 0}.error{font-size:11px;color:#8b3e2a;background:#fff4ed;border:1px solid #e5c4b4;border-radius:7px;padding:11px 13px;line-height:1.7;margin:0 0 16px}.inspection{margin-top:8px}.inspection summary,.release summary{color:var(--muted);font-size:11px;list-style-position:outside;margin-left:12px}.inspection h2{font-size:11px;font-weight:600;margin:18px 0 9px}.inspection pre{font:10px/1.7 var(--mono);max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#f0f3ed;border:1px solid var(--line);border-radius:7px;padding:13px;margin:0}.full-command{width:100%;resize:vertical;min-height:95px;max-height:250px;font:10px/1.7 var(--mono);border:1px solid var(--line);border-radius:7px;padding:12px;background:#f0f3ed;color:#344737}.note{font-size:11px;line-height:1.8;color:var(--muted);margin:23px 0 0;max-width:620px}.preview-note{color:#8a6b45;font-size:10px;line-height:1.7;margin:12px 0 0}.release{margin-top:18px}.release pre{font:11px/1.7 var(--mono);color:var(--muted);max-height:150px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}.footer{margin-top:38px;padding-top:18px;padding-bottom:30px;border-top:1px solid var(--line);font-size:10px;line-height:1.8;color:#899387}[hidden]{display:none!important}@media(max-width:560px){header,main,footer{padding-left:21px;padding-right:21px}header{height:80px}.heading{margin-top:20px;margin-bottom:28px}.brand{font-size:12px}.table-head,.task-row{grid-template-columns:75px minmax(0,1fr);gap:12px;padding-left:15px;padding-right:15px}.task-row{padding-top:14px;padding-bottom:14px}input[type=text]{font-size:10px;padding:0 9px}.command-line{align-items:stretch;flex-direction:column;gap:12px}.copy{width:100%}.tool-field{gap:8px}.tool-field select{min-width:126px}.reset{font-size:10px}.result{margin-top:23px;padding-top:22px}}
+:root{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#25342d;background:#fafbf8;font-synthesis:none;--muted:#718076;--line:#e0e6dc;--green:#315f47;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button,summary{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,summary:focus-visible{outline:3px solid #9eb69f;outline-offset:4px}input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #577e60;outline-offset:2px}header,main,footer{max-width:760px;margin:auto;padding-left:30px;padding-right:30px}header{height:100px;display:flex;align-items:center;gap:11px}.mark{background:#294736;color:#f7faf2;border-radius:8px;padding:8px 9px;font-weight:700;font-size:12px;letter-spacing:-.5px}.brand{font-size:13px;font-weight:600}.version{color:var(--muted);font:10px var(--mono);border:1px solid var(--line);border-radius:5px;padding:4px 6px;margin-left:auto}.heading{margin:23px 0 33px}h1{font:normal clamp(32px,5vw,40px)/1.18 Georgia,'Times New Roman',serif;letter-spacing:-1.1px;margin:0 0 11px}.heading p{font-size:13px;line-height:1.7;color:var(--muted);margin:0}.toolbar{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px}.tool-field{display:flex;align-items:center;gap:11px}.tool-field label{font-size:12px;font-weight:600}.tool-field select{min-width:0}.reset{border:0;background:none;padding:6px 0;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}.reset:hover{color:var(--green)}select,input[type=text]{height:38px;border:1px solid #d7dfd1;border-radius:7px;background:#fff;color:#25342d;padding:0 12px;min-width:0;width:100%;font-size:12px}input[type=text]{font-family:var(--mono);font-size:11px}input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}.models{background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}.table-head,.task-row{display:grid;grid-template-columns:82px minmax(0,1fr) 130px;align-items:center;gap:20px;padding:16px 22px}.table-head{background:#f3f6ef;padding-top:12px;padding-bottom:12px;color:var(--muted);font-size:10px;letter-spacing:.7px;text-transform:uppercase}.task-row{border-top:1px solid #edf0e9}.task-row label{font-size:12px;font-weight:550}.model-field{display:grid;gap:7px;min-width:0}.model-actions{display:flex;justify-content:space-between;align-items:baseline;gap:15px}.model-actions .tool-note{flex:1}.task-row select{font-size:11px;padding:0 9px}.task-row select:disabled{color:var(--muted);background:#f5f7f2}.effort-field{min-width:0}.tool-note{font-size:11px;color:var(--muted);line-height:1.7;margin:11px 1px 0;min-height:19px}.result{margin-top:27px;border-top:1px solid var(--line);padding-top:24px}.command-line{display:flex;align-items:center;justify-content:space-between;gap:18px}.command-preview{font:11px/1.7 var(--mono);overflow-wrap:anywhere;color:#52664f;min-width:0}.copy{flex-shrink:0;background:#315f47;color:#fff;border:0;border-radius:7px;padding:12px 17px;font-size:12px;font-weight:600;white-space:nowrap}.copy:hover{background:#254c37}.feedback{font-size:11px;color:var(--green);line-height:1.6;min-height:18px;margin:9px 0 0}.error{font-size:11px;color:#8b3e2a;background:#fff4ed;border:1px solid #e5c4b4;border-radius:7px;padding:11px 13px;line-height:1.7;margin:0 0 16px}.inspection{margin-top:8px}.inspection summary,.release summary{color:var(--muted);font-size:11px;list-style-position:outside;margin-left:12px}.inspection h2{font-size:11px;font-weight:600;margin:18px 0 9px}.inspection pre{font:10px/1.7 var(--mono);max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#f0f3ed;border:1px solid var(--line);border-radius:7px;padding:13px;margin:0}.full-command{width:100%;resize:vertical;min-height:95px;max-height:250px;font:10px/1.7 var(--mono);border:1px solid var(--line);border-radius:7px;padding:12px;background:#f0f3ed;color:#344737}.note{font-size:11px;line-height:1.8;color:var(--muted);margin:23px 0 0;max-width:620px}.preview-note{color:#8a6b45;font-size:10px;line-height:1.7;margin:12px 0 0}.release{margin-top:18px}.release pre{font:11px/1.7 var(--mono);color:var(--muted);max-height:150px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}.footer{margin-top:38px;padding-top:18px;padding-bottom:30px;border-top:1px solid var(--line);font-size:10px;line-height:1.8;color:#899387}[hidden]{display:none!important}@media(max-width:560px){header,main,footer{padding-left:21px;padding-right:21px}header{height:80px}.heading{margin-top:20px;margin-bottom:28px}.brand{font-size:12px}.table-head,.task-row{grid-template-columns:55px minmax(0,1fr) 100px;gap:9px;padding-left:15px;padding-right:15px}.task-row{padding-top:14px;padding-bottom:14px}input[type=text]{font-size:10px;padding:0 9px}.command-line{align-items:stretch;flex-direction:column;gap:12px}.copy{width:100%}.tool-field{gap:8px}.tool-field{display:grid;gap:7px}.tool-field select{min-width:0}.toolbar{gap:12px}.task-row select{font-size:10px;padding:0 5px}.task-row label{font-size:11px}.reset{font-size:10px}.result{margin-top:23px;padding-top:22px}}
 </style>
 </head>
 <body>
 <header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><span class="version" id="release-version"></span></header>
 <main>
   <noscript><p>Enable JavaScript to choose models and create your setup command.</p></noscript>
-  <div class="heading"><h1>Choose your helper models.</h1><p>Pick a tool, adjust its models, then copy one setup command.</p></div>
+  <div class="heading"><h1>Configure subagent models.</h1><p>Creates one setup command for your installed coding tools.</p></div>
   <section aria-label="Model preferences">
     <div class="toolbar">
       <div class="tool-field"><label for="tool">Tool</label><select id="tool" aria-label="Tool to edit"></select></div>
-      <button class="reset" id="reset" type="button">Reset defaults</button>
+      <div class="tool-field"><label for="preset">Preset</label><select id="preset" aria-label="Model preset"></select></div>
     </div>
-    <div class="models"><div class="table-head" aria-hidden="true"><span>Task</span><span>Model</span></div><div id="task-rows"></div></div>
-    <p class="tool-note" id="tool-note"> </p>
+    <div class="models"><div class="table-head" aria-hidden="true"><span>Task</span><span>Model</span><span>Effort</span></div><div id="task-rows"></div></div>
+    <div class="model-actions"><p class="tool-note" id="tool-note"> </p><button class="reset" id="reset" type="button">Reset preset</button></div>
   </section>
   <section class="result" aria-label="Setup command">
     <p class="error" id="config-error" role="alert" hidden></p>
@@ -40,12 +40,11 @@ const RELEASE = __APK_RELEASE_DATA__;
 (() => {
   const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
   const ROLES = ['worker', 'reviewer', 'explorer', 'routine'];
-  const EFFORTS = ['low', 'medium', 'high'];
   const TIERS = ['pro', 'flash', 'inherit'];
   const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}$/;
-  const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'agy'};
+  const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'Antigravity'};
   const TASKS = {worker: 'Code', reviewer: 'Review', explorer: 'Search', routine: 'Routine'};
-  const NOTES = {codex: '', claude: '', kimi: 'Jobs using the same Kimi alias must share its preset effort.', agy: 'agy supports native tiers: pro, flash, or inherit.'};
+  const NOTES = {codex: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', agy: 'Native tiers only; per-task effort is unavailable.'};
   const clone = value => JSON.parse(JSON.stringify(value));
   function effective(config, role) {
     return config.roles?.[role] ?? config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
@@ -54,12 +53,36 @@ const RELEASE = __APK_RELEASE_DATA__;
     return {selected: CLIENTS.filter(client => preferences.clients[client]), active: CLIENTS.find(client => preferences.clients[client]), maxConcurrent: preferences.maxConcurrent,
       jobs: Object.fromEntries(CLIENTS.filter(client => preferences.clients[client]).map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
   }
-  function preferenceForModel(config, role, model, jobs = {}) {
-    const recommended = [config.code, config.light, ...Object.values(config.roles ?? {})].find(choice => choice.model === model);
-    const shared = Object.entries(jobs).find(([otherRole, choice]) => otherRole !== role && choice.model === model)?.[1];
-    return {model, effort: (recommended ?? shared ?? effective(config, role)).effort};
+  function allowedEfforts(catalog, model) {
+    const supported = catalog?.models?.find(choice => choice.id === model)?.efforts ?? catalog?.efforts ?? [];
+    return [null, ...new Set(supported.filter(effort => effort !== null))];
   }
-  function buildConfig(state, preferences) {
+  function clientCatalog(client, preferences, catalog = RELEASE.catalog) {
+    if (catalog?.clients?.[client]) return catalog.clients[client];
+    const config = preferences.clients[client];
+    const recommendations = [config.code, config.light, ...Object.values(config.roles ?? {})];
+    const efforts = [...new Set(recommendations.map(choice => choice.effort).filter(effort => effort !== null))];
+    const ids = client === 'agy' ? TIERS : [...new Set(recommendations.map(choice => choice.model))];
+    return {label: LABELS[client], efforts, models: ids.map(id => ({id, label: id, efforts, defaultEffort: recommendations.find(choice => choice.model === id)?.effort ?? null}))};
+  }
+  function preferenceForModel(config, role, model, jobs = {}, catalog, syncAliases = false) {
+    const shared = Object.entries(jobs).find(([otherRole, choice]) => otherRole !== role && choice.model === model)?.[1];
+    if (!catalog) {
+      const recommended = [config.code, config.light, ...Object.values(config.roles ?? {})].find(choice => choice.model === model);
+      return {model, effort: (recommended ?? shared ?? effective(config, role)).effort};
+    }
+    const allowed = allowedEfforts(catalog, model);
+    const current = syncAliases ? shared ?? jobs[role] : jobs[role];
+    const documentedDefault = catalog.models?.find(choice => choice.id === model)?.defaultEffort ?? null;
+    const effort = current && allowed.includes(current.effort) ? current.effort : allowed.includes(documentedDefault) ? documentedDefault : null;
+    return {model, effort};
+  }
+  function updateEffort(state, client, role, effort) {
+    const model = state.jobs[client][role].model;
+    state.jobs[client][role].effort = effort;
+    if (client === 'kimi') for (const choice of Object.values(state.jobs[client])) if (choice.model === model) choice.effort = effort;
+  }
+  function buildConfig(state, preferences, catalog = RELEASE.catalog) {
     const errors = [];
     const maxConcurrent = Number(state.maxConcurrent);
     if (!Number.isInteger(maxConcurrent) || maxConcurrent < 1 || maxConcurrent > 32) errors.push('Invalid preset parallelism. Reset defaults.');
@@ -78,8 +101,8 @@ const RELEASE = __APK_RELEASE_DATA__;
         if (client === 'agy' && (!TIERS.includes(choice.model) || choice.effort !== null)) {
           errors.push(`agy ${TASKS[role]}: choose pro, flash, or inherit.`); continue;
         }
-        if (client !== 'agy' && !EFFORTS.includes(choice.effort)) {
-          errors.push(`${LABELS[client]} ${TASKS[role]}: invalid preset effort. Reset defaults.`); continue;
+        if (client !== 'agy' && !allowedEfforts(clientCatalog(client, preferences, catalog), choice.model).includes(choice.effort)) {
+          errors.push(`${LABELS[client]} ${TASKS[role]}: choose a supported effort or Native default.`); continue;
         }
         if (client === 'kimi' && choice.model === 'primary') {
           errors.push(`Kimi ${TASKS[role]}: choose an explicit model alias, not primary.`); continue;
@@ -93,7 +116,7 @@ const RELEASE = __APK_RELEASE_DATA__;
         const aliases = new Map();
         for (const choice of choices) {
           if (aliases.has(choice.model) && aliases.get(choice.model) !== choice.effort) {
-            errors.push(`Kimi: shared aliases need the same preset effort. Choose a recommended alias or a different alias per task.`); break;
+            errors.push(`Kimi: tasks using the same alias must use the same effort.`); break;
           }
           aliases.set(choice.model, choice.effort);
         }
@@ -112,14 +135,24 @@ const RELEASE = __APK_RELEASE_DATA__;
     for (const byte of bytes) binary += String.fromCharCode(byte);
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
+  function stableJSON(value) {
+    if (Array.isArray(value)) return `[${value.map(stableJSON).join(',')}]`;
+    if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stableJSON(value[key])}`).join(',')}}`;
+    return JSON.stringify(value);
+  }
   function buildCommand(config, release) {
     if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(release.version)) throw new Error('Invalid release version.');
-    return `npx --yes --ignore-scripts --package agent-policy-kit@${release.version} agent-policy setup --config ${encodeConfig(config)} --apply`;
+    const prefix = `npx --yes --ignore-scripts --package agent-policy-kit@${release.version} agent-policy setup`;
+    const preset = release.presets?.find(preset => stableJSON(preset.preferences) === stableJSON(config));
+    if (preset && /^[a-z][a-z0-9-]{0,31}$/.test(preset.id)) return `${prefix} --release --preset ${preset.id} --apply`;
+    return `${prefix} --config ${encodeConfig(config)} --apply`;
   }
-  globalThis.APKConfigurator = Object.freeze({initialState, effective, preferenceForModel, buildConfig, encodeConfig, buildCommand});
+  globalThis.APKConfigurator = Object.freeze({initialState, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id);
-  let state = initialState(RELEASE.preferences);
+  const presets = RELEASE.presets?.length ? RELEASE.presets : [{id: 'balanced', label: 'Balanced', preferences: RELEASE.preferences}];
+  let selectedPreset = presets.find(preset => preset.id === 'balanced') ?? presets[0];
+  let state = initialState(selectedPreset.preferences);
   let currentCommand = '';
   let revision = 0;
   $('release-version').textContent = `v${RELEASE.version}`;
@@ -139,7 +172,7 @@ const RELEASE = __APK_RELEASE_DATA__;
     revision++;
     $('copy-feedback').textContent = '';
     document.querySelectorAll('[aria-invalid=true]').forEach(node => node.removeAttribute('aria-invalid'));
-    const {config, errors} = buildConfig(state, RELEASE.preferences);
+    const {config, errors} = buildConfig(state, selectedPreset.preferences);
     if (errors.length) {
       currentCommand = ''; $('command').value = ''; $('command-preview').textContent = 'Check your model choices';
       $('config-json').textContent = ''; $('config-error').textContent = errors.join(' '); $('config-error').hidden = false; $('copy').disabled = true;
@@ -154,7 +187,7 @@ const RELEASE = __APK_RELEASE_DATA__;
       $('config-error').textContent = error.message; $('config-error').hidden = false; $('copy').disabled = true; return;
     }
     $('command').value = currentCommand;
-    $('command-preview').textContent = `npx … agent-policy-kit@${RELEASE.version} … --apply`;
+    $('command-preview').textContent = currentCommand.includes(' --config ') ? `npx … agent-policy-kit@${RELEASE.version} … --config … --apply` : currentCommand.replace('npx --yes --ignore-scripts --package ', 'npx … ');
     $('config-json').textContent = JSON.stringify(config, null, 2);
     $('config-error').hidden = true; $('copy').disabled = false;
   }
@@ -162,30 +195,57 @@ const RELEASE = __APK_RELEASE_DATA__;
     const client = state.active;
     const panel = $('task-rows'); panel.replaceChildren();
     $('tool-note').textContent = NOTES[client];
-    const config = RELEASE.preferences.clients[client];
-    const suggestions = [...new Set([config.code.model, config.light.model, ...ROLES.map(role => effective(config, role).model)])];
-    const datalist = element('datalist', {id: `models-${client}`});
-    suggestions.forEach(model => datalist.append(element('option', {value: model}))); panel.append(datalist);
+    const config = selectedPreset.preferences.clients[client];
+    const catalog = clientCatalog(client, selectedPreset.preferences);
     for (const role of ROLES) {
       const row = element('div', {class: 'task-row'});
       const id = `model-${client}-${role}`;
       row.append(element('label', {for: id}, TASKS[role]));
-      const input = client === 'agy' ? element('select', {id, 'aria-label': `${LABELS[client]} ${TASKS[role]} native tier`}) : element('input', {id, type: 'text', list: `models-${client}`, maxlength: '128', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', 'aria-label': `${LABELS[client]} ${TASKS[role]} model`});
-      if (client === 'agy') TIERS.forEach(tier => input.append(element('option', {value: tier}, tier)));
-      input.value = state.jobs[client][role].model; input.dataset.model = 'true';
-      input.addEventListener(client === 'agy' ? 'change' : 'input', () => {
-        state.jobs[client][role] = preferenceForModel(config, role, input.value, state.jobs[client]); updateResult();
+      const modelField = element('div', {class: 'model-field'});
+      const select = element('select', {id, 'aria-label': `${LABELS[client]} ${TASKS[role]} model`});
+      const known = catalog.models.some(model => model.id === state.jobs[client][role].model);
+      catalog.models.forEach(model => select.append(element('option', {value: model.id}, model.label || model.id)));
+      if (client !== 'agy') select.append(element('option', {value: '__custom__'}, 'Custom model…'));
+      select.value = known ? state.jobs[client][role].model : '__custom__';
+      const custom = element('input', {id: `custom-${client}-${role}`, type: 'text', maxlength: '128', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'Native model ID', 'aria-label': `${LABELS[client]} ${TASKS[role]} custom model`});
+      custom.value = known ? '' : state.jobs[client][role].model;
+      custom.hidden = select.value !== '__custom__'; custom.dataset.model = 'true';
+      const effort = element('select', {id: `effort-${client}-${role}`, 'aria-label': `${LABELS[client]} ${TASKS[role]} effort`});
+      function populateEffort() {
+        effort.replaceChildren();
+        const levels = client === 'agy' ? [null] : allowedEfforts(catalog, state.jobs[client][role].model);
+        levels.forEach(level => effort.append(element('option', {value: level ?? ''}, level === null ? 'Native default' : level[0].toUpperCase() + level.slice(1))));
+        effort.value = state.jobs[client][role].effort ?? '';
+        effort.disabled = levels.length === 1;
+      }
+      function chooseModel(model) {
+        state.jobs[client][role] = preferenceForModel(config, role, model, state.jobs[client], catalog, client === 'kimi');
+        populateEffort(); updateResult();
+      }
+      select.addEventListener('change', () => {
+        custom.hidden = select.value !== '__custom__';
+        chooseModel(custom.hidden ? select.value : custom.value);
+        if (!custom.hidden) custom.focus();
       });
-      row.append(input); panel.append(row);
+      custom.addEventListener('input', () => chooseModel(custom.value));
+      effort.addEventListener('change', () => {
+        updateEffort(state, client, role, effort.value || null);
+        for (const otherRole of ROLES) if (client === 'kimi' && state.jobs[client][otherRole].model === state.jobs[client][role].model) $(`effort-${client}-${otherRole}`).value = effort.value;
+        updateResult();
+      });
+      populateEffort(); modelField.append(select, custom); row.append(modelField, effort); panel.append(row);
     }
   }
-  for (const client of state.selected) $('tool').append(element('option', {value: client}, LABELS[client]));
-  $('tool').value = state.active;
+  for (const client of state.selected) $('tool').append(element('option', {value: client}, RELEASE.catalog?.clients?.[client]?.label || LABELS[client]));
+  for (const preset of presets) $('preset').append(element('option', {value: preset.id}, preset.label));
+  $('tool').value = state.active; $('preset').value = selectedPreset.id;
   $('tool').addEventListener('change', () => {state.active = $('tool').value; renderRows(); updateResult();});
-  $('reset').addEventListener('click', () => {
-    const active = state.active; state = initialState(RELEASE.preferences); state.active = active;
-    $('tool').value = active; renderRows(); updateResult(); $('copy-feedback').textContent = 'Defaults restored.';
-  });
+  function restorePreset() {
+    const active = state.active; state = initialState(selectedPreset.preferences); state.active = state.selected.includes(active) ? active : state.active;
+    $('tool').value = state.active; renderRows(); updateResult();
+  }
+  $('preset').addEventListener('change', () => {selectedPreset = presets.find(preset => preset.id === $('preset').value); restorePreset();});
+  $('reset').addEventListener('click', () => {restorePreset(); $('copy-feedback').textContent = 'Preset restored.';});
   $('copy').addEventListener('click', async () => {
     if (!currentCommand) return;
     const command = currentCommand; const copiedRevision = revision;

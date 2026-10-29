@@ -87,7 +87,7 @@ test('Kimi aliases require consistent effective effort but unused base defaults 
   state.jobs.kimi.reviewer.effort = 'high';
   const invalid = plain(api.buildConfig(state, preferences));
   assert.equal(invalid.config, null);
-  assert.match(invalid.errors.join(' '), /same preset effort/);
+  assert.match(invalid.errors.join(' '), /same effort/);
   state.jobs.kimi.reviewer = {model: 'primary', effort: 'low'};
   assert.match(plain(api.buildConfig(state, preferences)).errors.join(' '), /explicit model alias/);
 });
@@ -126,4 +126,70 @@ test('command is version pinned, shell safe, and decodes to the chosen UTF-8 JSO
   assert.deepEqual(JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')), plain(config));
   assert.throws(() => api.buildCommand(config, {...release, version: '0.1.0;echo'}), /Invalid release/);
   assert.equal(Buffer.from(api.encodeConfig({note: 'Привіт'}), 'base64url').toString('utf8'), JSON.stringify({note: 'Привіт'}));
+});
+
+test('compact controls show literal purpose, Antigravity, preset, model selection and effort', () => {
+  assert.match(template, /Configure subagent models\./);
+  assert.match(template, /Creates one setup command for your installed coding tools\./);
+  assert.match(template, /<select id="preset"/);
+  assert.match(template, /<span>Effort<\/span>/);
+  assert.match(script, /agy: 'Antigravity'/);
+  assert.match(script, /Custom model…/);
+});
+
+test('catalog effort support includes native default and model-specific limits', () => {
+  const catalog = {efforts: ['low', 'high', 'xhigh'], models: [
+    {id: 'catalog/model-a', label: 'Model A', efforts: ['high', 'xhigh'], defaultEffort: 'high'},
+    {id: 'catalog/model-b', label: 'Model B', efforts: [], defaultEffort: null}
+  ]};
+  assert.deepEqual(plain(api.allowedEfforts(catalog, 'catalog/model-a')), [null, 'high', 'xhigh']);
+  assert.deepEqual(plain(api.allowedEfforts(catalog, 'catalog/model-b')), [null]);
+  assert.deepEqual(plain(api.allowedEfforts(catalog, 'custom/model')), [null, 'low', 'high', 'xhigh']);
+  const jobs = {worker: {model: 'old/model', effort: 'low'}};
+  assert.deepEqual(plain(api.preferenceForModel(preferences.clients.codex, 'worker', 'catalog/model-a', jobs, catalog)), {model: 'catalog/model-a', effort: 'high'});
+  jobs.worker.effort = 'xhigh';
+  assert.equal(api.preferenceForModel(preferences.clients.codex, 'worker', 'catalog/model-a', jobs, catalog).effort, 'xhigh');
+  assert.equal(api.preferenceForModel(preferences.clients.codex, 'worker', 'catalog/model-b', jobs, catalog).effort, null);
+});
+
+test('Kimi effort edits synchronize jobs with the same model alias', () => {
+  const state = api.initialState(preferences);
+  state.jobs.kimi.reviewer = {...state.jobs.kimi.worker};
+  api.updateEffort(state, 'kimi', 'worker', null);
+  assert.equal(state.jobs.kimi.worker.effort, null);
+  assert.equal(state.jobs.kimi.reviewer.effort, null);
+  assert.equal(state.jobs.kimi.routine.effort, preferences.clients.kimi.light.effort);
+  assert.deepEqual(plain(api.buildConfig(state, preferences)).errors, []);
+});
+
+test('exact release presets generate short commands and edits use explicit configuration', () => {
+  const config = plain(api.buildConfig(api.initialState(preferences), preferences).config);
+  const withPresets = {...release, presets: [{id: 'balanced', label: 'Balanced', preferences}]};
+  assert.equal(api.buildCommand(config, withPresets), 'npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --preset balanced --apply');
+  config.clients.codex.roles = {reviewer: {model: 'custom/reviewer', effort: 'high'}};
+  assert.match(api.buildCommand(config, withPresets), /--config [A-Za-z0-9_-]+ --apply$/);
+});
+
+
+test('catalog validation accepts native default and rejects a model-unsupported level', () => {
+  const state = api.initialState(preferences);
+  const catalog = {clients: {codex: {label: 'Codex', efforts: ['low', 'high', 'xhigh'], models: [
+    {id: preferences.clients.codex.code.model, efforts: ['high', 'xhigh'], defaultEffort: 'high'},
+    {id: preferences.clients.codex.light.model, efforts: [], defaultEffort: null}
+  ]}}};
+  state.jobs.codex.explorer.effort = null;
+  state.jobs.codex.routine.effort = null;
+  state.jobs.codex.worker.effort = 'xhigh';
+  assert.deepEqual(plain(api.buildConfig(state, preferences, catalog)).errors, []);
+  state.jobs.codex.worker.effort = 'low';
+  assert.equal(api.buildConfig(state, preferences, catalog).config, null);
+  state.jobs.codex.worker.effort = null;
+  assert.deepEqual(plain(api.buildConfig(state, preferences, catalog)).errors, []);
+});
+
+test('Kimi model selection reuses its alias effort; independent client roles keep valid effort', () => {
+  const catalog = {efforts: ['low', 'high'], models: [{id: 'catalog/shared', efforts: ['low', 'high'], defaultEffort: 'high'}]};
+  const jobs = {worker: {model: 'catalog/shared', effort: 'high'}, routine: {model: 'other', effort: 'low'}};
+  assert.equal(api.preferenceForModel(preferences.clients.kimi, 'routine', 'catalog/shared', jobs, catalog, true).effort, 'high');
+  assert.equal(api.preferenceForModel(preferences.clients.codex, 'routine', 'catalog/shared', jobs, catalog).effort, 'low');
 });
