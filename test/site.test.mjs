@@ -16,6 +16,9 @@ test('configuration template has a single release marker and no external assets 
   assert.equal(template.split('__APK_RELEASE_DATA__').length, 2);
   assert.doesNotMatch(template, /<(?:script|link|img)[^>]+(?:src|href)=/i);
   assert.doesNotMatch(script, /\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/);
+  assert.doesNotMatch(template, /type="(?:checkbox|number)"|role="tablist"|id="effort-/);
+  assert.match(template, /<select id="tool"/);
+  assert.match(template, /<details class="inspection"/);
 });
 
 test('recommendations expose four independent jobs and preserve native fallbacks', () => {
@@ -23,26 +26,38 @@ test('recommendations expose four independent jobs and preserve native fallbacks
   const {config, errors} = plain(api.buildConfig(state, preferences));
   assert.deepEqual(errors, []);
   assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy']);
-  assert.deepEqual(Object.keys(config.clients.codex.roles), ['worker', 'reviewer', 'explorer', 'routine']);
+  assert.deepEqual(config, preferences);
+  assert.deepEqual(Object.keys(state.jobs.codex), ['worker', 'reviewer', 'explorer', 'routine']);
+  assert.equal(config.clients.codex.roles, undefined);
   assert.deepEqual(config.clients.codex.code, preferences.clients.codex.code);
   assert.deepEqual(config.clients.kimi.light, preferences.clients.kimi.light);
-  assert.deepEqual(config.clients.agy.roles.worker, {model: 'pro', effort: null});
+  assert.deepEqual(plain(state.jobs.agy.worker), {model: 'pro', effort: null});
   state.jobs.codex.reviewer.model = 'custom/review:1';
   assert.equal(state.jobs.codex.worker.model, preferences.clients.codex.code.model);
 });
 
-test('selected tools and explicit model choices determine the payload', () => {
+test('all four tools stay configured and only changed roles produce overrides', () => {
   const state = api.initialState(preferences);
-  state.selected = ['claude'];
-  state.maxConcurrent = '7';
-  state.jobs.claude.reviewer = {model: 'opus', effort: 'medium'};
+  state.jobs.claude.reviewer = api.preferenceForModel(preferences.clients.claude, 'reviewer', 'opus');
   const {config, errors} = plain(api.buildConfig(state, preferences));
   assert.deepEqual(errors, []);
-  assert.deepEqual(Object.keys(config.clients), ['claude']);
-  assert.equal(config.maxConcurrent, 7);
-  assert.equal(config.clients.claude.roles.reviewer.model, 'opus');
+  assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy']);
+  assert.equal(config.maxConcurrent, preferences.maxConcurrent);
+  assert.deepEqual(config.clients.claude.roles, {reviewer: {model: 'opus', effort: 'high'}});
   assert.ok(!config.clients.claude.avoidModels.includes('opus'));
   assert.deepEqual(config.clients.claude.code, preferences.clients.claude.code);
+  assert.equal(config.clients.codex.roles, undefined);
+});
+
+test('model changes use known model effort and custom models keep the original task default', () => {
+  const config = preferences.clients.kimi;
+  assert.deepEqual(plain(api.preferenceForModel(config, 'routine', config.code.model)), config.code);
+  assert.deepEqual(plain(api.preferenceForModel(config, 'worker', config.light.model)), config.light);
+  assert.deepEqual(plain(api.preferenceForModel(config, 'routine', 'custom/alias')), {model: 'custom/alias', effort: config.light.effort});
+  const state = api.initialState(preferences);
+  state.jobs.kimi.routine = api.preferenceForModel(config, 'routine', config.code.model);
+  assert.deepEqual(plain(api.buildConfig(state, preferences)).errors, []);
+  assert.equal(api.buildConfig(state, preferences).config.clients.kimi.roles.routine.effort, config.code.effort);
 });
 
 test('native role recommendations override code/light defaults', () => {
@@ -60,7 +75,7 @@ test('Kimi aliases require consistent effective effort but unused base defaults 
   state.jobs.kimi.reviewer.effort = 'high';
   const invalid = plain(api.buildConfig(state, preferences));
   assert.equal(invalid.config, null);
-  assert.match(invalid.errors.join(' '), /different effort/);
+  assert.match(invalid.errors.join(' '), /same preset effort/);
   state.jobs.kimi.reviewer = {model: 'primary', effort: 'low'};
   assert.match(plain(api.buildConfig(state, preferences)).errors.join(' '), /explicit model alias/);
 });
@@ -97,6 +112,6 @@ test('command is version pinned, shell safe, and decodes to the chosen UTF-8 JSO
   assert.match(command, /^npx --yes --ignore-scripts --package agent-policy-kit@0\.1\.0 agent-policy setup --config ([A-Za-z0-9_-]+) --apply$/);
   const payload = command.match(/--config ([A-Za-z0-9_-]+)/)[1];
   assert.deepEqual(JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')), plain(config));
-  assert.throws(() => api.buildCommand(config, {...release, version: '0.1.0;echo'}), /invalid release/);
+  assert.throws(() => api.buildCommand(config, {...release, version: '0.1.0;echo'}), /Invalid release/);
   assert.equal(Buffer.from(api.encodeConfig({note: 'Привіт'}), 'base64url').toString('utf8'), JSON.stringify({note: 'Привіт'}));
 });
