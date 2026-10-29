@@ -32,14 +32,18 @@
     "docs/",
     "README.md",
     "AGENT_INSTALL.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md",
+    "site/index.html",
+    "models/"
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "check": "node scripts/check.mjs",
-    "test:package": "node --test test/package-acceptance.test.mjs",
+    "test:package": "node --test test/*package*.test.mjs",
     "test:unit": "node scripts/test-unit.mjs",
-    "prepublishOnly": "npm run check && npm test"
+    "prepublishOnly": "npm run check && npm test",
+    "build:site": "node scripts/build-site.mjs"
   },
   "dependencies": {
     "toml-eslint-parser": "1.0.3"

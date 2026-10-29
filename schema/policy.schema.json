@@ -26,7 +26,7 @@
           "$ref": "#/$defs/client"
         },
         "claude": {
-          "$ref": "#/$defs/client"
+          "$ref": "#/$defs/claudeClient"
         },
         "kimi": {
           "$ref": "#/$defs/kimiClient"
@@ -55,9 +55,14 @@
         },
         "effort": {
           "enum": [
+            null,
+            "none",
+            "minimal",
             "low",
             "medium",
-            "high"
+            "high",
+            "xhigh",
+            "max"
           ]
         }
       }
@@ -74,6 +79,7 @@
           "enum": [
             "pro",
             "flash",
+            "flash_lite",
             "inherit"
           ]
         },
@@ -104,6 +110,24 @@
           "items": {
             "$ref": "#/$defs/identifier"
           }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/profile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/profile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/profile"
+            },
+            "routine": {
+              "$ref": "#/$defs/profile"
+            }
+          }
         }
       }
     },
@@ -128,6 +152,24 @@
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/identifier"
+          }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "routine": {
+              "$ref": "#/$defs/tierProfile"
+            }
           }
         }
       }
@@ -154,9 +196,12 @@
         },
         "effort": {
           "enum": [
+            null,
             "low",
             "medium",
-            "high"
+            "high",
+            "xhigh",
+            "max"
           ]
         }
       }
@@ -183,9 +228,93 @@
           "items": {
             "$ref": "#/$defs/identifier"
           }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "routine": {
+              "$ref": "#/$defs/kimiProfile"
+            }
+          }
+        }
+      }
+    },
+    "claudeProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/identifier"
+        },
+        "effort": {
+          "enum": [
+            null,
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      }
+    },
+    "claudeClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/claudeProfile"
+        },
+        "light": {
+          "$ref": "#/$defs/claudeProfile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "routine": {
+              "$ref": "#/$defs/claudeProfile"
+            }
+          }
         }
       }
     }
   },
-  "$comment": "The configuration validator also rejects avoided selected models and incompatible efforts for the same Kimi alias."
+  "$comment": "Model-specific supported effort is checked against the release catalog; null means no explicit effort override. Only conflicting non-null Kimi alias pins are invalid."
 }

@@ -1,23 +1,19 @@
 # Verification record
 
-Configuration-only release candidate 0.1.0, local macOS arm64, 2026-10-29. Previous runtime-hook/mod results do not validate this redesign.
+Configuration release/page candidate0.1.0, macOS arm64,2026-10-29. This record distinguishes literal configuration, native loading and model execution.
 
-| Layer | Status | Meaning |
-|---|---|---|
-| Shared preferences/native generation/installer/detection | PASS, 98/98 unit cases within both full suites | Native file shapes, ownership, preservation and safety |
-| Installed tarball with denied source access | PASS on Node 22.13.0 and 26.5.1, full suites 99/99 each | Distribution, rollback, repeat setup and owned removal |
-| Package/state removal after setup | PASS on both runtimes | Native files and standalone consumer fixtures have no APK dependency |
-| Scoped native installer review | PASS after reserved Kimi alias correction | Independent 56/56 targeted tests |
-| Whole-change review and scoped fixes | PASS | Active native home, YAML scalar serialization, canonical updates and optional delegation verified |
-| Native Codex config parser | PASS, positive and malformed-config control | Native settings parse, role loading remains unchecked |
-| Native agy role discovery | PASS, four roles listed; malformed role omitted | Native definitions load without a model task |
-| Native Claude/Kimi role loading | NOT CHECKED | No documented safe role-list/parser-only command found |
-| Real native model/provider execution | NOT CHECKED | No model smoke tasks used for configuration validation |
-| Hosted macOS/Linux CI | NOT RUN | Workflow prepared; no remote exists |
-| Windows settings application | UNSUPPORTED | Explicit refusal |
+| Layer | Current evidence |
+|---|---|
+| Full Node26.5.1 suite | PASS180/180, including both source-denied real-tarball gates |
+| Current minimum Node22.13 suite | Pending final run; prior99-case configuration-only baseline passed, not promoted to this revision |
+| Two synthetic releases | PASS: actual0.1.0/0.2.0 tarballs, changed preset/model AND role/instruction templates; A→B→A, mixed applied versions, late replacement rollback, drift/prerequisite safety, final original-user restoration |
+| Package/state removal | PASS: generated native files/standalone consumer fixtures continue without source/npm/state |
+| Real Chrome page | PASS localfile desktop and390pxChromeemulation: compact form, custommodels, copyfeedback, invalidinputclearing, preset/tier selection; expanded effort/catalog QA ongoing |
+| Actual page command via npx | PASS using local0.1tarball/freshnpmcache and disposable nativeCLI identity; selected reviewer model persisted; no live/modelcalls |
+| Independent whole-change review | Pending for this release/catalog/page extension |
+| Native Codex config parser | Priorpositive/malformednegativecontrolPASS; not complete role/model execution |
+| Native Antigravity role listing | Priorfour-rolepositive/malformedroleomissioncontrolPASS; fast-tier finalcheck pending |
+| Native Claude/Kimi loading/provider execution | NOTCHECKED; no live model tasks used as configuration proof |
+| HostedmacOS/LinuxCI/publication | NOTRUN; no remote, deployment or npm publication |
 
-Native formats were checked against current primary documentation. Last observed CLI versions during preparation: Codex 0.166.0, Claude Code 2.1.312, Kimi 2.4.0, agy 1.4.10. Working identity does not prove account access, model entitlement or native loading in a resumed session. New native sessions may be needed.
-
-The tarball gate uses fixture executable identities and standalone native-file consumers. It does not claim real provider execution. Private logs and profiles stay outside publication.
-
-Final native agy listing was repeated after quoted model serialization; all four roles load. A reference YAML parser preserved custom:, null and true as strings. Optional-delegation regressions retain disabled Codex agents and ordinary main settings.
+The release catalog is dated and sourced; access differs byaccount/provider. Modelquality/price guarantees were not benchmarked. Test version0.2.0 is synthetic, not a public release. Privateprofiles, logfiles, source schema probes and browser payload evidence remain excluded from Git/npm.

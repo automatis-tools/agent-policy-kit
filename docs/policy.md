@@ -1,24 +1,15 @@
-# Shared preferences
+# Configuration preferences
 
-Start with policies/balanced.json. The [JSON Schema](../schema/policy.schema.json) describes the shape; the configuration validator is authoritative for accepted input.
+Start with policies/balanced.json or another preset in the selected release. The [JSON Schema](../schema/policy.schema.json) describes data shape; the configuration validator also checks the release catalog's known model/effort compatibility.
 
-- schemaVersion is 1.
-- maxConcurrent is a shared target from 1 to 32.
-- clients contains codex, claude, kimi and/or agy.
-- Each client has code and light, each with model and effort, plus avoidModels.
-- effort is low, medium or high. agy uses null because its native role schema does not pin effort.
-- avoidModels is instruction guidance, not a universal deny gate.
+- schemaVersion1; maxConcurrent is a shared target1..32.
+- clients contains codex, claude, kimi and/or agy (the technical key for Antigravity).
+- code/light hold default model+effort pairs.
+- Optional roles overrides worker, reviewer, explorer and routine independently. Worker/reviewer otherwise use code; explorer/routine use light.
+- avoidModels is delegation guidance. An explicit page choice removes itself from that avoid list.
 
-The installer creates apk-worker and apk-reviewer from code, and apk-explorer and apk-routine from light. Same responsibilities are used across clients, while model identifiers follow each client's native API. Main chat models are preserved.
+Effort null means native behavior without an explicit effort override. Codex supports model-dependent none/minimal/low/medium/high/xhigh/max; Claude supports low through max as documented per model. Kimi actual aliases must declare the requested non-null effort. Antigravity's role field supports model tiers, with no per-role effort pin.
 
-Role selection is conditional on the main agent choosing to delegate. These settings do not require subagents or enable a disabled agent feature. [Model maintenance](model-updates.md) describes how to review changing model recommendations without a background updater.
+A known model cannot request an effort excluded by the release catalog. Custom IDs can use the client's native level set, subject to actual native availability. Kimi can merge null with one explicit pin for a shared alias; contradictory explicit pins are refused. A section-wide effort conflicting with mixed default/pinned alias behavior is a prerequisite rather than a silent rewrite.
 
-Codex defaults are Sol high for code and Luna high for light work. Claude defaults are Sonnet high and Haiku high. Kimi uses provisioned aliases kimi-code/k3 high and kimi-code/kimi-for-coding low. agy uses Pro and Flash tiers. Account access is a prerequisite, not something this file grants.
-
-Kimi aliases must exist in native config with compatible model metadata. Different efforts require distinct aliases because overrides apply to a model entry. agy tiers do not prove a concrete provider model. Native precedence and capability limits are described in [support](compatibility.md).
-
-Old enforce/observe modes and audit allowlists are removed. There is no per-launch evaluator.
-
-The canonical shared preferences are stateDir/policy.json, where stateDir is --state-dir, AGENT_POLICY_HOME, or the selected home's .agent-policy-kit directory. Uninstall retains this file and private backups. An external --policy custom.json is a source for configuration and must remain semantically equal to the canonical file; pass the same --policy to setup and doctor.
-
-Before changing preferences, remove every affected receipt sharing that canonical policy with owned uninstall, using the installation's --home and --state-dir targets. Confirm no pending transaction or active lock remains. Validate the replacement against the shipped schema and validatePolicy, update the canonical file and any external source to the same value, then rerun setup and doctor with the same --policy. Editing only custom.json after uninstall still returns POLICY_CONFLICT. Do not bypass this check by deleting receipts, resetting state, or discarding backups. See the [AI operator guide](../AGENT_INSTALL.md#5-update-or-remove-configuration) for the coordinated sequence.
+[Presets/catalog](model-catalog.md) describe recommendations and sources. [Release usage](releases.md) explains explicit default/preset/custom replacement. Only when the main agent chooses delegation do any of these role preferences apply. No subagent feature is enabled by the configurator.

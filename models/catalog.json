@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-29",
+  "scope": "Documented/native coding-tool selectors at this release; account access and custom deployment IDs vary.",
+  "clients": {
+    "codex": {
+      "label": "Codex",
+      "efforts": [
+        "none",
+        "minimal",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "observedClientVersion": "0.166.0",
+      "observation": "codex debug models --bundled: 9 visible selectors; 3 hidden specialized/utility entries excluded",
+      "models": [
+        {
+          "id": "gpt-6-astra",
+          "label": "GPT-6 Astra",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-6.1-sol",
+          "label": "GPT-6.1 Sol",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-6.1-terra",
+          "label": "GPT-6.1 Terra",
+          "efforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://developers.openai.com/api/docs/models/gpt-6.1-terra",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-6-sol",
+          "label": "GPT-6 Sol",
+          "efforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-6-luna",
+          "label": "GPT-6 Luna",
+          "efforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "label": "GPT-5.6 Sol",
+          "efforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "label": "GPT-5.6 Terra",
+          "efforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "label": "GPT-5.6 Luna",
+          "efforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+          "kind": "model"
+        },
+        {
+          "id": "gpt-5.5",
+          "label": "GPT-5.5",
+          "efforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.5",
+          "kind": "model"
+        }
+      ],
+      "excluded": [
+        {
+          "id": "gpt-daybreak-blue-latest",
+          "reason": "hidden specialized selector"
+        },
+        {
+          "id": "gpt-daybreak-red-latest",
+          "reason": "hidden specialized selector"
+        },
+        {
+          "id": "codex-auto-review",
+          "reason": "hidden internal utility selector"
+        }
+      ]
+    },
+    "claude": {
+      "label": "Claude Code",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "observedClientVersion": "2.1.312",
+      "models": [
+        {
+          "id": "sonnet",
+          "label": "Sonnet (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "alias"
+        },
+        {
+          "id": "opus",
+          "label": "Opus (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "alias"
+        },
+        {
+          "id": "haiku",
+          "label": "Haiku (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "alias"
+        },
+        {
+          "id": "claude-fable-5-1",
+          "label": "Fable 5.1",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-5-5",
+          "label": "Opus 5.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-sonnet-5-5",
+          "label": "Sonnet 5.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-haiku-5-5",
+          "label": "Haiku 5.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-fable-5",
+          "label": "Fable 5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-5",
+          "label": "Opus 5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-sonnet-5",
+          "label": "Sonnet 5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-8",
+          "label": "Opus 4.8",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-7",
+          "label": "Opus 4.7",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "xhigh",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-6",
+          "label": "Opus 4.6",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-sonnet-4-6",
+          "label": "Sonnet 4.6",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-5-20251101",
+          "label": "Opus 4.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": null,
+          "source": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "kind": "model"
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929",
+          "label": "Sonnet 4.5",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-haiku-4-5-20251001",
+          "label": "Haiku 4.5",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "inherit",
+          "label": "Inherit main model",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/sub-agents",
+          "kind": "inherit"
+        }
+      ],
+      "note": "Includes standard subagent aliases and documented full model IDs. Account/provider access varies; session/context modes and restricted deployments may use Custom model. API and Claude Code effort defaults can differ.",
+      "excluded": [
+        {
+          "id": "best",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "default",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "fable",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "opus[1m]",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "opusplan",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "sonnet[1m]",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        }
+      ]
+    },
+    "kimi": {
+      "label": "Kimi",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "models": [
+        {
+          "id": "kimi-code/k3",
+          "label": "K3",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://www.kimi.ai/help/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "k3"
+        },
+        {
+          "id": "kimi-code/k3-256k",
+          "label": "K3 \u00b7 256K",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://www.kimi.ai/help/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "k3-256k"
+        },
+        {
+          "id": "kimi-code/kimi-for-coding",
+          "label": "K2.8 Preview",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "source": "https://www.kimi.ai/help/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "kimi-for-coding"
+        },
+        {
+          "id": "kimi-code/kimi-for-coding-highspeed",
+          "label": "K2.7 Code HighSpeed",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://www.kimi.ai/help/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "kimi-for-coding-highspeed"
+        }
+      ],
+      "note": "Selectors are configured native aliases. Preferred release aliases may be resolved once to a unique provisioned alias for the documented upstream model. No login or provider metadata is invented.",
+      "observedClientVersion": "2.4.0",
+      "observation": "The four documented preferred aliases and effort capabilities were corroborated through whitelisted provisioned native metadata; no credentials or custom account aliases retained."
+    },
+    "agy": {
+      "label": "Antigravity",
+      "efforts": [],
+      "observedClientVersion": "1.4.10",
+      "models": [
+        {
+          "id": "pro",
+          "label": "Pro",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        },
+        {
+          "id": "flash",
+          "label": "Flash",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        },
+        {
+          "id": "flash_lite",
+          "label": "Flash Lite",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        },
+        {
+          "id": "inherit",
+          "label": "Inherit main model",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        }
+      ],
+      "note": "Native per-subagent selectors are tiers, not the session model inventory. Per-role effort is not exposed by the native agent-file schema."
+    }
+  }
+}

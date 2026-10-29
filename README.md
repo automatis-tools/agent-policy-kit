@@ -2,36 +2,38 @@
 
 ```mermaid
 flowchart LR
-    Preferences("Your preferences<br/>Code and review · Search and routine<br/>Models · Effort · Parallelism"):::preferences
-    Kit("Agent Policy Kit<br/>Configure once, then exit"):::kit
-    Tools("Your installed coding tools<br/>Codex · Claude Code · Kimi · agy<br/>Continue working on their own"):::tools
-    Preferences --> Kit
-    Kit -->|Writes native settings| Tools
-    classDef preferences fill:#f8fafc,stroke:#94a3b8,color:#0f172a
-    classDef kit fill:#2563eb,stroke:#1d4ed8,color:#ffffff
-    classDef tools fill:#f0fdf4,stroke:#86efac,color:#14532d
+    Release("Choose a release") --> Models("Choose your models")
+    Models --> Command("Run one command")
+    Command --> Done("Configured. APK exits.")
+    classDef default fill:#f5f7f6,stroke:#bdc8c2,color:#1b2924
+    classDef action fill:#245e49,stroke:#245e49,color:#ffffff
+    class Command action
 ```
 
-**Set up your coding tools once. They run on their own.**
+**Your model choices. Your coding tools. One setup.**
 
-Agent Policy Kit is an npm configurator that applies a shared setup to the coding tools already on your computer.
+APK configures Codex, Claude Code, Kimi and Antigravity through their native files, then exits. You can remove the npm package afterward.
 
-**Your agent decides whether to use subagents.** These preferences apply only when it delegates.
+**The main agent decides whether to use subagents.** Your preferences apply only when it delegates; the main model stays unchanged.
 
-Choose models for code and review, lighter models for search and routine work, and a parallelism target. The kit translates those choices into each tool's own settings and agent files.
+## Choose your setup
 
-After setup, it exits. **You can remove the npm package.** Your tools keep their configuration and use their usual accounts and providers.
+Open the [configuration page](site/index.html) in **Google Chrome**. Choose a preset, then models and effort for code, review, search and routine work. Copy the generated command and run it once. Only installed tools are configured.
 
-## Let your AI agent handle setup
+The page is a self-contained HTML file: no backend or data upload. Before hosting, open site/index.html locally. See [page preview and hosting](docs/configuration-page.md).
 
-Share this repository with your coding agent:
+## Use a specific release's defaults
 
-> Follow the [AI setup and removal guide](AGENT_INSTALL.md). Configure my installed coding tools with the default preferences. Verify the saved settings and report any unsupported options.
+After npm publication:
 
-Your agent handles detection, configuration and checks. Your main model and unrelated settings stay unchanged. Ask the same agent to remove the configuration later if needed.
+```sh
+npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --apply
+```
 
-[Support and limits](docs/compatibility.md) · [Examples](docs/use-cases.md) · [Keeping models current](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verified results](docs/verification.md)
+Omit --apply to preview. Each version includes its own presets, instructions and configuration page. [Release notes](CHANGELOG.md) explain what changed and why; [release usage](docs/releases.md) covers upgrade and downgrade.
 
-Requires macOS or Linux and Node.js 22.x (22.13+) or 24+. Version 0.1.0 is a local release candidate; the guide covers local tarballs and npm releases.
+Prefer your AI agent to handle it? Give it the [setup and removal guide](AGENT_INSTALL.md).
 
-MIT licensed. Independent of the client vendors.
+[Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
+
+Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.1.0 is a local release candidate. MIT licensed.

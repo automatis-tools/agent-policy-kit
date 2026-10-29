@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "maxConcurrent": 3,
+  "clients": {
+    "codex": {
+      "code": {
+        "model": "gpt-6.1-sol",
+        "effort": "high"
+      },
+      "light": {
+        "model": "gpt-6.1-sol",
+        "effort": "high"
+      },
+      "avoidModels": [
+        "gpt-6-astra"
+      ]
+    },
+    "claude": {
+      "code": {
+        "model": "opus",
+        "effort": "high"
+      },
+      "light": {
+        "model": "sonnet",
+        "effort": "high"
+      },
+      "avoidModels": [
+        "fable"
+      ]
+    },
+    "kimi": {
+      "code": {
+        "model": "kimi-code/k3",
+        "effort": "high"
+      },
+      "light": {
+        "model": "kimi-code/k3",
+        "effort": "high"
+      },
+      "avoidModels": [
+        "primary",
+        "kimi-code/k3.1-pro-highspeed",
+        "kimi-code/kimi-for-coding-highspeed"
+      ]
+    },
+    "agy": {
+      "code": {
+        "model": "pro",
+        "effort": null
+      },
+      "light": {
+        "model": "pro",
+        "effort": null
+      },
+      "avoidModels": []
+    }
+  }
+}

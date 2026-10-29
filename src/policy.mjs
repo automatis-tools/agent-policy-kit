@@ -1,5 +1,8 @@
+import catalog from '../models/catalog.json' with {type:'json'};
 export const CLIENTS = Object.freeze(['codex', 'claude', 'kimi', 'agy']);
 export const ROLES = Object.freeze({worker:'code', reviewer:'code', explorer:'light', routine:'light'});
+export const rolePreference=(config,role)=>config.roles?.[role]??config[ROLES[role]];
+export const NATIVE_EFFORTS=Object.freeze(Object.fromEntries(CLIENTS.map(client=>[client,Object.freeze([...catalog.clients[client].efforts])])));
 const identifier = /^[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}$/;
 function invalid() { throw Object.assign(new Error('Invalid shared preferences.'), {code:'INVALID_POLICY'}); }
 function object(value, fields) {
@@ -16,16 +19,24 @@ export function validatePolicy(value) {
   object(value.clients,CLIENTS);
   if (!Object.keys(value.clients).length) invalid();
   for (const [client,config] of Object.entries(value.clients)) {
-    object(config,['code','light','avoidModels']);
-    for (const kind of ['code','light']) {
-      object(config[kind],['model','effort']); model(config[kind].model);
-      if (client === 'kimi' && config[kind].model === 'primary') invalid();
-      if (client === 'agy' ? (config[kind].effort !== null || !['pro','flash','inherit'].includes(config[kind].model)) : !['low','medium','high'].includes(config[kind].effort)) invalid();
+    object(config,['code','light','roles','avoidModels']);
+    if(config.roles!==undefined)object(config.roles,Object.keys(ROLES));
+    for (const selected of [config.code,config.light,...Object.values(config.roles??{})]) {
+      object(selected,['model','effort']); model(selected.model);
+      if (client === 'kimi' && selected.model === 'primary') invalid();
+      if(client==='agy'&&!['pro','flash','flash_lite','inherit'].includes(selected.model))invalid();
+      if(selected.effort!==null){
+        if(!NATIVE_EFFORTS[client].includes(selected.effort))invalid();
+        const known=catalog.clients[client].models.find(model=>model.id===selected.model);
+        if(known&&!known.efforts.includes(selected.effort))invalid();
+      }
     }
     if (!Array.isArray(config.avoidModels) || config.avoidModels.length > 32 || new Set(config.avoidModels).size !== config.avoidModels.length) invalid();
     config.avoidModels.forEach(model);
-    if (config.avoidModels.includes(config.code.model) || config.avoidModels.includes(config.light.model)) invalid();
-    if (client === 'kimi' && config.code.model === config.light.model && config.code.effort !== config.light.effort) invalid();
+    const effective=Object.keys(ROLES).map(role=>rolePreference(config,role));
+    if (effective.some(selected=>config.avoidModels.includes(selected.model))) invalid();
+    const pinned=effective.filter(value=>value.effort!==null);
+    if (client==='kimi'&&new Set(pinned.map(v=>v.model+'\0'+v.effort)).size!==new Set(pinned.map(v=>v.model)).size) invalid();
   }
   return freeze(JSON.parse(JSON.stringify(value)));
 }

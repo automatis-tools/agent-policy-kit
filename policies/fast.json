@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "maxConcurrent": 3,
+  "clients": {
+    "codex": {
+      "code": {
+        "model": "gpt-6-luna",
+        "effort": "low"
+      },
+      "light": {
+        "model": "gpt-6-luna",
+        "effort": "low"
+      },
+      "avoidModels": [
+        "gpt-6-astra"
+      ]
+    },
+    "claude": {
+      "code": {
+        "model": "haiku",
+        "effort": "low"
+      },
+      "light": {
+        "model": "haiku",
+        "effort": "low"
+      },
+      "avoidModels": [
+        "opus",
+        "fable"
+      ]
+    },
+    "kimi": {
+      "code": {
+        "model": "kimi-code/kimi-for-coding",
+        "effort": "low"
+      },
+      "light": {
+        "model": "kimi-code/kimi-for-coding",
+        "effort": "low"
+      },
+      "avoidModels": [
+        "primary",
+        "kimi-code/k3.1-pro-highspeed",
+        "kimi-code/kimi-for-coding-highspeed"
+      ]
+    },
+    "agy": {
+      "code": {
+        "model": "flash_lite",
+        "effort": null
+      },
+      "light": {
+        "model": "flash_lite",
+        "effort": null
+      },
+      "avoidModels": []
+    }
+  }
+}

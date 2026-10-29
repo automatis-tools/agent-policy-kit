@@ -5,7 +5,7 @@
 | Codex | User role TOMLs, native subagent defaults/concurrency, routing instructions | Higher-priority project/explicit settings still follow Codex rules |
 | Claude Code | User role Markdown with model/effort, native default/concurrency env, routing instructions | Force settings and native execution-path exceptions can override the intended mapping |
 | Kimi Code | User role Markdown, existing secondary-model pool, per-alias effort, routing instructions | Model-role selection and max concurrency are guidance; provisioned aliases/capabilities are required |
-| agy | User role Markdown with Pro/Flash tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
+| Antigravity | User role Markdown with Pro/Flash/Flash Lite/inherit tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
 
 These are preferences implemented through native features. APK does not participate in later agent operation and does not enforce policy on every request. avoidModels is guidance. No hook, wrapper or proxy is installed to bypass native limits.
 

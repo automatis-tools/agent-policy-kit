@@ -1,20 +1,25 @@
-# Prepare an npm release
+# Prepare a configuration release
 
-agent-policy-kit 0.1.0 is a local release candidate. The owner creates the public repository and authorizes publication separately. Nothing publishes automatically.
+One version: package.json version identifies presets, model catalog, native templates, instructions and page. No second preset-version system. Current0.1.0 is unreleased. The owner creates GitHub and authorizes publication separately; nothing publishes automatically.
 
-Add actual repository/bugs/homepage metadata once the repository exists. Confirm npm name ownership/availability; an earlier anonymous 404 is not a reservation. If the name changes, update package identity and instructions consistently.
+## Record what and why
 
-Keep package.json, package-lock.json and changelog aligned. Run the [development checks](development.md), inspect [support](compatibility.md) and [verified evidence](verification.md), then review the distribution:
+For every release, update CHANGELOG.md with: date, changed models/efforts/role instructions, why the changes fit the work, who should update, native/client requirements and migration/rollback limits. Record catalog source/date and distinguish configuration checks from model-quality evaluation. Do not claim performance/cost numbers without evidence.
 
-```sh
-npm pack --dry-run --json --ignore-scripts
-npm run test:package
-npm publish --dry-run --ignore-scripts
-npm pack --ignore-scripts
-```
+Patch releases can correct documentation/configuration bugs; intentional recommendation changes deserve clearly described release notes (normally a minor release); incompatible native ownership/layouts require a documented migration boundary. Never rewrite a published version. See [npm publication rules](https://docs.npmjs.com/cli/v11/commands/npm-publish/).
 
-The real tarball gate uses fresh profiles, an installed bin and denied source access. After native setup it removes the package and private kit state, then verifies configuration independence. Its standalone consumer fixtures are not real client/model execution.
+## Build and verify before tagging
 
-No lifecycle installation script modifies client configuration. Explicit setup --apply is required. Generated native files must contain no package path/import/command; a temporary npm installation is safe.
+1. Confirm npm name ownership and set actual repository/bugs/homepage URLs once they exist. Do not invent them.
+2. Update package version and lockfile, preset JSON, model catalog/source date and this version's changelog entry. Fill the actual release date when cutting it.
+3. Run npm run build:site. The generated single HTML file embeds that version's exact data and command.
+4. Run npm run check and npm test. Required tarball gates deny source access, remove package/state, and prove two synthetic versions can upgrade/downgrade changed models AND templates safely. Synthetic0.2.0 is not a real release.
+5. Review npm pack --dry-run --json --ignore-scripts, npm publish --dry-run --ignore-scripts, and the final npm pack tarball/integrity. Private evidence/configs must stay out.
 
-README has inline Mermaid and links to bundled documentation. Inspect rendered links before publication. Keep private backups, test profiles, development artifacts and evidence outside Git/npm. Publication, authentication and registry verification remain separate owner-authorized steps.
+The package includes CHANGELOG.md and its matching page. Its CLI requires no compilation; only the page data is regenerated. No lifecycle install script mutates native settings.
+
+After explicit publication authorization, create the corresponding git version tag/release with the reviewed changelog text and publish that exact tarball through npm's normal authenticated process. This repository does not create the remote, publish, merge or enable auto-merge. Recheck registry contents and public page links after an authorized release.
+
+## Static page
+
+Host each release's generated site/index.html at an immutable versioned path. A latest landing URL may link the current one. GitHub Pages or another static host can serve the one file; there is no backend. Add real public links after the owner chooses/creates them. Local preview uses only Google Chrome.

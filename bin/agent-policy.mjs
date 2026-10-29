@@ -7,6 +7,7 @@ import {parseArgs} from 'node:util';
 import {CLIENTS,validatePolicy} from '../src/policy.mjs';
 import {nativeHomeConflict} from '../src/native.mjs';
 import {detectClients,resolveClient,summarizeDetection} from '../src/detect.mjs';
+import {bundledReleaseInfo,presetPreferences} from '../src/release.mjs';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'))).version;
 const print=value=>process.stdout.write(JSON.stringify(value,null,2)+'\n');
@@ -24,13 +25,15 @@ Usage: agent-policy <command> [options]
   instructions  Print the AI setup and removal guide
   init          Copy default preferences to --policy (never overwrite)
   detect        Detect installed coding tools from executable identity
+  release       Show this package's configuration version and release notes
   setup         Plan native configuration; add --apply to write
   install       Plan one --client or all detected clients
   uninstall     Plan owned removals; add --apply to remove
   doctor        Check owned native configuration without model calls
 
 Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
-         --policy FILE --apply --help --version
+         --policy FILE | --release [--preset fast|balanced|quality] | --config BASE64URL
+         --apply --help --version
 
 State defaults to AGENT_POLICY_HOME or ~/.agent-policy-kit.
 This configurator exits after setup. Native files work without the package.`);}
@@ -38,20 +41,29 @@ async function main(){
   const {values:opts,positionals}=parseArgs({allowPositionals:true,strict:true,options:{
     client:{type:'string'},home:{type:'string'},'state-dir':{type:'string'},policy:{type:'string'},
     apply:{type:'boolean',default:false},help:{type:'boolean'},version:{type:'boolean'},
+    release:{type:'boolean',default:false},config:{type:'string'},preset:{type:'string'},
   }});
   if(opts.version){console.log(version);return;}
   const command=positionals[0];
   if(opts.help||!command||command==='help'){help();return;}
-  if(!['instructions','init','detect','setup','install','uninstall','doctor'].includes(command)) fail('UNKNOWN_COMMAND');
+  if(!['instructions','init','detect','release','setup','install','uninstall','doctor'].includes(command)) fail('UNKNOWN_COMMAND');
   if(positionals.length!==1) fail('UNEXPECTED_ARGUMENT');
+  const bundled=Boolean(opts.release||opts.preset!==undefined);
+  if([opts.policy!==undefined,bundled,opts.config!==undefined].filter(Boolean).length>1)fail('CONFLICTING_OPTIONS');
+  if((opts.release||opts.config!==undefined)&&!['setup','install'].includes(command))fail('CONFLICTING_OPTIONS');
+  if(opts.preset!==undefined&&!['release','setup','install'].includes(command))fail('CONFLICTING_OPTIONS');
+  const preset=opts.preset??'balanced';
+  if(bundled)presetPreferences(preset);
   if(command==='instructions'){process.stdout.write(fs.readFileSync(path.join(root,'AGENT_INSTALL.md'),'utf8'));return;}
+  if(command==='release'){print(bundledReleaseInfo(preset));return;}
   const client=opts.client;
-  if(client&&!CLIENTS.includes(client)) fail('UNSUPPORTED_CLIENT');
+  if(client!==undefined&&!CLIENTS.includes(client)) fail('UNSUPPORTED_CLIENT');
   const home=path.resolve(opts.home??os.homedir());
   const selectedState=opts['state-dir']??process.env.AGENT_POLICY_HOME??path.join(home,'.agent-policy-kit');
   if(!path.isAbsolute(selectedState)) fail('STATE_PATH_MUST_BE_ABSOLUTE');
   const stateDir=path.resolve(selectedState);
-  const policyPath=opts.policy?path.resolve(opts.policy):fs.existsSync(path.join(stateDir,'policy.json'))?path.join(stateDir,'policy.json'):path.join(root,'policies/balanced.json');
+  const builtin=path.join(root,`policies/${preset}.json`);
+  let policyPath=bundled?builtin:opts.policy?path.resolve(opts.policy):fs.existsSync(path.join(stateDir,'policy.json'))?path.join(stateDir,'policy.json'):builtin;
   if(command==='detect'){print(summarizeDetection(client?[await resolveClient(client)]:await detectClients()));return;}
   if(command==='init'){
     if(!opts.policy) fail('POLICY_PATH_REQUIRED');
@@ -72,13 +84,32 @@ async function main(){
     if(failed) process.exitCode=3;
     return;
   }
-  loadPolicy(policyPath);
   if(command==='setup'||command==='install'){
-    const {setupDetected}=await import('../src/setup.mjs');
-    const result=await setupDetected({client:client??null,home,stateDir,policyPath,apply:opts.apply,explicitHome:Boolean(opts.home)});
-    print(result);process.exitCode=result.exitCode;return;
+    let temporary;
+    try{
+      if(opts.config!==undefined){
+        let preferences;
+        try{
+          if(opts.config.length>87384||!/^[-_A-Za-z0-9]+$/.test(opts.config))throw new Error();
+          const bytes=Buffer.from(opts.config,'base64url');
+          if(bytes.length>65536||bytes.toString('base64url')!==opts.config)throw new Error();
+          preferences=validatePolicy(JSON.parse(bytes.toString('utf8')));
+        }catch{fail('INVALID_CONFIG');}
+        temporary=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'agent-policy-config-'));
+        policyPath=path.join(temporary,'preferences.json');
+        fs.writeFileSync(policyPath,JSON.stringify(preferences),{flag:'wx',mode:0o600});
+      }
+      const preferences=loadPolicy(policyPath);
+      const {setupDetected}=await import('../src/setup.mjs');
+      const result=await setupDetected({client:client??null,home,stateDir,policyPath,apply:opts.apply,explicitHome:Boolean(opts.home),
+        releaseVersion:version,replace:bundled||opts.config!==undefined,
+        preset:opts.config!==undefined||opts.policy||policyPath!==builtin?null:preset,
+        source:opts.config!==undefined||opts.policy?'custom':policyPath===builtin?'release':'saved',
+        enabledClients:Object.keys(preferences.clients)});
+      print(result);process.exitCode=result.exitCode;return;
+    }finally{if(temporary)fs.rmSync(temporary,{recursive:true,force:true});}
   }
-  const {planInstall}=await import('../src/install.mjs');
+  const {inspectConfiguration}=await import('../src/install.mjs');
   const report={schemaVersion:1,mode:'configuration_only',version,clients:{}};
   for(const selected of client?[client]:CLIENTS){
     const detection=summarizeDetection([await resolveClient(selected)])[0];
@@ -86,7 +117,7 @@ async function main(){
     if(!opts.home&&nativeHomeConflict(selected,home,process.env)){
       configuration={status:'attention',reason:'NATIVE_HOME_OVERRIDE_UNSUPPORTED'};
     } else if(fs.existsSync(path.join(stateDir,'installations',selected+'.json'))){
-      try{const plan=await planInstall({client:selected,home,stateDir,policyPath});configuration={status:plan.status==='unchanged'?'verified':'attention',warnings:plan.warnings};}
+      try{configuration=await inspectConfiguration({client:selected,home,stateDir});}
       catch(error){configuration={status:'attention',reason:safeCode(error.code)};}
     }
     report.clients[selected]={detection,configuration,modelExecution:'not_checked',

@@ -10,6 +10,8 @@ for (const folder of ['src', 'bin', 'scripts']) for (const file of walk(path.joi
   const result = spawnSync(process.execPath, ['--check', file], { stdio: 'inherit' });
   if (result.status) process.exit(result.status);
 }
+const site = spawnSync(process.execPath, [path.join(root, 'scripts/build-site.mjs'), '--check'], { stdio: 'inherit' });
+if (site.status) process.exit(site.status);
 const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: root, encoding: 'utf8' });
 if (packed.status) { console.error('Package inspection failed.'); process.exit(1); }
 const files = JSON.parse(packed.stdout)[0].files;

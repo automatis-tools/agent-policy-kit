@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {validatePolicy} from '../src/policy.mjs';
+import {validatePolicy,rolePreference} from '../src/policy.mjs';
 
 const preferences = () => ({schemaVersion:1,maxConcurrent:3,clients:{codex:{
   code:{model:'gpt-6.1-sol',effort:'high'},light:{model:'gpt-6-luna',effort:'high'},avoidModels:['gpt-6-astra'],
@@ -30,6 +30,35 @@ test('agy preferences use native tiers without fabricated per-role effort', () =
 test('the bundled preset uses the same shared preference contract', () => {
   const p=validatePolicy(JSON.parse(fs.readFileSync(new URL('../policies/balanced.json',import.meta.url))));
   assert.equal(p.maxConcurrent,3);assert.equal(Object.keys(p.clients).length,4);
+});
+
+test('individual task choices override recommendations without changing other roles',()=>{
+  const p=preferences();p.clients.codex.roles={reviewer:{model:'review-model',effort:'medium'}};
+  const config=validatePolicy(p).clients.codex;
+  assert.equal(rolePreference(config,'reviewer').model,'review-model');
+  assert.equal(rolePreference(config,'worker').model,'gpt-6.1-sol');
+  assert.equal(rolePreference(config,'explorer').model,'gpt-6-luna');
+  assert.throws(()=>validatePolicy({...p,clients:{codex:{...p.clients.codex,roles:{unknown:{model:'x',effort:'high'}}}}}));
+});
+test('Kimi effort consistency concerns effective task choices rather than unused recommendations',()=>{
+  const client={code:{model:'native/k3',effort:'high'},light:{model:'native/light',effort:'low'},avoidModels:[],
+    roles:Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:'native/k3',effort:'low'}]))};
+  const p={schemaVersion:1,maxConcurrent:3,clients:{kimi:client}};
+  assert.equal(rolePreference(validatePolicy(p).clients.kimi,'worker').effort,'low');
+  client.roles.reviewer.effort='high';assert.throws(()=>validatePolicy(p));
+});
+
+test('native-default effort and documented expanded levels remain model-specific',()=>{
+  const p=preferences();p.clients.codex.code.effort='max';assert.doesNotThrow(()=>validatePolicy(p));
+  p.clients.codex.code.effort='none';assert.throws(()=>validatePolicy(p));
+  p.clients.codex.code.effort=null;assert.equal(validatePolicy(p).clients.codex.code.effort,null);
+  p.clients.claude={code:{model:'claude-haiku-4-5-20251001',effort:null},light:{model:'haiku',effort:'max'},avoidModels:[]};
+  assert.doesNotThrow(()=>validatePolicy(p));p.clients.claude.code.effort='high';assert.throws(()=>validatePolicy(p));
+});
+test('Kimi native-default requests can share an alias with one explicit effort',()=>{
+  const p={schemaVersion:1,maxConcurrent:3,clients:{kimi:{code:{model:'native/k3',effort:'max'},light:{model:'native/k3',effort:null},avoidModels:[]}}};
+  assert.doesNotThrow(()=>validatePolicy(p));
+  p.clients.kimi.light.effort='high';assert.throws(()=>validatePolicy(p));
 });
 
 for(const kind of ['code','light']) test(`Kimi ${kind} selection rejects the reserved primary pool alias`,()=>{
