@@ -44,3 +44,29 @@ test('doctor separates package, client trust and model-runtime outcomes', t => {
   assert.equal(report.clients.agy.runtime.status, 'unsupported');
   assert.notEqual(report.clients.agy.clientTrust.status, 'pass');
 });
+test('observe mode does not block malformed hook JSON', t => {
+  const p = path.join(temp(t), 'observe.json');
+  const policy = JSON.parse(fs.readFileSync(new URL('../policies/balanced.json', import.meta.url)));
+  policy.mode = 'observe'; fs.writeFileSync(p, JSON.stringify(policy));
+  const got = run(['hook', '--client', 'codex', '--policy', p, '--state-dir', temp(t)], 'PRIVATE_INVALID_JSON');
+  assert.equal(got.status, 0); assert.equal(got.stdout, ''); assert.equal(got.stderr.includes('PRIVATE'), false);
+});
+test('packaged LLM instructions are available without policy or client setup', () => {
+  const got = run(['instructions']);
+  assert.equal(got.status, 0); assert.match(got.stdout, /LLM-first/); assert.match(got.stdout, /uninstall/);
+});
+test('autodetect setup does not write for stale configuration folders without executables', t => {
+  const p = temp(t); const state = path.join(p, 'state');
+  fs.mkdirSync(path.join(p, '.claude'));
+  const got = run(['setup', '--apply', '--dev', '--home', p, '--state-dir', state], undefined,
+    { HOME: p, USERPROFILE: p, PATH: path.dirname(process.execPath) });
+  assert.equal(got.status, 3); assert.equal(JSON.parse(got.stdout).status, 'no_clients');
+  assert.equal(fs.existsSync(state), false);
+});
+test('explicit client install also refuses absent client executables', t => {
+  const p = temp(t); const state = path.join(p, 'state');
+  const got = run(['install', '--client', 'codex', '--apply', '--dev', '--home', p, '--state-dir', state], undefined,
+    { HOME: p, USERPROFILE: p, PATH: path.dirname(process.execPath) });
+  assert.equal(got.status, 3); assert.equal(JSON.parse(got.stdout).status, 'no_clients');
+  assert.equal(fs.existsSync(state), false);
+});

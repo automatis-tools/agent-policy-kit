@@ -37,10 +37,18 @@ test('observer mode does not change a forbidden call', () => {
   assert.equal(got.audit.action, 'deny');
   assert.equal(got.audit.enforced, false);
 });
+test('observer mode also leaves malformed target input unblocked', () => {
+  const observe = validatePolicy({ ...policy, mode: 'observe' });
+  assert.equal(handleHook('codex', event('spawn_agent', 'malformed'), observe).output, null);
+});
 test('observation records never infer a reported model from the request', () => {
   const got = handleHook('codex', { hook_event_name: 'PostToolUse', tool_name: 'spawn_agent', tool_input: { model: 'gpt-6.1-sol' } }, policy);
   assert.equal(got.audit.reportedModel, null);
   assert.equal(got.audit.source, 'unavailable');
+});
+test('PostToolUse caller model is not reported as the spawned child model', () => {
+  const got = handleHook('codex', { hook_event_name: 'PostToolUse', tool_name: 'spawn_agent', model: 'gpt-6.1-sol', tool_input: { model: 'gpt-6-luna' } }, policy);
+  assert.equal(got.audit.reportedModel, null); assert.equal(got.audit.source, 'unavailable');
 });
 test('malformed targeted arguments receive a fixed denial without echoing secrets', () => {
   const got = handleHook('codex', event('spawn_agent', 'PRIVATE_CREDENTIAL'), policy);

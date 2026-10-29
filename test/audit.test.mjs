@@ -37,3 +37,51 @@ test('audit refuses a symlinked data directory', t => {
   fs.symlinkSync(other, linked, 'dir');
   assert.throws(() => appendRecord(linked, { client: 'codex' }, policy));
 });
+test('audit inspection refuses injected fields instead of exporting their private values', t => {
+  const state = dir(t);
+  const file = appendRecord(state, { client: 'codex', action: 'allow' }, policy);
+  const record = JSON.parse(fs.readFileSync(file)); record.prompt = 'PRIVATE_INJECTED_PROMPT';
+  fs.writeFileSync(file, JSON.stringify(record));
+  assert.throws(() => readRecords(state, policy));
+});
+test('audit inspection masks a tampered unknown model using the current allowlist', t => {
+  const state = dir(t);
+  const file = appendRecord(state, { client: 'codex', action: 'allow' }, policy);
+  const record = JSON.parse(fs.readFileSync(file)); record.reportedModel = 'PRIVATE_INJECTED_KEY';
+  fs.writeFileSync(file, JSON.stringify(record));
+  assert.equal(readRecords(state, policy)[0].reportedModel, 'unrecognized');
+});
+test('missing token evidence stays unknown rather than reporting free usage', t => {
+  const state = dir(t);
+  appendRecord(state, { client: 'codex', action: 'allow' }, policy);
+  const records = readRecords(state, policy);
+  assert.equal(records[0].tokens.input, null);
+  assert.equal(publicSummary(records).groups[0].inputTokens, null);
+});
+test('audit inspection rejects private nested fields in token metadata', t => {
+  const state = dir(t);
+  const file = appendRecord(state, { client: 'codex', action: 'allow' }, policy);
+  const record = JSON.parse(fs.readFileSync(file)); record.tokens.prompt = 'PRIVATE_NESTED';
+  fs.writeFileSync(file, JSON.stringify(record));
+  assert.throws(() => readRecords(state, policy));
+});
+test('events form one inspectable JSONL journal with no correlation identifiers', t => {
+  const state = dir(t);
+  const first = appendRecord(state, { client: 'codex', action: 'allow', sessionId: 'private-session', agentId: 'private-agent' }, policy);
+  const second = appendRecord(state, { client: 'codex', action: 'deny' }, policy);
+  assert.equal(first, second);
+  assert.equal(fs.readFileSync(first, 'utf8').trim().split('\n').length, 2);
+  const [record] = readRecords(state, policy);
+  assert.equal(Object.hasOwn(record, 'session'), false); assert.equal(Object.hasOwn(record, 'agent'), false);
+});
+test('another writer creating a private directory does not lose a valid event', t => {
+  const state = path.join(dir(t), 'new-state');
+  const mkdir = fs.mkdirSync;
+  fs.mkdirSync = (p, options) => {
+    if (p === state) { mkdir(p, options); throw Object.assign(new Error('another writer won'), { code: 'EEXIST' }); }
+    return mkdir(p, options);
+  };
+  try { appendRecord(state, { client: 'codex', action: 'allow' }, policy); }
+  finally { fs.mkdirSync = mkdir; }
+  assert.equal(readRecords(state, policy).length, 1);
+});

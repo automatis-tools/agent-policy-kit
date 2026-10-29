@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="610" viewBox="0 0 1120 610" role="img" aria-labelledby="title desc">
+<title id="title">Agent Policy Kit keeps delegated work within your model policy</title>
+<desc id="desc">Your main agent delegates a task. Agent Policy Kit checks your policy and routes supported launches to a capable or light model, or blocks a disallowed launch. Results return to the main agent. Metadata distinguishes requested, reported and unknown models.</desc>
+<defs>
+ <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#475569" stroke-width="1.8"/></marker>
+ <marker id="blue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#2563eb" stroke-width="1.8"/></marker>
+ <marker id="red" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#c2410c" stroke-width="1.8"/></marker>
+</defs>
+<rect x="1" y="1" width="1118" height="608" rx="24" fill="#f8fafc" stroke="#dbe3ed"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
+ <text x="44" y="48" font-size="23" font-weight="700">Your main agent. Your model rules.</text>
+ <text x="44" y="78" font-size="16" fill="#64748b">Detect installed coding agents · control supported subagent launches · keep metadata evidence</text>
+ <rect x="398" y="111" width="240" height="57" rx="13" fill="#eef2ff" stroke="#c7d2fe"/>
+ <text x="518" y="146" text-anchor="middle" font-size="19" font-weight="700">Your model policy</text>
+ <path d="M518 168V203" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+ <rect x="44" y="218" width="226" height="116" rx="18" fill="white" stroke="#cbd5e1" stroke-width="1.5"/>
+ <circle cx="80" cy="253" r="12" fill="#dbeafe"/><circle cx="80" cy="253" r="5" fill="#2563eb"/>
+ <text x="106" y="260" font-size="21" font-weight="700">Main agent</text>
+ <text x="66" y="295" font-size="17" fill="#475569">Delegates a task</text>
+ <text x="66" y="319" font-size="14" fill="#64748b">Main chat model stays yours</text>
+ <path d="M270 273H371" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#blue)"/>
+ <rect x="382" y="216" width="272" height="116" rx="18" fill="#2563eb"/>
+ <text x="518" y="259" text-anchor="middle" font-size="25" font-weight="700" fill="white">Agent Policy Kit</text>
+ <text x="518" y="291" text-anchor="middle" font-size="17" fill="#eff6ff">Check role + model rules</text>
+ <text x="518" y="315" text-anchor="middle" font-size="14" fill="#dbeafe">Local checks · no classifier service</text>
+ <path d="M654 251H711V199H776" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#blue)"/>
+ <path d="M654 295H711V339H776" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#blue)"/>
+ <rect x="788" y="150" width="288" height="98" rx="17" fill="white" stroke="#93c5fd" stroke-width="1.5"/>
+ <text x="811" y="187" font-size="21" font-weight="700">Code &amp; review</text>
+ <text x="811" y="220" font-size="17" fill="#475569">Allowed capable model</text>
+ <rect x="788" y="290" width="288" height="98" rx="17" fill="white" stroke="#99d5bd" stroke-width="1.5"/>
+ <text x="811" y="327" font-size="21" font-weight="700">Search &amp; routine</text>
+ <text x="811" y="360" font-size="17" fill="#475569">Allowed light model</text>
+ <path d="M518 332V389" stroke="#c2410c" stroke-width="2" stroke-dasharray="6 5" fill="none" marker-end="url(#red)"/>
+ <rect x="390" y="402" width="256" height="77" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+ <text x="518" y="434" text-anchor="middle" font-size="19" font-weight="700" fill="#9a3412">Outside policy?</text>
+ <text x="518" y="460" text-anchor="middle" font-size="17" fill="#9a3412">Block the launch</text>
+ <path d="M932 248V270H1090V430H977" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 5" fill="none"/>
+ <path d="M932 388V419" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 5" fill="none"/>
+ <rect x="752" y="430" width="324" height="76" rx="14" fill="#eef2f6" stroke="#d5dee8"/>
+ <text x="775" y="460" font-size="19" font-weight="700">Metadata audit</text>
+ <text x="775" y="487" font-size="15" fill="#475569">Requested · reported · unknown</text>
+ <path d="M790 522V551H157V345" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+ <text x="429" y="543" text-anchor="middle" font-size="16" fill="#475569">Results return to the main agent</text>
+ <text x="44" y="584" font-size="13" fill="#64748b">Supported paths only. A configured model is not proof of the provider's actual model.</text>
+</g>
+</svg>

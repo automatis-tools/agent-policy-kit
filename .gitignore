@@ -4,3 +4,5 @@ artifacts/
 coverage/
 *.tgz
 .DS_Store
+.idea/
+.superpowers/
