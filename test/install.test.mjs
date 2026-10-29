@@ -16,119 +16,112 @@ async function fixture(t, client = 'codex') {
 }
 async function put(p, s) { await fs.mkdir(path.dirname(p), {recursive:true}); await fs.writeFile(p, s); }
 
-test('Codex plan is private and read-only; apply preserves settings and repeat is a no-op', async t => {
-  const f = await fixture(t);
-  const config = path.join(f.home, '.codex/config.toml');
-  const original = '# token is private\nmodel = "main"\nmodel_reasoning_effort = "ultra"\n[agents]\nmax_concurrent_threads_per_session = 9 # keep\n';
-  await put(config, original);
-  const plan = await planInstall(f);
-  assert.equal(await fs.readFile(config, 'utf8'), original);
-  await assert.rejects(fs.stat(f.stateDir), {code:'ENOENT'});
-  const summary = JSON.stringify(summarizePlan(plan));
-  assert.ok(!summary.includes(f.home));
-  assert.ok(!summary.includes('token is private'));
-  assert.equal((await applyInstall(plan)).status, 'applied');
-  assert.match(await fs.readFile(config, 'utf8'), /max_concurrent_threads_per_session = 3 # keep/);
-  assert.match(await fs.readFile(config, 'utf8'), /model = "main"/);
-  const hooks = JSON.parse(await fs.readFile(path.join(f.home, '.codex/hooks.json')));
-  assert.match(hooks.hooks.PreToolUse[0].hooks[0].command, /'"'"'/);
-  assert.ok(hooks.hooks.PreToolUse[0].hooks[0].command.includes('--policy'));
-  assert.equal((await fs.stat(path.join(f.stateDir, 'policy.json'))).mode & 0o777, 0o600);
-  assert.equal((await planInstall(f)).status, 'unchanged');
-  assert.equal((await applyInstall(await planInstall(f))).changedFiles, 0);
-});
+import { parseToml } from '../src/toml.mjs';
+const directories = {codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
+const modelConfig = `default_model = "main"
+[providers.fixture]
+type = "kimi"
+api_key = "private-fixture"
+[models."kimi-code/k3"]
+provider = "fixture"
+model = "k3"
+max_context_size = 1048576
+support_efforts = ["low", "high"]
+[models."kimi-code/kimi-for-coding"]
+provider = "fixture"
+model = "kimi-for-coding"
+max_context_size = 262144
+support_efforts = ["low", "high"]
+`;
+async function provision(f) { await put(path.join(f.home,'.kimi-code/config.toml'),modelConfig); }
+function rolePath(f, role) { return path.join(f.home,directories[f.client],f.client==='agy'?'config/agents':'agents',`apk-${role}.${f.client==='codex'?'toml':'md'}`); }
+function instructionPath(f) { return path.join(f.home,directories[f.client],f.client==='claude'?'CLAUDE.md':'AGENTS.md'); }
 
-test('uninstall preserves later unrelated settings and rejects owned drift', async t => {
-  const f = await fixture(t, 'claude');
-  const target = path.join(f.home, '.claude/settings.json');
-  await put(target, JSON.stringify({model:'main',effortLevel:'max',env:{EXISTING:'secret'},hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'echo user'}]}]}}));
-  await applyInstall(await planInstall(f));
-  const settings = JSON.parse(await fs.readFile(target));
-  assert.equal(settings.model, 'main');
-  assert.equal(settings.effortLevel, 'max');
-  assert.equal(settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS, '3');
-  settings.newSetting = true;
-  await fs.writeFile(target, JSON.stringify(settings));
-  const preview = await uninstall({...f, apply:false});
-  assert.equal(preview.kind, 'uninstall');
-  assert.equal((JSON.parse(await fs.readFile(target))).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS, '3');
-  settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS = '5';
-  await fs.writeFile(target, JSON.stringify(settings));
-  await assert.rejects(uninstall({...f,apply:true}), {code:'OWNED_DRIFT'});
-  settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS = '3';
-  await fs.writeFile(target, JSON.stringify(settings));
-  await uninstall({...f,apply:true});
-  const result = JSON.parse(await fs.readFile(target));
-  assert.equal(result.newSetting, true);
-  assert.equal(result.env.EXISTING, 'secret');
-  assert.equal(result.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS, undefined);
-  assert.equal(result.hooks.PreToolUse.length, 1);
-});
-
-test('malformed config, symlinks, stale plans, lock and pending journal stop safely', async t => {
-  const f = await fixture(t);
-  const target = path.join(f.home, '.codex/hooks.json');
-  await put(target, '{"hooks":');
-  await assert.rejects(planInstall(f), {code:'INVALID_JSON'});
-  await fs.rm(target);
-  await fs.symlink(f.policyPath, target);
-  await assert.rejects(planInstall(f), {code:'UNSAFE_PATH'});
-  await fs.rm(target);
-  const stale = await planInstall(f);
-  await put(target, '{}');
-  await assert.rejects(applyInstall(stale), {code:'STALE_PLAN'});
-  await fs.mkdir(f.stateDir, {recursive:true});
-  await fs.writeFile(path.join(f.stateDir, '.install.lock'), 'busy');
-  await assert.rejects(applyInstall(await planInstall(f)), {code:'INSTALL_LOCKED'});
-  await fs.rm(path.join(f.stateDir, '.install.lock'));
-  await fs.writeFile(path.join(f.stateDir, 'pending.json'), '{}');
-  await assert.rejects(planInstall(f), {code:'RECOVERY_REQUIRED'});
-});
-
-test('Kimi preserves model pool and main settings, uses an owned launcher and warns about missing aliases', async t => {
-  const f = await fixture(t, 'kimi');
-  const target = path.join(f.home, '.kimi-code/config.toml');
-  const original = 'default_model = "main"\n[thinking]\neffort = "high"\n';
-  await put(target, original);
-  const plan = await planInstall(f);
-  assert.ok(plan.warnings.includes('kimi-native-pool-unverified'));
+test('all four clients generate standalone native roles and no runtime files',async t=>{
+ for(const client of ['codex','claude','kimi','agy']) {
+  const f=await fixture(t,client); if(client==='kimi')await provision(f);
+  const policy=JSON.parse(await fs.readFile(f.policyPath));
+  const plan=await planInstall(f); assert.equal(plan.status,'planned');
+  await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+  assert.ok(!JSON.stringify(summarizePlan(plan)).includes(f.root));
   await applyInstall(plan);
-  assert.ok((await fs.readFile(target, 'utf8')).startsWith(original));
-  assert.ok((await fs.readFile(path.join(f.stateDir, 'bin/kimi-policy'), 'utf8')).includes("'run' '--client' 'kimi'"));
-  await uninstall({...f,apply:true});
-  assert.equal((await fs.readFile(target, 'utf8')).trim(), original.trim());
+  for(const role of ['worker','reviewer','explorer','routine']) {
+   const content=await fs.readFile(rolePath(f,role),'utf8');
+   const selected=policy.clients[client][['worker','reviewer'].includes(role)?'code':'light'];
+   assert.match(content,new RegExp('apk-'+role));
+   if(client==='codex') { const native=parseToml(content); assert.equal(native.name,'apk-'+role); assert.equal(native.model,selected.model); assert.equal(native.model_reasoning_effort,selected.effort); assert.ok(native.description&&native.developer_instructions); }
+   else if(client==='kimi') { assert.ok(!/^model:/m.test(content)); assert.ok(content.includes(selected.model)); }
+   else { assert.ok(content.includes('model: '+selected.model)); if(client==='claude')assert.ok(content.includes('effort: '+selected.effort));else assert.ok(!/^effort:/m.test(content)); }
+   for(const forbidden of [f.packageRoot,f.nodePath,f.stateDir,'agent-policy.mjs','hook','launcher','plugin']) assert.ok(!content.includes(forbidden),forbidden);
+  }
+  assert.match(await fs.readFile(instructionPath(f),'utf8'),/at most 3/);
+  assert.equal((await planInstall(f)).status,'unchanged');
+  await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+  await assert.rejects(fs.stat(path.join(f.stateDir,'bin')),{code:'ENOENT'});
+ }
 });
 
-test('agy is explicitly unsupported and causes no files', async t => {
-  const f = await fixture(t, 'agy');
-  const p = await planInstall(f);
-  assert.equal(p.status, 'unsupported');
-  assert.equal(p.changes.length, 0);
-  assert.equal((await applyInstall(p)).status, 'unsupported');
-  await assert.rejects(fs.stat(f.stateDir), {code:'ENOENT'});
+test('Codex native defaults preserve main settings and unrelated hooks byte for byte',async t=>{
+ const f=await fixture(t), config=path.join(f.home,'.codex/config.toml');
+ const original='# private comment\nmodel = "main"\nmodel_reasoning_effort = "ultra"\n[agents]\nmax_concurrent_threads_per_session = 9 # cap\n';
+ const hooks=path.join(f.home,'.codex/hooks.json'); await put(hooks,'{"user":"opaque"}\n');await put(config,original);
+ await applyInstall(await planInstall(f));const native=parseToml(await fs.readFile(config,'utf8'));
+ assert.equal(native.model,'main');assert.equal(native.model_reasoning_effort,'ultra');assert.equal(native.agents.default_subagent_model,'gpt-6.1-sol');assert.equal(native.agents.default_subagent_reasoning_effort,'high');assert.equal(native.agents.max_concurrent_threads_per_session,3);
+ assert.equal(await fs.readFile(hooks,'utf8'),'{"user":"opaque"}\n');
+ await uninstall({...f,apply:true});assert.equal((await fs.readFile(config,'utf8')).trim(),original.trim());
 });
 
-test('duplicate JSON keys, unknown hook shapes, and cap aliases are explicit conflicts', async t => {
-  const f = await fixture(t);
-  const hooks = path.join(f.home,'.codex/hooks.json');
-  await put(hooks, '{"hooks":{},"hooks":{}}');
-  await assert.rejects(planInstall(f),{code:'INVALID_JSON'});
-  await put(hooks,'{"hooks":{"PreToolUse":{}}}');
-  await assert.rejects(planInstall(f),{code:'UNSUPPORTED_CONFIG'});
-  await put(hooks,'{}');
-  await put(path.join(f.home,'.codex/config.toml'),'[agents]\nmax_threads = 6\n');
-  await assert.rejects(planInstall(f),{code:'CODEX_CAP_ALIAS_CONFLICT'});
+test('instructions merge once, preserve unrelated later edits, and reject owned block drift',async t=>{
+ const f=await fixture(t), target=instructionPath(f),original='# Existing\nKeep this.';await put(target,original);
+ await applyInstall(await planInstall(f));const content=await fs.readFile(target,'utf8');assert.ok(content.startsWith(original));
+ assert.equal((await planInstall(f)).status,'unchanged');assert.equal((content.match(/BEGIN agent-policy-kit/g)||[]).length,1);
+ await fs.writeFile(target,content.replace('apk-worker','user-worker'));await assert.rejects(uninstall({...f,apply:true}),{code:'OWNED_DRIFT'});
+ await fs.writeFile(target,'User prefix\n'+content+'\nUser suffix\n');await uninstall({...f,apply:true});assert.equal(await fs.readFile(target,'utf8'),'User prefix\n'+original+'\nUser suffix\n');
 });
 
-test('existing policy conflicts and forged receipt edits cannot overwrite other settings', async t => {
-  const f = await fixture(t);
-  await applyInstall(await planInstall(f));
-  const receiptPath = path.join(f.stateDir,'installations/codex.json');
-  const record = JSON.parse(await fs.readFile(receiptPath));
-  const file = record.files.find(f=>f.type === 'toml');
-  file.ops[0].before = '9\nmodel = "FORGED"';
-  await fs.writeFile(receiptPath,JSON.stringify(record));
-  await assert.rejects(uninstall({...f,apply:true}), {code:'INVALID_RECEIPT'});
+test('same-name roles or instruction markers conflict without writes',async t=>{
+ const f=await fixture(t);await put(rolePath(f,'worker'),'user-owned');await assert.rejects(planInstall(f),{code:'OWNERSHIP_CONFLICT'});await fs.rm(rolePath(f,'worker'));
+ await put(instructionPath(f),'<!-- BEGIN agent-policy-kit -->\nuser block\n');await assert.rejects(planInstall(f),{code:'OWNERSHIP_CONFLICT'});await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+});
+
+test('Claude preserves main, unrelated env, hooks and plugins; uninstall restores owned defaults',async t=>{
+ const f=await fixture(t,'claude'),target=path.join(f.home,'.claude/settings.json');
+ const original={model:'main',effortLevel:'max',env:{EXISTING:'private',CLAUDE_CODE_SUBAGENT_MODEL:'old'},hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'echo user'}]}]},enabledPlugins:{user:true}};await put(target,JSON.stringify(original));
+ await applyInstall(await planInstall(f));const settings=JSON.parse(await fs.readFile(target));assert.equal(settings.env.CLAUDE_CODE_SUBAGENT_MODEL,'sonnet');assert.equal(settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'3');assert.deepEqual(settings.hooks,original.hooks);assert.deepEqual(settings.enabledPlugins,original.enabledPlugins);assert.equal(settings.model,'main');settings.later=true;await fs.writeFile(target,JSON.stringify(settings));
+ settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS='5';await fs.writeFile(target,JSON.stringify(settings));await assert.rejects(uninstall({...f,apply:true}),{code:'OWNED_DRIFT'});settings.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS='3';await fs.writeFile(target,JSON.stringify(settings));
+ await uninstall({...f,apply:true});assert.deepEqual(JSON.parse(await fs.readFile(target)),{...original,later:true});
+});
+
+test('Claude forced single model is an explicit prerequisite with zero writes',async t=>{
+ const f=await fixture(t,'claude');await put(path.join(f.home,'.claude/settings.json'),JSON.stringify({env:{CLAUDE_CODE_SUBAGENT_MODEL_FORCE:'1'}}));const plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.ok(plan.warnings.includes('claude-force-model-conflict'));assert.equal(plan.changes.length,0);await applyInstall(plan);await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+});
+
+test('Kimi provisioned aliases receive per-alias effort and pool routing without altering identity or credentials',async t=>{
+ const f=await fixture(t,'kimi');const target=path.join(f.home,'.kimi-code/config.toml');await put(target,modelConfig+'[secondary_model]\ndefault_effort = "high" # former global\ndefault_model = "kimi-code/k3"\n[secondary_model.models]\n"kimi-code/k3" = "old hint"\n');
+ const original=parseToml(await fs.readFile(target,'utf8'));await applyInstall(await planInstall(f));const native=parseToml(await fs.readFile(target,'utf8'));
+ assert.equal(native.default_model,'main');assert.deepEqual(native.providers,original.providers);assert.equal(native.secondary_model.default_effort,undefined);
+ const preferences=JSON.parse(await fs.readFile(f.policyPath)).clients.kimi;
+ for(const kind of ['code','light']){const selected=preferences[kind];assert.equal(native.models[selected.model].overrides.default_effort,selected.effort);assert.equal(native.models[selected.model].model,original.models[selected.model].model);assert.ok(native.secondary_model.models[selected.model]);}
+ await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),original);
+});
+
+test('Kimi missing aliases or unsupported effort are explicit prerequisites with zero writes',async t=>{
+ const f=await fixture(t,'kimi');let plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.ok(plan.warnings.includes('kimi-provisioned-models-required'));assert.equal(plan.changes.length,0);await applyInstall(plan);await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+ await put(path.join(f.home,'.kimi-code/config.toml'),modelConfig.replaceAll('["low", "high"]','["high"]'));plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.ok(plan.warnings.includes('kimi-supported-effort-required'));
+});
+
+test('malformed configs, duplicate keys, native scalar mismatches and cap aliases refuse planning',async t=>{
+ const f=await fixture(t,'claude'),target=path.join(f.home,'.claude/settings.json');await put(target,'{"env":{},"env":{}}');await assert.rejects(planInstall(f),{code:'INVALID_JSON'});await put(target,'{"env":[]}');await assert.rejects(planInstall(f),{code:'UNSUPPORTED_CONFIG'});
+ const codex=await fixture(t),native=path.join(codex.home,'.codex/config.toml');await put(native,'[broken');await assert.rejects(planInstall(codex),{code:'INVALID_TOML'});await put(native,'[agents]\nmax_threads = 9\n');await assert.rejects(planInstall(codex),{code:'CODEX_CAP_ALIAS_CONFLICT'});
+});
+
+test('legacy runtime receipts and forged restoration values are rejected explicitly',async t=>{
+ const f=await fixture(t);const receipt=path.join(f.stateDir,'installations/codex.json');await put(receipt,JSON.stringify({schemaVersion:1,client:'codex',packageRoot:'/old/runtime'}));await assert.rejects(planInstall(f),{code:'LEGACY_RUNTIME_RECEIPT'});await assert.rejects(uninstall(f),{code:'LEGACY_RUNTIME_RECEIPT'});await fs.rm(receipt);
+ await applyInstall(await planInstall(f));const record=JSON.parse(await fs.readFile(receipt));record.files.find(v=>v.type==='toml').ops[0].before='9\nmodel = "FORGED"';await fs.writeFile(receipt,JSON.stringify(record));await assert.rejects(uninstall({...f,apply:true}),{code:'INVALID_RECEIPT'});
+});
+
+test('native configuration survives removing package source, input preferences and state',async t=>{
+ const f=await fixture(t);f.packageRoot=path.join(f.root,'npm-package');await fs.mkdir(f.packageRoot);await applyInstall(await planInstall(f));await fs.rm(f.packageRoot,{recursive:true});await fs.rm(f.policyPath);await fs.rm(f.stateDir,{recursive:true});const config=parseToml(await fs.readFile(path.join(f.home,'.codex/config.toml'),'utf8'));assert.equal(config.agents.default_subagent_model,'gpt-6.1-sol');assert.equal(parseToml(await fs.readFile(rolePath(f,'explorer'),'utf8')).model,'gpt-6-luna');assert.match(await fs.readFile(instructionPath(f),'utf8'),/apk-reviewer/);
 });
 
 test('symlink parent swaps between planning and applying refuse all config changes', async t => {
@@ -159,7 +152,7 @@ async function failingChild(f, drift = false) {
   const preloader = path.join(f.root,'preloader.mjs');
   const entry = path.join(f.root,'transaction.mjs');
   const receipt = path.join(f.stateDir,`installations/${f.client}.json`);
-  const firstTarget = path.join(f.home,'.codex/hooks.json');
+  const firstTarget = path.join(f.home,'.codex/agents/apk-worker.toml');
   await fs.writeFile(preloader, `import fs from 'node:fs/promises';\nimport {syncBuiltinESMExports} from 'node:module';\nconst rename = fs.rename; let failed = false;\nfs.rename = async (from,to) => { if (to === ${JSON.stringify(receipt)} && !failed) { failed = true; ${drift ? `await fs.writeFile(${JSON.stringify(firstTarget)}, '{}\\n');` : ''} throw Object.assign(new Error('injected disk error'), {code:'EIO'}); } return rename(from,to); };\nsyncBuiltinESMExports();\n`);
   await fs.writeFile(entry, `import {planInstall,applyInstall} from ${JSON.stringify(new URL('../src/install.mjs',import.meta.url).href)};\ntry { await applyInstall(await planInstall(${JSON.stringify(f)})); process.exitCode=2; } catch(e) { console.log(e.code); }\n`);
   return run(process.execPath,['--import',preloader,entry]);
@@ -172,7 +165,7 @@ test('a late disk failure rolls all committed files back to their exact preimage
   const result = await failingChild(f);
   assert.equal(result.stdout.trim(),'INSTALL_FAILED');
   assert.equal(await fs.readFile(target,'utf8'),original);
-  await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+  await assert.rejects(fs.stat(path.join(f.home,'.codex/agents/apk-worker.toml')),{code:'ENOENT'});
   await assert.rejects(fs.stat(path.join(f.stateDir,'policy.json')),{code:'ENOENT'});
   await assert.rejects(fs.stat(path.join(f.stateDir,'pending.json')),{code:'ENOENT'});
   assert.ok(!(await fs.readdir(path.dirname(target))).some(p=>p.endsWith('.tmp')));
@@ -182,7 +175,7 @@ test('rollback preserves concurrent postimage drift and retains a recovery journ
   const f = await fixture(t);
   const result = await failingChild(f,true);
   assert.equal(result.stdout.trim(),'ROLLBACK_CONFLICT');
-  assert.equal(await fs.readFile(path.join(f.home,'.codex/hooks.json'),'utf8'),'{}\n');
+  assert.equal(await fs.readFile(path.join(f.home,'.codex/agents/apk-worker.toml'),'utf8'),'{}\n');
   assert.ok(await fs.stat(path.join(f.stateDir,'pending.json')));
   await assert.rejects(planInstall(f),{code:'RECOVERY_REQUIRED'});
 });
@@ -196,54 +189,6 @@ test('symlink ancestors of supplied home and external state roots are refused', 
   await assert.rejects(planInstall({...f,stateDir:path.join(alias,'nested','state')}),{code:'UNSAFE_PATH'});
 });
 
-test('policy copies and receipt drift conflict without rewriting configuration', async t => {
-  const f = await fixture(t,'claude');
-  await fs.mkdir(f.stateDir,{recursive:true});
-  await fs.writeFile(path.join(f.stateDir,'policy.json'),'{}\n');
-  await assert.rejects(planInstall(f),{code:'POLICY_CONFLICT'});
-  await fs.rm(path.join(f.stateDir,'policy.json'));
-  await applyInstall(await planInstall(f));
-  const target = path.join(f.home,'.claude/settings.json');
-  const before = await fs.readFile(target,'utf8');
-  await fs.writeFile(path.join(f.stateDir,'policy.json'),'{}\n');
-  await assert.rejects(planInstall(f),{code:'OWNED_DRIFT'});
-  assert.equal(await fs.readFile(target,'utf8'),before);
-});
-
-test('installed hook command executes with apostrophes and spaces in package and state paths', async t => {
-  const f = await fixture(t,'claude');
-  f.packageRoot = path.join(f.root,"installed package's folder");
-  await put(path.join(f.packageRoot,'bin/agent-policy.mjs'),'console.log(JSON.stringify(process.argv.slice(2)));\n');
-  await applyInstall(await planInstall(f));
-  const settings = JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json')));
-  const output = await run('/bin/sh',['-c',settings.hooks.PreToolUse[0].hooks[0].command]);
-  assert.deepEqual(JSON.parse(output.stdout),['hook','--client','claude','--policy',path.join(f.stateDir,'policy.json'),'--state-dir',f.stateDir,'--home',f.home]);
-});
-
-test('Kimi alias names without effective model bindings remain explicitly unverified', async t => {
-  const f = await fixture(t,'kimi');
-  await put(path.join(f.home,'.kimi-code/config.toml'),'[secondary_model]\ndefault_model = "subagent-code"\n[secondary_model.models]\nsubagent-code = "code"\nsubagent-light = "light"\n');
-  assert.ok((await planInstall(f)).warnings.includes('kimi-native-pool-unverified'));
-});
-
-test('validated concurrency changes drive all native caps and uninstall restores previous values', async t => {
-  for (const client of ['codex','claude','kimi']) {
-    const f = await fixture(t,client);
-    const policy = JSON.parse(await fs.readFile(f.policyPath));
-    policy.clients[client].maxConcurrent = 2;
-    await fs.writeFile(f.policyPath,JSON.stringify(policy));
-    await applyInstall(await planInstall(f));
-    if (client === 'codex') assert.match(await fs.readFile(path.join(f.home,'.codex/config.toml'),'utf8'),/max_concurrent_threads_per_session = 2/);
-    else if (client === 'claude') assert.equal(JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'))).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'2');
-    else {
-      assert.equal(JSON.parse(await fs.readFile(path.join(f.stateDir,'policy.json'))).clients.kimi.maxConcurrent,2);
-      assert.ok((await fs.readFile(path.join(f.stateDir,'bin/kimi-policy'),'utf8')).includes("'run' '--client' 'kimi'"));
-    }
-    assert.equal((await planInstall(f)).status,'unchanged');
-    await uninstall({...f,apply:true});
-  }
-});
-
 test('missing policy clients and native scalar type mismatches fail during read-only planning', async t => {
   const f = await fixture(t);
   const policy = JSON.parse(await fs.readFile(f.policyPath));
@@ -255,25 +200,11 @@ test('missing policy clients and native scalar type mismatches fail during read-
   await assert.rejects(planInstall(f),{code:'UNSUPPORTED_CONFIG'});
 });
 
-test('Kimi install is idempotent with a complete native pool and leaves every native binding intact', async t => {
-  const f = await fixture(t,'kimi');
-  const original = `default_model = "main"\n[secondary_model]\ndefault_model = "subagent-code"\n[secondary_model.models]\nsubagent-code = "code"\nsubagent-light = "light"\n[models.subagent-code]\nprovider = "provider"\nmodel = "k3-256k"\nmax_context_size = 262144\nsupport_efforts = ["low","high"]\n[models.subagent-code.overrides]\ndefault_effort = "high"\n[models.subagent-light]\nprovider = "provider"\nmodel = "kimi-for-coding"\nmax_context_size = 262144\nsupport_efforts = ["low","high"]\n[models.subagent-light.overrides]\ndefault_effort = "low"\n`;
-  const target = path.join(f.home,'.kimi-code/config.toml');
-  await put(target,original);
-  const plan = await planInstall(f);
-  assert.ok(!plan.warnings.includes('kimi-native-pool-unverified'));
-  await applyInstall(plan);
-  assert.equal((await planInstall(f)).status,'unchanged');
-  assert.ok((await fs.readFile(target,'utf8')).startsWith(original));
-  await uninstall({...f,apply:true});
-  assert.equal((await fs.readFile(target,'utf8')).trim(),original.trim());
-});
-
 test('an interrupted child process leaves a private journal and forces explicit recovery', async t => {
   const f = await fixture(t);
   const preloader = path.join(f.root,'crash-preloader.mjs');
   const entry = path.join(f.root,'crash-transaction.mjs');
-  const firstTarget = path.join(f.home,'.codex/hooks.json');
+  const firstTarget = path.join(f.home,'.codex/agents/apk-worker.toml');
   await fs.writeFile(preloader,`import fs from 'node:fs/promises'; import {syncBuiltinESMExports} from 'node:module'; const rename = fs.rename; fs.rename = async (from,to) => { const result = await rename(from,to); if (to === ${JSON.stringify(firstTarget)}) process.kill(process.pid,'SIGKILL'); return result; }; syncBuiltinESMExports();\n`);
   await fs.writeFile(entry,`import {planInstall,applyInstall} from ${JSON.stringify(new URL('../src/install.mjs',import.meta.url).href)}; await applyInstall(await planInstall(${JSON.stringify(f)}));\n`);
   await assert.rejects(run(process.execPath,['--import',preloader,entry]),{signal:'SIGKILL'});
@@ -301,7 +232,7 @@ test('apply rejects stale unchanged native config and shared policy dependencies
   for (const dependency of ['native','shared-policy','source-policy']) {
     const f = await fixture(t);
     const native = path.join(f.home,'.codex/config.toml');
-    const matching = '[agents]\nmax_concurrent_threads_per_session = 3\n[features]\nhooks = true\n';
+    const matching = '[agents]\nmax_concurrent_threads_per_session = 3\ndefault_subagent_model = "gpt-6.1-sol"\ndefault_subagent_reasoning_effort = "high"\n';
     await put(native,matching);
     const policy = JSON.parse(await fs.readFile(f.policyPath,'utf8'));
     await put(path.join(f.stateDir,'policy.json'),JSON.stringify(policy,null,2)+'\n');
@@ -311,7 +242,7 @@ test('apply rejects stale unchanged native config and shared policy dependencies
     if (dependency === 'native') await fs.writeFile(native,matching.replace('= 3','= 999').replace('= true','= false'));
     else await fs.writeFile(dependency === 'shared-policy' ? path.join(f.stateDir,'policy.json') : f.policyPath,'{}\n');
     await assert.rejects(applyInstall(plan),{code:'STALE_PLAN'});
-    await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+    await assert.rejects(fs.stat(path.join(f.home,'.codex/agents/apk-worker.toml')),{code:'ENOENT'});
     await assert.rejects(fs.stat(path.join(f.stateDir,'installations/codex.json')),{code:'ENOENT'});
   }
 });
@@ -333,7 +264,7 @@ test('unchanged dependencies are rechecked after staging and after the last comm
   for (const during of ['staging','last-commit']) {
     const f = await fixture(t);
     const native = path.join(f.home,'.codex/config.toml');
-    const original = '[agents]\nmax_concurrent_threads_per_session = 3\n[features]\nhooks = true\n';
+    const original = '[agents]\nmax_concurrent_threads_per_session = 3\ndefault_subagent_model = "gpt-6.1-sol"\ndefault_subagent_reasoning_effort = "high"\n';
     await put(native,original);
     const preloader = path.join(f.root,'dependency-preloader.mjs');
     const entry = path.join(f.root,'dependency-transaction.mjs');
@@ -343,25 +274,14 @@ test('unchanged dependencies are rechecked after staging and after the last comm
     const result = await run(process.execPath,['--import',preloader,entry]);
     assert.equal(result.stdout.trim(),'STALE_PLAN');
     assert.match(await fs.readFile(native,'utf8'),/= 999/);
-    await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+    await assert.rejects(fs.stat(path.join(f.home,'.codex/agents/apk-worker.toml')),{code:'ENOENT'});
     await assert.rejects(fs.stat(path.join(f.stateDir,'installations/codex.json')),{code:'ENOENT'});
   }
 });
 
-test('Kimi uninstall refuses a nested table added beneath the owned hook without reparenting it', async t => {
-  const f = await fixture(t,'kimi');
-  const target = path.join(f.home,'.kimi-code/config.toml');
-  await put(target,'[[hooks]]\nevent = "Stop"\ncommand = "user"\n');
-  await applyInstall(await planInstall(f));
-  await fs.appendFile(target,'\n[hooks.extra]\nuser_value = 123\n');
-  const before = await fs.readFile(target,'utf8');
-  await assert.rejects(uninstall({...f,apply:true}),{code:'OWNED_DRIFT'});
-  assert.equal(await fs.readFile(target,'utf8'),before);
-});
-
 test('late finalization sync failure preserves a recovery journal when rollback meets a competing edit', async t => {
   const f = await fixture(t);
-  const hooks = path.join(f.home,'.codex/hooks.json');
+  const hooks = path.join(f.home,'.codex/agents/apk-worker.toml');
   const pending = path.join(f.stateDir,'pending.json');
   const preloader = path.join(f.root,'finalization-preloader.mjs');
   const entry = path.join(f.root,'finalization-transaction.mjs');
@@ -383,7 +303,7 @@ test('shared policies with identical semantics preserve formatting and stay idem
   await applyInstall(await planInstall(f));
   assert.equal(await fs.readFile(path.join(f.stateDir,'policy.json'),'utf8'),source);
   const policy = JSON.parse(source);
-  await fs.writeFile(f.policyPath,JSON.stringify({clients:policy.clients,mode:policy.mode,schemaVersion:policy.schemaVersion}));
+  await fs.writeFile(f.policyPath,JSON.stringify({clients:policy.clients,maxConcurrent:policy.maxConcurrent,schemaVersion:policy.schemaVersion}));
   assert.equal((await planInstall(f)).status,'unchanged');
   await uninstall({...f,apply:true});
 });
@@ -391,7 +311,7 @@ test('shared policies with identical semantics preserve formatting and stay idem
 test('finalization rechecks unchanged dependencies before reporting success', async t => {
   const f = await fixture(t);
   const native = path.join(f.home,'.codex/config.toml');
-  const original = '[agents]\nmax_concurrent_threads_per_session = 3\n[features]\nhooks = true\n';
+  const original = '[agents]\nmax_concurrent_threads_per_session = 3\ndefault_subagent_model = "gpt-6.1-sol"\ndefault_subagent_reasoning_effort = "high"\n';
   await put(native,original);
   const preloader = path.join(f.root,'final-dependency-preloader.mjs');
   const entry = path.join(f.root,'final-dependency-transaction.mjs');
@@ -400,12 +320,12 @@ test('finalization rechecks unchanged dependencies before reporting success', as
   const result = await run(process.execPath,['--import',preloader,entry]);
   assert.equal(result.stdout.trim(),'STALE_PLAN');
   assert.match(await fs.readFile(native,'utf8'),/= 999/);
-  await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+  await assert.rejects(fs.stat(path.join(f.home,'.codex/agents/apk-worker.toml')),{code:'ENOENT'});
 });
 
 test('failed recovery-journal recreation retains a private lock pointing to the backup index', async t => {
   const f = await fixture(t);
-  const hooks = path.join(f.home,'.codex/hooks.json');
+  const hooks = path.join(f.home,'.codex/agents/apk-worker.toml');
   const pending = path.join(f.stateDir,'pending.json');
   const preloader = path.join(f.root,'recovery-fallback-preloader.mjs');
   const entry = path.join(f.root,'recovery-fallback-transaction.mjs');
@@ -423,25 +343,36 @@ test('failed recovery-journal recreation retains a private lock pointing to the 
   await assert.rejects(uninstall({...f,apply:true}),{code:'RECOVERY_REQUIRED'});
 });
 
-test('fresh observe installations preserve user delegated defaults and limits while activating hooks',async t=>{
-  for(const client of ['codex','claude','kimi']){
-    const f=await fixture(t,client),policy=JSON.parse(await fs.readFile(f.policyPath));policy.mode='observe';await fs.writeFile(f.policyPath,JSON.stringify(policy));
-    const target=path.join(f.home,client==='codex'?'.codex/config.toml':client==='claude'?'.claude/settings.json':'.kimi-code/config.toml');
-    const original=client==='claude'?JSON.stringify({model:'main',env:{CLAUDE_CODE_SUBAGENT_MODEL:'user-choice',CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS:'11',USER_SETTING:'preserve'}}):client==='codex'?'model = "main"\n[agents]\nmax_threads = 11\n[features]\nhooks = false\n':'default_model = "main"\n[secondary_model]\ndefault_model = "user-model"\n';
-    await put(target,original);await applyInstall(await planInstall(f));
-    const receipt=JSON.parse(await fs.readFile(path.join(f.stateDir,'installations',client+'.json')));
-    assert.equal(receipt.mode,'observe');
-    if(client==='claude')assert.deepEqual(JSON.parse(await fs.readFile(target)).env,JSON.parse(original).env);
-    if(client==='codex'){const text=await fs.readFile(target,'utf8');assert.match(text,/max_threads = 11/);assert.ok(!text.includes('max_concurrent_threads_per_session'));assert.match(text,/hooks = true/);}
-    if(client==='kimi')assert.ok((await fs.readFile(target,'utf8')).startsWith(original));
-    assert.equal((await planInstall(f)).status,'unchanged');await uninstall({...f,apply:true});
-    if(client==='claude')assert.deepEqual(JSON.parse(await fs.readFile(target)),JSON.parse(original));else assert.equal((await fs.readFile(target,'utf8')).trim(),original.trim());
-  }
+
+test('malformed receipt collections and scalar restoration input refuse without leaking implementation errors',async t=>{
+ for(const mutation of [r=>{r.files={};},r=>{r.files[0].ops=[null];},r=>{r.files[0].ops[0].before='9\n[agents.extra]\nx = 1';}]) {
+  const f=await fixture(t);await applyInstall(await planInstall(f));const target=path.join(f.stateDir,'installations/codex.json'),record=JSON.parse(await fs.readFile(target));mutation(record);await fs.writeFile(target,JSON.stringify(record));await assert.rejects(uninstall({...f,apply:true}),{code:'INVALID_RECEIPT'});
+ }
 });
 
-test('observe install into empty Claude settings creates no default-model or concurrency env',async t=>{
-  const f=await fixture(t,'claude'),policy=JSON.parse(await fs.readFile(f.policyPath));policy.mode='observe';await fs.writeFile(f.policyPath,JSON.stringify(policy));
-  await applyInstall(await planInstall(f));const settings=JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json')));
-  assert.equal(settings.env,undefined);assert.ok(settings.hooks.PreToolUse.length);
-  await uninstall({...f,apply:true});
+test('Kimi section effort type mismatch refuses planning before it can create an invalid receipt',async t=>{
+ const f=await fixture(t,'kimi');await put(path.join(f.home,'.kimi-code/config.toml'),modelConfig+'[secondary_model]\ndefault_effort = 3\n');await assert.rejects(planInstall(f),{code:'UNSUPPORTED_CONFIG'});await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+});
+
+test('native same-name role drift and newly added section-wide effort block removal safely',async t=>{
+ const codex=await fixture(t);await applyInstall(await planInstall(codex));await fs.appendFile(rolePath(codex,'worker'),'# user edit\n');await assert.rejects(planInstall(codex),{code:'OWNED_DRIFT'});await assert.rejects(uninstall({...codex,apply:true}),{code:'OWNED_DRIFT'});
+ const kimi=await fixture(t,'kimi');await provision(kimi);await applyInstall(await planInstall(kimi));const config=path.join(kimi.home,'.kimi-code/config.toml');let text=await fs.readFile(config,'utf8');text=text.replace('[secondary_model]\n','[secondary_model]\ndefault_effort = "low"\n');await fs.writeFile(config,text);await assert.rejects(uninstall({...kimi,apply:true}),{code:'OWNED_DRIFT'});
+});
+
+test('target symlinks, stale planned roles, explicit locks and pending journals refuse safely',async t=>{
+ const f=await fixture(t),target=rolePath(f,'worker');await fs.mkdir(path.dirname(target),{recursive:true});await fs.symlink(f.policyPath,target);await assert.rejects(planInstall(f),{code:'UNSAFE_PATH'});await fs.rm(target);
+ const plan=await planInstall(f);await put(target,'competing role');await assert.rejects(applyInstall(plan),{code:'STALE_PLAN'});await fs.rm(target);await fs.mkdir(f.stateDir,{recursive:true});await put(path.join(f.stateDir,'.install.lock'),'busy');await assert.rejects(applyInstall(await planInstall(f)),{code:'INSTALL_LOCKED'});await fs.rm(path.join(f.stateDir,'.install.lock'));await put(path.join(f.stateDir,'pending.json'),'{}');await assert.rejects(planInstall(f),{code:'RECOVERY_REQUIRED'});
+});
+
+test('same-value native scalars are adopted for drift checks and retained on uninstall',async t=>{
+ const f=await fixture(t),target=path.join(f.home,'.codex/config.toml'),original='model = "main"\n[agents]\nmax_concurrent_threads_per_session = 3\ndefault_subagent_model = "gpt-6.1-sol"\ndefault_subagent_reasoning_effort = "high"\n';await put(target,original);const plan=await planInstall(f);assert.ok(!plan.changes.some(c=>c.path===target));await applyInstall(plan);await uninstall({...f,apply:true});assert.equal(await fs.readFile(target,'utf8'),original);
+ const claude=await fixture(t,'claude'),jsonTarget=path.join(claude.home,'.claude/settings.json'),settings={model:'main',env:{CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS:'3',CLAUDE_CODE_SUBAGENT_MODEL:'sonnet'}};await put(jsonTarget,JSON.stringify(settings));await applyInstall(await planInstall(claude));await uninstall({...claude,apply:true});assert.deepEqual(JSON.parse(await fs.readFile(jsonTarget)),settings);
+});
+
+test('different shared preferences refuse planning and owned policy drift refuses repeat install',async t=>{
+ const f=await fixture(t);await put(path.join(f.stateDir,'policy.json'),'{}\n');await assert.rejects(planInstall(f),{code:'POLICY_CONFLICT'});await fs.rm(path.join(f.stateDir,'policy.json'));await applyInstall(await planInstall(f));await fs.writeFile(path.join(f.stateDir,'policy.json'),'{}\n');await assert.rejects(planInstall(f),{code:'OWNED_DRIFT'});
+});
+
+test('Kimi keeps unrelated native pool entries, provider settings, hooks and later edits',async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');const original=modelConfig+'[secondary_model]\ndefault_model = "kimi-code/k3"\n[secondary_model.models]\n"kimi-code/k3" = "user code hint"\n"other" = "preserve other model"\n[models.other]\nprovider = "fixture"\nmodel = "other"\nmax_context_size = 100\n[[hooks]]\nevent = "Stop"\ncommand = "user command"\n';await put(target,original);await applyInstall(await planInstall(f));let native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.secondary_model.models.other,'preserve other model');assert.deepEqual(native.hooks,parseToml(original).hooks);await fs.appendFile(target,'\n[user_settings]\nlater = true\n');await uninstall({...f,apply:true});native=parseToml(await fs.readFile(target,'utf8'));assert.deepEqual(native,{...parseToml(original),user_settings:{later:true}});
 });

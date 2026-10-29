@@ -32,7 +32,8 @@ test('plan-only detects a genuine subset and creates no configuration or state',
   const result = await setupDetected(f);
   assert.equal(result.status,'planned'); assert.equal(result.exitCode,0);
   assert.equal(result.results.filter(r=>r.status === 'planned').length,1);
-  assert.ok(result.requiredActions.some(a=>a.client === 'codex' && a.code === 'native_hook_trust_required' && a.automatable === false));
+  assert.ok(result.requiredActions.some(a=>a.client === 'codex' && a.code === 'codex-native-precedence-limits' && a.automatable === false));
+  assert.ok(!JSON.stringify(result).includes('hook'));
   assert.ok(!JSON.stringify(result).includes(f.root));
   await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
 });
@@ -59,13 +60,13 @@ test('an independent client failure preserves successful configuration and repor
   assert.ok(!JSON.stringify(result).includes('SECRET'));
 });
 
-test('detected agy reports unsupported and never creates a fake integration',async t=>{
+test('detected agy receives native roles with explicit tier and cap limitations',async t=>{
   const f = await fixture(t); await binary(f,'agy','Antigravity 1.4.10');
   const result = await setupDetected({...f,client:'agy',apply:true});
-  assert.equal(result.status,'partial'); assert.equal(result.exitCode,3);
-  assert.equal(result.results[0].status,'unsupported');
-  assert.ok(result.requiredActions.some(a=>a.code === 'exact_model_enforcement_unsupported'));
-  await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+  assert.equal(result.status,'configured'); assert.equal(result.exitCode,0);
+  assert.equal(result.results[0].status,'configured');
+  assert.ok(result.requiredActions.some(a=>a.code === 'agy-concurrency-guidance-only'));
+  assert.match(await fs.readFile(path.join(f.home,'.gemini/config/agents/apk-worker.md'),'utf8'),/model: pro/);
 });
 
 test('requested missing clients do not touch present-but-unrequested clients',async t=>{
@@ -79,9 +80,9 @@ test('requested missing clients do not touch present-but-unrequested clients',as
 test('Kimi prerequisites are actionable through the agent without claiming native readiness',async t=>{
   const f = await fixture(t); await binary(f,'kimi','kimi 2.4.0');
   const result = await setupDetected({...f,client:'kimi',apply:true});
-  assert.equal(result.status,'configured');
-  assert.ok(result.requiredActions.some(a=>a.code === 'kimi_native_pool_required' && a.automatable === true));
-  assert.ok(result.requiredActions.some(a=>a.code === 'native_hook_load_check_required' && a.automatable === true));
+  assert.equal(result.status,'partial'); assert.equal(result.results[0].status,'prerequisite');
+  assert.ok(result.requiredActions.some(a=>a.code === 'kimi-provisioned-models-required' && a.automatable === false));
+  await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
 });
 
 test('an unverifiable executable makes a detected subset partial while preserving its success',async t=>{
@@ -95,38 +96,14 @@ test('an unverifiable executable makes a detected subset partial while preservin
   await assert.rejects(fs.stat(path.join(f.home,'.claude')),{code:'ENOENT'});
 });
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-const execute=promisify(execFile);
-test('conventional-only Kimi setup creates a working resolver-based launcher and retains limitations',async t=>{
-  const f=await fixture(t);
-  const kimi=path.join(f.hostHome,'.kimi-code/bin/kimi');
-  await fs.mkdir(path.dirname(kimi),{recursive:true});
-  await fs.writeFile(kimi,`#!${process.execPath}\nif(process.argv[2]==='--version'){console.log('kimi 2.4.0');}else{console.log(JSON.stringify({args:process.argv.slice(2),cap:process.env.KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY,clientHome:process.env.KIMI_CODE_HOME}));}\n`,{mode:0o700});
-  const result=await setupDetected({...f,client:'kimi',apply:true});
-  assert.equal(result.status,'configured');
-  const launcher=path.join(f.stateDir,'bin/kimi-policy');
-  const output=await execute('/bin/sh',[launcher,'--fixture-launch',"argument's spaces"],{env:{PATH:f.bin,HOME:f.hostHome}});
-  assert.deepEqual(JSON.parse(output.stdout),{args:['--fixture-launch',"argument's spaces"],cap:'3',clientHome:path.join(f.home,'.kimi-code')});
-  const applied=result.results.find(r=>r.client==='kimi');
-  for(const warning of ['kimi-swarm-cap-launcher-only','kimi-ordinary-agent-concurrency-unsupported']) assert.ok(applied.warnings.includes(warning));
-  assert.ok(result.requiredActions.some(a=>a.code==='kimi_policy_launcher_required'&&a.automatable));
-  const repeated=await setupDetected({...f,client:'kimi',apply:true});
-  assert.equal(repeated.results[0].status,'unchanged');
-  assert.ok(repeated.results[0].warnings.includes('kimi-ordinary-agent-concurrency-unsupported'));
-  const policy=JSON.parse(await fs.readFile(path.join(f.stateDir,'policy.json'),'utf8'));
-  policy.clients.kimi.maxConcurrent=2;
-  await fs.writeFile(path.join(f.stateDir,'policy.json'),JSON.stringify(policy));
-  const updated=await execute('/bin/sh',[launcher,'--fixture-launch'],{env:{PATH:f.bin,HOME:f.hostHome}});
-  assert.equal(JSON.parse(updated.stdout).cap,'2');
+test('conventional-only Kimi gets native configuration without a launcher',async t=>{
+ const f=await fixture(t),kimi=path.join(f.hostHome,'.kimi-code/bin/kimi');await fs.mkdir(path.dirname(kimi),{recursive:true});await fs.writeFile(kimi,`#!${process.execPath}\nconsole.log('kimi 2.4.0');\n`,{mode:0o700});
+ const config=path.join(f.home,'.kimi-code/config.toml');await fs.mkdir(path.dirname(config),{recursive:true});await fs.writeFile(config,'[providers.fixture]\ntype = "kimi"\n[models."kimi-code/k3"]\nprovider = "fixture"\nmodel = "k3"\nmax_context_size = 1048576\nsupport_efforts = ["high"]\n[models."kimi-code/kimi-for-coding"]\nprovider = "fixture"\nmodel = "kimi-for-coding"\nmax_context_size = 262144\nsupport_efforts = ["low", "high"]\n');
+ for(const attempt of [1,2]){
+  const result=await setupDetected({...f,client:'kimi',apply:true});assert.equal(result.status,'configured');assert.equal(result.results[0].status,attempt===1?'configured':'unchanged');assert.ok(result.results[0].warnings.includes('kimi-concurrency-guidance-only'));assert.ok(result.requiredActions.some(a=>a.code==='kimi-model-pool-routing-guidance'));await assert.rejects(fs.stat(path.join(f.stateDir,'bin')),{code:'ENOENT'});
+ }
 });
 
-test('applied and unchanged setup JSON retains safe Kimi concurrency warnings',async t=>{
-  const f=await fixture(t);await binary(f,'kimi','kimi 2.4.0');
-  for(const attempt of [1,2]){
-    const result=await setupDetected({...f,client:'kimi',apply:true});
-    assert.ok(Array.isArray(result.results[0].warnings),'applied setup omitted safe warnings');
-    assert.ok(result.results[0].warnings.includes('kimi-swarm-cap-launcher-only'));
-    assert.ok(result.results[0].warnings.includes('kimi-ordinary-agent-concurrency-unsupported'));
-  }
+test('a per-client prerequisite preserves successful configuration of another client',async t=>{
+ const f=await fixture(t);await binary(f,'codex','codex-cli 0.165.0');await binary(f,'kimi','kimi 2.4.0');const result=await setupDetected({...f,apply:true});assert.equal(result.status,'partial');assert.equal(result.results.find(r=>r.client==='codex').status,'configured');assert.equal(result.results.find(r=>r.client==='kimi').status,'prerequisite');await assert.rejects(fs.stat(path.join(f.stateDir,'installations/kimi.json')),{code:'ENOENT'});
 });

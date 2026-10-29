@@ -69,6 +69,12 @@ export function setTomlValue(text, target, value) {
 export function restoreTomlValue(text, ownership) {
   const tree = ast(text);
   const found = locate(tree, ownership.path);
+  if (ownership.kind === 'removed') {
+    if (found) fail('OWNED_DRIFT');
+    if (ownership.before === null) return text;
+    const before = parseToml(`value = ${ownership.before}\n`).value;
+    return setTomlValue(text,ownership.path,before).text;
+  }
   if (!found || text.slice(...found.value.range) !== ownership.after) fail('OWNED_DRIFT');
   if (ownership.before !== null) return replace(text, ...found.value.range, ownership.before);
   text = removeStatement(text, found);
@@ -80,25 +86,11 @@ export function restoreTomlValue(text, ownership) {
   return text;
 }
 
-export function appendTomlHook(text, entry) {
-  const parsed = parseToml(text);
-  if (parsed.hooks !== undefined && !Array.isArray(parsed.hooks)) fail('UNSUPPORTED_TOML_STRUCTURE');
-  if ((parsed.hooks ?? []).some(e => same(e, entry))) fail('OWNERSHIP_CONFLICT');
-  const nl = newline(text);
-  const block = `[[hooks]]${nl}` + Object.entries(entry).map(([k, v]) => `${keyText(k)} = ${literal(v)}${nl}`).join('');
-  const result = text + (text.endsWith('\n') || !text ? '' : nl) + nl + block;
+export function removeTomlValue(text,target) {
+  const tree=ast(text),found=locate(tree,target);
+  if(!found)return {text,ownership:{kind:'removed',path:target,before:null}};
+  const ownership={kind:'removed',path:target,before:text.slice(...found.value.range)};
+  const result=removeStatement(text,found);
   ast(result);
-  return {text:result,ownership:{kind:'hook',entry}};
-}
-
-export function removeTomlHook(text, ownership) {
-  const tree = ast(text);
-  const matches = tree.body[0].body.filter(n => n.type === 'TOMLTable' && n.kind === 'array' && same(n.resolvedKey.slice(0, -1), ['hooks']) && same(Object.fromEntries(n.body.map(kv => [keys(kv.key).join('.'), getStaticTOMLValue(kv.value)])), ownership.entry));
-  if (matches.length !== 1) fail('OWNED_DRIFT');
-  const table = matches[0];
-  if (tree.body[0].body.some(n => n.type === 'TOMLTable' && n.resolvedKey.length > table.resolvedKey.length && same(n.resolvedKey.slice(0,table.resolvedKey.length),table.resolvedKey))) fail('OWNED_DRIFT');
-  // Node ranges span exactly the owned table, not the following user's table.
-  const result = removeStatement(text, table);
-  ast(result);
-  return result;
+  return {text:result,ownership};
 }

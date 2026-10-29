@@ -4,7 +4,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { constants } from 'node:fs';
 import { validatePolicy } from './policy.mjs';
-import { parseToml, setTomlValue, restoreTomlValue, appendTomlHook, removeTomlHook } from './toml.mjs';
+import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
+import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
 
 const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
 const LIMIT = 1024 * 1024;
@@ -17,11 +18,10 @@ function fail(code) { throw Object.assign(new Error(code), {code}); }
 function object(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 function absolute(value) { if (typeof value !== 'string' || !path.isAbsolute(value) || value.includes('\0')) fail('UNSAFE_PATH'); return path.resolve(value); }
 function within(base, target) { const relative = path.relative(base, target); return !relative.startsWith('..' + path.sep) && relative !== '..' && !path.isAbsolute(relative); }
-function locations(client, home, stateDir) {
-  return {receipt:path.join(stateDir, 'installations', client + '.json'),policy:path.join(stateDir, 'policy.json'),
-    config:path.join(home, client === 'codex' ? '.codex/config.toml' : client === 'claude' ? '.claude/settings.json' : '.kimi-code/config.toml'),
-    hooks:path.join(home, '.codex/hooks.json'),launcher:path.join(stateDir, 'bin/kimi-policy')};
+function locations(client,home,stateDir) {
+  return {...nativeLocations(client,home),receipt:path.join(stateDir,'installations',client+'.json'),policy:path.join(stateDir,'policy.json')};
 }
+function nativeTargets(l) { return [...(l.config?[l.config]:[]),l.instructions,...l.roles]; }
 async function statOrNull(file) { try { return await fs.lstat(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; } }
 async function safePath(file, base) {
   if (!within(base, file)) fail('UNSAFE_PATH');
@@ -79,35 +79,18 @@ function parseJson(text, code = 'INVALID_JSON') {
   } catch { fail(code); }
 }
 function configJson(text) { const value = text === null ? {} : parseJson(text); if (!object(value)) fail('UNSUPPORTED_CONFIG'); return value; }
-function shell(value) { return "'" + value.replaceAll("'", "'\"'\"'") + "'"; }
-function command({nodePath, packageRoot, client, stateDir, home}) {
-  return [nodePath,path.join(packageRoot,'bin/agent-policy.mjs'),'hook','--client',client,'--policy',path.join(stateDir,'policy.json'),'--state-dir',stateDir,'--home',home].map(shell).join(' ');
-}
-function ensureObject(parent, key) {
-  if (!own(parent,key)) parent[key] = {};
-  if (!object(parent[key])) fail('UNSUPPORTED_CONFIG');
+function ensureObject(parent,key) {
+  if(!own(parent,key))parent[key]={};
+  if(!object(parent[key]))fail('UNSUPPORTED_CONFIG');
   return parent[key];
 }
-function jsonInstall(text, client, cmd, maxConcurrent, defaultModel, mode) {
-  const value = configJson(text), ops = [], created = [];
-  if (!own(value,'hooks')) created.push(['hooks']);
-  const hooks = ensureObject(value,'hooks');
-  for (const [event, matcher] of [['PreToolUse',client === 'codex' ? '^(spawn_agent|Agent)$' : '^Agent$'], ['SubagentStart',null], ['SubagentStop',null]]) {
-    if (!own(hooks,event)) { hooks[event] = []; created.push(['hooks',event]); }
-    if (!Array.isArray(hooks[event]) || hooks[event].some(e => !object(e))) fail('UNSUPPORTED_CONFIG');
-    const entry = {...(matcher ? {matcher} : {}),hooks:[{type:'command',command:cmd,timeout:10}]};
-    if (hooks[event].some(e => equal(e,entry))) fail('OWNERSHIP_CONFLICT');
-    hooks[event].push(entry);
-    ops.push({kind:'entry',path:['hooks',event],entry});
-  }
-  if (client === 'claude' && mode === 'enforce') {
-    if (!own(value,'env')) created.push(['env']);
-    const env = ensureObject(value,'env');
-    for (const [key, after] of [['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS',String(maxConcurrent)],['CLAUDE_CODE_SUBAGENT_MODEL',defaultModel]]) {
-      if (own(env,key) && typeof env[key] !== 'string') fail('UNSUPPORTED_CONFIG');
-      ops.push({kind:'value',path:['env',key],existed:own(env,key),before:env[key] ?? null,after});
-      env[key] = after;
-    }
+function jsonInstall(text,maxConcurrent,defaultModel) {
+  const value=configJson(text),ops=[],created=[];
+  if(!own(value,'env'))created.push(['env']);
+  const env=ensureObject(value,'env');
+  for(const [key,after] of [['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS',String(maxConcurrent)],['CLAUDE_CODE_SUBAGENT_MODEL',defaultModel]]) {
+    if(own(env,key)&&typeof env[key]!=='string')fail('UNSUPPORTED_CONFIG');
+    ops.push({kind:'value',path:['env',key],existed:own(env,key),before:env[key]??null,after});env[key]=after;
   }
   return {text:json(value),ops,created};
 }
@@ -119,15 +102,8 @@ function undoJson(text, file) {
   const value = configJson(text);
   for (const op of file.ops.toReversed()) {
     const parent = atPath(value,op.path.slice(0,-1)), key = op.path.at(-1);
-    if (op.kind === 'entry') {
-      if (!Array.isArray(parent[key])) fail('OWNED_DRIFT');
-      const matches = parent[key].flatMap((v,i) => equal(v,op.entry) ? [i] : []);
-      if (matches.length !== 1) fail('OWNED_DRIFT');
-      parent[key].splice(matches[0],1);
-    } else {
-      if (!equal(parent[key],op.after)) fail('OWNED_DRIFT');
-      if (op.existed) parent[key] = op.before; else delete parent[key];
-    }
+    if (!equal(parent[key],op.after)) fail('OWNED_DRIFT');
+    if (op.existed) parent[key] = op.before; else delete parent[key];
   }
   for (const keys of file.created.toReversed()) {
     const parent = atPath(value,keys.slice(0,-1)), key = keys.at(-1);
@@ -168,148 +144,137 @@ async function context({client,home,stateDir}) {
 function change(plan,target,before,after,mode=0o600) {
   if (before.text !== after) plan.changes.push({path:target,before:before.text,after,beforeHash:digest(before.text),afterHash:digest(after),mode,beforeMode:before.mode});
 }
-function validateReceipt(r, plan) {
-  const l = locations(plan.client,plan.home,plan.stateDir);
-  const allowed = plan.client === 'codex' ? [l.config,l.hooks] : plan.client === 'claude' ? [l.config] : [l.config,l.launcher];
-  if (!object(r) || r.schemaVersion !== 1 || r.client !== plan.client || r.home !== plan.home || r.stateDir !== plan.stateDir || !Array.isArray(r.files) || r.files.length !== allowed.length || !r.files.every(f => object(f) && allowed.includes(f.path)) || new Set(r.files.map(f=>f.path)).size !== allowed.length) fail('INVALID_RECEIPT');
-  if (r.mode !== undefined && !['enforce','observe'].includes(r.mode)) fail('INVALID_RECEIPT');
-  const observing = r.mode === 'observe';
-  if (absolute(r.packageRoot) !== r.packageRoot || absolute(r.nodePath) !== r.nodePath || !Number.isInteger(r.maxConcurrent) || r.maxConcurrent < 1 || r.maxConcurrent > 32 || typeof r.defaultModel !== 'string' || !Array.isArray(r.warnings) || !r.warnings.every(w => ['codex-hook-trust-required','kimi-native-pool-unverified','kimi-swarm-cap-launcher-only','kimi-ordinary-agent-concurrency-unsupported'].includes(w))) fail('INVALID_RECEIPT');
-  const cmd = command({...plan,packageRoot:r.packageRoot,nodePath:r.nodePath});
-  for (const f of r.files) {
-    if (typeof f.existed !== 'boolean') fail('INVALID_RECEIPT');
-    if (f.type === 'owned') { if (f.path !== l.launcher || typeof f.afterHash !== 'string') fail('INVALID_RECEIPT'); }
-    else if (f.type === 'json') {
-      if (f.path !== (plan.client === 'codex' ? l.hooks : l.config) || !Array.isArray(f.ops) || !Array.isArray(f.created)) fail('INVALID_RECEIPT');
-      if (!f.ops.every(object)) fail('INVALID_RECEIPT');
-      const expectedPaths = [['hooks','PreToolUse'],['hooks','SubagentStart'],['hooks','SubagentStop'],...(plan.client === 'claude' && !observing ? [['env','CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS'],['env','CLAUDE_CODE_SUBAGENT_MODEL']] : [])];
-      if (f.ops.length !== expectedPaths.length || !expectedPaths.every(p => f.ops.filter(op => equal(op.path,p)).length === 1)) fail('INVALID_RECEIPT');
-      for (const op of f.ops) {
-        if (!object(op) || !Array.isArray(op.path) || op.path.length !== 2) fail('INVALID_RECEIPT');
-        if (op.kind === 'entry') {
-          if (op.path[0] !== 'hooks' || !['PreToolUse','SubagentStart','SubagentStop'].includes(op.path[1]) || !object(op.entry)) fail('INVALID_RECEIPT');
-          const matcher = op.path[1] === 'PreToolUse' ? (plan.client === 'codex' ? '^(spawn_agent|Agent)$' : '^Agent$') : null;
-          if (!equal(op.entry,{...(matcher ? {matcher} : {}),hooks:[{type:'command',command:cmd,timeout:10}]})) fail('INVALID_RECEIPT');
-        } else if (op.kind !== 'value' || plan.client !== 'claude' || op.path[0] !== 'env' || !['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL'].includes(op.path[1]) || typeof op.existed !== 'boolean' || op.after !== (op.path[1] === 'CLAUDE_CODE_SUBAGENT_MODEL' ? r.defaultModel : String(r.maxConcurrent)) || (op.existed && typeof op.before !== 'string')) fail('INVALID_RECEIPT');
+function tomlSettings(client,preferences,maxConcurrent) {
+  if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],preferences.code.model],[['agents','default_subagent_reasoning_effort'],preferences.code.effort]];
+  if(client!=='kimi')return [];
+  const selected=[...new Map([preferences.code,preferences.light].map(v=>[v.model,v])).values()];
+  return [[['secondary_model','default_model'],preferences.code.model],...selected.map(v=>[['secondary_model','models',v.model],v.model===preferences.code.model?'Implementation and difficult analysis; apk-worker and apk-reviewer.':'Search and mechanical tasks; apk-explorer and apk-routine.']),...selected.map(v=>[['models',v.model,'overrides','default_effort'],v.effort])];
+}
+function validPriorLiteral(raw,type) {
+  if(raw===null)return true;
+  if(typeof raw!=='string')return false;
+  try { const parsed=parseToml(`value = ${raw}\n`);return Object.keys(parsed).length===1&&typeof parsed.value===type&& (type!=='number'||Number.isSafeInteger(parsed.value)); } catch { return false; }
+}
+function validateReceipt(r,plan) {
+  if(object(r)&&(r.schemaVersion===1||own(r,'packageRoot')||own(r,'nodePath')||own(r,'mode')||(Array.isArray(r.files)&&r.files.some(f=>object(f)&&(['owned','hook'].includes(f.type)||(Array.isArray(f.ops)&&f.ops.some(op=>object(op)&&['hook','entry'].includes(op.kind))))))))fail('LEGACY_RUNTIME_RECEIPT');
+  const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l);
+  if(!object(r)||r.schemaVersion!==2||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(f=>object(f)&&allowed.includes(f.path))||new Set(r.files.map(f=>f.path)).size!==allowed.length||!/^[a-f0-9]{64}$/.test(r.policyHash))fail('INVALID_RECEIPT');
+  try { validatePolicy({schemaVersion:1,maxConcurrent:r.maxConcurrent,clients:{[plan.client]:r.preferences}}); }catch {fail('INVALID_RECEIPT');}
+  if(!equal(r.warnings,nativeWarnings(plan.client)))fail('INVALID_RECEIPT');
+  const roles=nativeRoles(plan.client,r.preferences),block=instructionBlock(plan.client,r.preferences,r.maxConcurrent);
+  for(const f of r.files) {
+    if(typeof f.existed!=='boolean')fail('INVALID_RECEIPT');
+    if(l.roles.includes(f.path)) {
+      if(f.type!=='role'||f.existed||f.afterHash!==digest(roles[l.roles.indexOf(f.path)]))fail('INVALID_RECEIPT');
+    } else if(f.path===l.instructions) {
+      if(f.type!=='instructions'||f.block!==block||!['','\n','\n\n'].includes(f.prefix))fail('INVALID_RECEIPT');
+    } else if(plan.client==='claude') {
+      if(f.type!=='json'||!Array.isArray(f.ops)||f.ops.length!==2||!Array.isArray(f.created)||f.created.length>1||!f.created.every(p=>equal(p,['env'])))fail('INVALID_RECEIPT');
+      for(const [i,key]of ['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL'].entries()) {
+        const op=f.ops[i],after=i===0?String(r.maxConcurrent):r.preferences.code.model;
+        if(!object(op)||op.kind!=='value'||!equal(op.path,['env',key])||typeof op.existed!=='boolean'||op.after!==after||(op.existed?typeof op.before!=='string':op.before!==null))fail('INVALID_RECEIPT');
       }
-      if (!f.created.every(k => equal(k,['hooks']) || equal(k,['env']) || (Array.isArray(k) && k.length === 2 && k[0] === 'hooks' && ['PreToolUse','SubagentStart','SubagentStop'].includes(k[1])))) fail('INVALID_RECEIPT');
-    } else if (f.type === 'toml') {
-      if (f.path !== l.config || !Array.isArray(f.ops)) fail('INVALID_RECEIPT');
-      if (!f.ops.every(object)) fail('INVALID_RECEIPT');
-      for (const op of f.ops) {
-        if (plan.client === 'codex') {
-          if (op.kind !== 'scalar' || ![['features','hooks'],['agents','max_concurrent_threads_per_session']].some(p => equal(p,op.path)) || (op.before !== null && typeof op.before !== 'string')) fail('INVALID_RECEIPT');
-          if (op.after !== (op.path[0] === 'features' ? 'true' : String(r.maxConcurrent)) || (op.addedTable && !equal(op.addedTable,op.path.slice(0,-1)))) fail('INVALID_RECEIPT');
-          if (op.before !== null) {
-            let previous;
-            try { previous = parseToml(`value = ${op.before}\n`); } catch { fail('INVALID_RECEIPT'); }
-            if (Object.keys(previous).length !== 1 || (op.path[0] === 'features' ? typeof previous.value !== 'boolean' : !Number.isSafeInteger(previous.value))) fail('INVALID_RECEIPT');
-          }
-        } else if (op.kind !== 'hook' || !equal(op.entry,{event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:cmd,timeout:10})) fail('INVALID_RECEIPT');
+    } else {
+      const expected=tomlSettings(plan.client,r.preferences,r.maxConcurrent);
+      if(f.type!=='toml'||!Array.isArray(f.ops)||!f.ops.every(object))fail('INVALID_RECEIPT');
+      const removed=f.ops.filter(op=>op.kind==='removed');
+      if(removed.length!==(plan.client==='kimi'?1:0)||(removed.length&&f.ops[0]!==removed[0])||f.ops.length!==expected.length+removed.length)fail('INVALID_RECEIPT');
+      const scalars=f.ops.filter(op=>op.kind==='scalar');
+      for(const [i,[keys,value]]of expected.entries()) {
+        const op=scalars[i];
+        if(!object(op)||!equal(op.path,keys)||op.after!==JSON.stringify(value)||!validPriorLiteral(op.before,typeof value)||(op.addedTable&&!equal(op.addedTable,keys.slice(0,-1))))fail('INVALID_RECEIPT');
       }
-      if (plan.client === 'codex') {
-        const expected = observing ? [['features','hooks']] : [['agents','max_concurrent_threads_per_session'],['features','hooks']];
-        if (f.ops.length !== expected.length || !expected.every(p => f.ops.some(o=>equal(o.path,p)))) fail('INVALID_RECEIPT');
-      } else if (f.ops.length !== 1) fail('INVALID_RECEIPT');
-    } else fail('INVALID_RECEIPT');
+      if(scalars.length!==expected.length)fail('INVALID_RECEIPT');
+      for(const op of removed)if(!equal(op.path,['secondary_model','default_effort'])||!validPriorLiteral(op.before,'string'))fail('INVALID_RECEIPT');
+    }
   }
   return r;
 }
 async function undoFiles(plan,r,verifyOnly=false) {
-  const base = allowedBases(plan);
-  for (const file of r.files) {
-    const before = await readDependency(plan,file.path,base(file.path));
-    if (before.text === null) fail('OWNED_DRIFT');
-    let after;
-    if (file.type === 'json') after = undoJson(before.text,file);
-    else if (file.type === 'toml') {
-      after = before.text;
-      for (const op of file.ops.toReversed()) after = op.kind === 'hook' ? removeTomlHook(after,op) : restoreTomlValue(after,op);
-      if (!file.existed && !after.trim()) after = null;
-    } else { if (digest(before.text) !== file.afterHash) fail('OWNED_DRIFT'); after = null; }
-    if (!verifyOnly) change(plan,file.path,before,after,before.mode);
+  for(const file of r.files) {
+    const before=await readDependency(plan,file.path,plan.home);if(before.text===null)fail('OWNED_DRIFT');let after;
+    if(file.type==='json')after=undoJson(before.text,file);
+    else if(file.type==='toml') { after=before.text;for(const op of file.ops.toReversed())after=restoreTomlValue(after,op);if(!file.existed&&!after.trim())after=null; }
+    else if(file.type==='instructions') {
+      const owned=file.prefix+file.block;
+      if(before.text.split(BEGIN).length!==2||before.text.split(END).length!==2||!before.text.includes(owned))fail('OWNED_DRIFT');
+      after=before.text.replace(owned,'');if(!file.existed&&!after)after=null;
+    } else {if(digest(before.text)!==file.afterHash)fail('OWNED_DRIFT');after=null;}
+    if(!verifyOnly)change(plan,file.path,before,after,before.mode);
   }
 }
-function kimiPoolMatches(native,config) {
-  const pool = native.secondary_model;
-  if (!object(pool?.models) || typeof pool.default_model !== 'string' || !own(pool.models,pool.default_model) || native.thinking?.enabled === false || pool.default_effort !== undefined) return false;
-  return Object.values(config?.profiles ?? {}).every(profile => {
-    const model = native.models?.[profile.model];
-    const effective = model && {...model,...(model.overrides ?? {})};
-    return typeof pool.models[profile.model] === 'string' && object(model)
-      && typeof model.provider === 'string' && model.model === profile.providerModel
-      && Number.isSafeInteger(effective.max_context_size) && effective.max_context_size > 0
-      && Array.isArray(effective.support_efforts) && effective.support_efforts.includes(profile.effort)
-      && effective.default_effort === profile.effort;
-  });
+function prerequisite(plan,warning) {return {...plan,status:'prerequisite',warnings:[warning],changes:[]};}
+function kimiPrerequisite(native,preferences) {
+  if(native.thinking?.enabled===false)return 'kimi-thinking-disabled';
+  for(const selected of [preferences.code,preferences.light]) {
+    const model=native.models?.[selected.model];
+    if(!object(model)||typeof model.provider!=='string'||typeof model.model!=='string'||!Number.isSafeInteger(model.max_context_size)||model.max_context_size<1||!object(native.providers?.[model.provider]))return 'kimi-provisioned-models-required';
+    const effective={...model,...model.overrides};
+    if(!Array.isArray(effective.support_efforts)||!effective.support_efforts.includes(selected.effort))return 'kimi-supported-effort-required';
+  }
+  return null;
 }
-
 export async function planInstall(options) {
-  const {result:plan,l,receipt} = await context(options);
-  plan.kind = 'install';
-  if (plan.client === 'agy') return {...plan,status:'unsupported',warnings:['agy-exact-model-enforcement-unsupported']};
-  plan.packageRoot = absolute(options.packageRoot); plan.nodePath = absolute(options.nodePath);
-  plan.policyPath = absolute(options.policyPath);
-  const policySource = await readDependency(plan,plan.policyPath,path.dirname(plan.policyPath));
-  if (policySource.text === null) fail('INVALID_POLICY');
-  const policy = parseJson(policySource.text,'INVALID_POLICY');
-  try { validatePolicy(policy); } catch { fail('INVALID_POLICY'); }
-  if (!own(policy.clients,plan.client)) fail('INVALID_POLICY');
-  const selected = policy.clients[plan.client], maxConcurrent = selected.maxConcurrent;
-  const defaultModel = selected.profiles[selected.defaultProfile].model;
-  const policyText = json(policy);
-  const policyHash = digest(json(canonical(policy)));
-  const policyBefore = await readDependency(plan,l.policy,plan.stateDir);
-  if (receipt.text !== null) {
-    const r = validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
-    if (r.packageRoot !== plan.packageRoot || r.nodePath !== plan.nodePath || r.policyHash !== policyHash || (r.mode ?? 'enforce') !== policy.mode) fail('INSTALLATION_CONFLICT');
-    await undoFiles(plan,r,true);
-    if (policyBefore.text === null || !equal(parseJson(policyBefore.text,'OWNED_DRIFT'),policy)) fail('OWNED_DRIFT');
-    return {...plan,status:'unchanged',warnings:r.warnings ?? []};
+  const {result:plan,l,receipt}=await context(options);plan.kind='install';
+  // Refuse experimental runtime receipts before reading or rewriting configuration.
+  let record=null;
+  if(receipt.text!==null)record=validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
+  plan.policyPath=absolute(options.policyPath);
+  const source=await readDependency(plan,plan.policyPath,path.dirname(plan.policyPath));if(source.text===null)fail('INVALID_POLICY');
+  const policy=parseJson(source.text,'INVALID_POLICY');try {validatePolicy(policy);}catch {fail('INVALID_POLICY');}
+  if(!own(policy.clients,plan.client))fail('INVALID_POLICY');
+  const selected=policy.clients[plan.client],maxConcurrent=policy.maxConcurrent,policyHash=digest(json(canonical(policy)));
+  const policyBefore=await readDependency(plan,l.policy,plan.stateDir);
+  if(record) {
+    if(record.policyHash!==policyHash)fail('INSTALLATION_CONFLICT');
+    await undoFiles(plan,record,true);
+    if(policyBefore.text===null||!equal(parseJson(policyBefore.text,'OWNED_DRIFT'),policy))fail('OWNED_DRIFT');
+    return {...plan,status:'unchanged',warnings:record.warnings};
   }
-  if (policyBefore.text !== null && !equal(parseJson(policyBefore.text,'POLICY_CONFLICT'),policy)) fail('POLICY_CONFLICT');
-  const cmd = command(plan), files = [];
-  const config = await readDependency(plan,l.config,plan.home);
-  if (plan.client === 'claude' || plan.client === 'codex') {
-    const target = plan.client === 'codex' ? l.hooks : l.config;
-    const before = plan.client === 'codex' ? await readDependency(plan,target,plan.home) : config;
-    const edited = jsonInstall(before.text,plan.client,cmd,maxConcurrent,defaultModel,policy.mode);
-    change(plan,target,before,edited.text,before.mode);
-    files.push({path:target,type:'json',existed:before.text !== null,ops:edited.ops,created:edited.created});
-  }
-  if (plan.client === 'codex') {
-    let text = config.text ?? '';
-    const native = parseToml(text);
-    if (policy.mode === 'enforce' && native.agents && own(native.agents,'max_threads')) fail('CODEX_CAP_ALIAS_CONFLICT');
-    const priorCap = native.agents?.max_concurrent_threads_per_session;
-    if ((policy.mode === 'enforce' && priorCap !== undefined && (!Number.isSafeInteger(priorCap) || priorCap < 1)) || (native.features?.hooks !== undefined && typeof native.features.hooks !== 'boolean')) fail('UNSUPPORTED_CONFIG');
-    const ops = [];
-    const settings = [...(policy.mode === 'enforce' ? [[['agents','max_concurrent_threads_per_session'],maxConcurrent]] : []),[['features','hooks'],true]];
-    for (const [keys,v] of settings) {
-      const edit = setTomlValue(text,keys,v); text = edit.text; ops.push(edit.ownership);
+  if(policyBefore.text!==null&&!equal(parseJson(policyBefore.text,'POLICY_CONFLICT'),policy))fail('POLICY_CONFLICT');
+  const config=l.config?await readDependency(plan,l.config,plan.home):null;
+  let native;
+  if(plan.client==='claude') {
+    native=configJson(config.text);
+    if(native.env!==undefined&&!object(native.env))fail('UNSUPPORTED_CONFIG');
+    if(native.env?.CLAUDE_CODE_SUBAGENT_MODEL_FORCE==='1')return prerequisite(plan,'claude-force-model-conflict');
+  } else if(config) {
+    native=parseToml(config.text??'');
+    if(plan.client==='kimi'){const required=kimiPrerequisite(native,selected);if(required)return prerequisite(plan,required);if(native.secondary_model?.default_effort!==undefined&&typeof native.secondary_model.default_effort!=='string')fail('UNSUPPORTED_CONFIG');}
+    if(plan.client==='codex') {
+      if(native.agents&&own(native.agents,'max_threads'))fail('CODEX_CAP_ALIAS_CONFLICT');
+      const cap=native.agents?.max_concurrent_threads_per_session;
+      if(cap!==undefined&&(!Number.isSafeInteger(cap)||cap<1))fail('UNSUPPORTED_CONFIG');
     }
-    change(plan,l.config,config,text,config.mode);
-    files.push({path:l.config,type:'toml',existed:config.text !== null,ops});
-    plan.warnings.push('codex-hook-trust-required');
-  } else if (plan.client === 'kimi') {
-    const text = config.text ?? '', native = parseToml(text);
-    if (policy.mode === 'enforce') {
-      if (!kimiPoolMatches(native,policy.clients.kimi)) plan.warnings.push('kimi-native-pool-unverified');
-      plan.warnings.push('kimi-swarm-cap-launcher-only','kimi-ordinary-agent-concurrency-unsupported');
-    }
-    const edit = appendTomlHook(text,{event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:cmd,timeout:10});
-    change(plan,l.config,config,edit.text,config.mode);
-    files.push({path:l.config,type:'toml',existed:config.text !== null,ops:[edit.ownership]});
-    const launcher = await readDependency(plan,l.launcher,plan.stateDir);
-    if (launcher.text !== null) fail('OWNERSHIP_CONFLICT');
-    const launch = [plan.nodePath,path.join(plan.packageRoot,'bin/agent-policy.mjs'),'run','--client','kimi','--home',plan.home,'--policy',l.policy,'--state-dir',plan.stateDir,'--'].map(shell).join(' ');
-    const launcherText = `#!/bin/sh\n# Owned by agent-policy-kit\nexec ${launch} "$@"\n`;
-    change(plan,l.launcher,launcher,launcherText,0o700);
-    files.push({path:l.launcher,type:'owned',existed:false,afterHash:digest(launcherText)});
   }
-  change(plan,l.policy,policyBefore,policyBefore.text ?? policyText,0o600);
-  const record = {schemaVersion:1,client:plan.client,home:plan.home,stateDir:plan.stateDir,packageRoot:plan.packageRoot,nodePath:plan.nodePath,mode:policy.mode,maxConcurrent,defaultModel,policyHash,warnings:plan.warnings,files};
-  change(plan,l.receipt,receipt,json(record),0o600);
+  const files=[];plan.warnings=nativeWarnings(plan.client);
+  if(plan.client==='claude') {
+    const edited=jsonInstall(config.text,maxConcurrent,selected.code.model);change(plan,l.config,config,edited.text,config.mode);
+    files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
+  } else if(config) {
+    let text=config.text??'';const ops=[];
+    if(plan.client==='kimi') {const edit=removeTomlValue(text,['secondary_model','default_effort']);text=edit.text;if(edit.ownership)ops.push(edit.ownership);}
+    for(const[keys,value]of tomlSettings(plan.client,selected,maxConcurrent)) {
+      const previous=keys.reduce((at,key)=>at?.[key],native);
+      if(previous!==undefined&&typeof previous!==typeof value)fail('UNSUPPORTED_CONFIG');
+      const edit=setTomlValue(text,keys,value);text=edit.text;ops.push(edit.ownership);
+    }
+    change(plan,l.config,config,text,config.mode);files.push({path:l.config,type:'toml',existed:config.text!==null,ops});
+  }
+  const roles=nativeRoles(plan.client,selected);
+  for(const[i,target]of l.roles.entries()) {
+    const before=await readDependency(plan,target,plan.home);if(before.text!==null)fail('OWNERSHIP_CONFLICT');
+    change(plan,target,before,roles[i]);files.push({path:target,type:'role',existed:false,afterHash:digest(roles[i])});
+  }
+  const before=await readDependency(plan,l.instructions,plan.home),text=before.text??'';
+  if(text.includes(BEGIN)||text.includes(END))fail('OWNERSHIP_CONFLICT');
+  const prefix=!text||text.endsWith('\n\n')?'':text.endsWith('\n')?'\n':'\n\n';
+  const block=instructionBlock(plan.client,selected,maxConcurrent);
+  change(plan,l.instructions,before,text+prefix+block,before.mode);
+  files.push({path:l.instructions,type:'instructions',existed:before.text!==null,prefix,block});
+  change(plan,l.policy,policyBefore,policyBefore.text??json(policy),0o600);
+  const r={schemaVersion:2,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,maxConcurrent,preferences:selected,policyHash,warnings:plan.warnings,files};
+  change(plan,l.receipt,receipt,json(r),0o600);
   return {...plan,status:'planned'};
 }
 
@@ -343,7 +308,7 @@ async function verifyDependencies(plan, committed = []) {
 function validPlan(plan) {
   if (!object(plan) || plan.schemaVersion !== 1 || !CLIENTS.includes(plan.client) || !['install','uninstall'].includes(plan.kind) || !Array.isArray(plan.changes) || !Array.isArray(plan.dependencies)) fail('INVALID_PLAN');
   absolute(plan.home); absolute(plan.stateDir);
-  const l = locations(plan.client,plan.home,plan.stateDir), allowed = [l.config,l.policy,l.receipt,...(plan.client === 'codex' ? [l.hooks] : []),...(plan.client === 'kimi' ? [l.launcher] : [])];
+  const l = locations(plan.client,plan.home,plan.stateDir), allowed = [...nativeTargets(l),l.policy,l.receipt];
   if (plan.policyPath !== undefined) absolute(plan.policyPath);
   if (new Set(plan.dependencies.map(d=>d.path)).size !== plan.dependencies.length) fail('INVALID_PLAN');
   for (const d of plan.dependencies) {
@@ -358,7 +323,7 @@ function validPlan(plan) {
 }
 export async function applyInstall(plan) {
   validPlan(plan);
-  if (plan.status === 'unsupported') return {status:'unsupported',client:plan.client,changedFiles:0,warnings:[...plan.warnings]};
+  if (plan.status === 'prerequisite') return {status:'prerequisite',client:plan.client,changedFiles:0,warnings:[...plan.warnings]};
   await safePath(plan.home,path.parse(plan.home).root);
   await safePath(plan.stateDir,path.parse(plan.stateDir).root);
   if (!plan.changes.length) {
@@ -455,7 +420,7 @@ export async function uninstall(options) {
   plan.warnings = record.warnings ?? [];
   await undoFiles(plan,record);
   change(plan,l.receipt,receipt,null,0o600);
-  // Shared policy, private backups and audit records are intentionally retained.
+  // Shared preferences and private transaction backups are retained for later configuration/removal.
   plan.status = 'planned';
   return options.apply ? applyInstall(plan) : plan;
 }

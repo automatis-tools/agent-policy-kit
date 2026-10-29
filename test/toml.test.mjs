@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseToml, setTomlValue, restoreTomlValue, appendTomlHook, removeTomlHook } from '../src/toml.mjs';
+import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from '../src/toml.mjs';
 
 test('scalar updates preserve quoted keys, comments, multiline strings and unrelated bytes', () => {
   const input = '# secret comment\nmodel = "main"\ntext = """hello\n[agents]\nworld"""\n["agents"]\n"max_threads" = 12 # retain\n';
@@ -26,25 +26,9 @@ test('owned scalar drift, malformed TOML and unsupported inline tables fail safe
   assert.throws(() => setTomlValue('agents = { max_threads = 8 }\n', ['agents', 'max_threads'], 3), {code:'UNSUPPORTED_TOML_STRUCTURE'});
 });
 
-test('Kimi hook tables append without touching native model pool and uninstall by AST ownership', () => {
-  const original = '[secondary_model.models."subagent-code"]\nmodel = "provider/code"\n';
-  const entry = {event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:"'node' '/space and quote/cli.mjs'",timeout:10};
-  const result = appendTomlHook(original, entry);
-  assert.ok(result.text.startsWith(original));
-  assert.deepEqual(parseToml(result.text).hooks, [entry]);
-  const later = result.text + '\n[[hooks]]\nevent = "Stop"\ncommand = "echo later"\n';
-  const undone = removeTomlHook(later, result.ownership);
-  assert.equal(parseToml(undone).hooks.length, 1);
-  assert.equal(parseToml(undone).hooks[0].command, 'echo later');
-  assert.ok(undone.startsWith(original));
-});
-
-test('owned Kimi hook rejects nested table drift rather than transferring it to an earlier hook', () => {
-  for (const suffix of ['[hooks.extra]\nuser_value = 123\n','[[hooks.extra]]\nuser_value = 123\n','[hooks."quoted.extra"]\nuser_value = 123\n']) {
-    const original = '[[hooks]]\nevent = "Stop"\ncommand = "user"\n';
-    const entry = {event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:'owned',timeout:10};
-    const result = appendTomlHook(original,entry);
-    const changed = result.text + '\n' + suffix;
-    assert.throws(()=>removeTomlHook(changed,result.ownership),{code:'OWNED_DRIFT'});
-  }
+test('section-wide effort removal is owned, reversible, and refuses replacement drift',()=>{
+ const original='[secondary_model]\ndefault_effort = "high" # user default\ndefault_model = "code"\n';
+ const edit=removeTomlValue(original,['secondary_model','default_effort']);assert.equal(parseToml(edit.text).secondary_model.default_effort,undefined);assert.equal(parseToml(edit.text).secondary_model.default_model,'code');
+ assert.deepEqual(parseToml(restoreTomlValue(edit.text+'# later\n',edit.ownership)),parseToml(original));
+ assert.throws(()=>restoreTomlValue(edit.text+'default_effort = "low"\n',edit.ownership),{code:'OWNED_DRIFT'});
 });

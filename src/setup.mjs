@@ -1,17 +1,13 @@
 import { detectClients, resolveClient, summarizeDetection } from './detect.mjs';
 import { planInstall, applyInstall, summarizePlan } from './install.mjs';
 
-const ERRORS = new Set(['INVALID_CLIENT','INVALID_POLICY','INVALID_JSON','INVALID_TOML','UNSUPPORTED_CONFIG','UNSUPPORTED_TOML_STRUCTURE','UNSUPPORTED_TOML_VALUE','CODEX_CAP_ALIAS_CONFLICT','OWNERSHIP_CONFLICT','INVALID_RECEIPT','OWNED_DRIFT','INSTALLATION_CONFLICT','POLICY_CONFLICT','UNSAFE_PATH','UNSAFE_FILE','STALE_PLAN','RECOVERY_REQUIRED','ROLLBACK_CONFLICT','INVALID_PLAN','PLATFORM_UNSUPPORTED','INSTALL_LOCKED','INSTALL_FAILED','EACCES','EPERM','ENOENT','ENOSPC','EIO','EROFS']);
+const ERRORS = new Set(['LEGACY_RUNTIME_RECEIPT','INVALID_CLIENT','INVALID_POLICY','INVALID_JSON','INVALID_TOML','UNSUPPORTED_CONFIG','UNSUPPORTED_TOML_STRUCTURE','UNSUPPORTED_TOML_VALUE','CODEX_CAP_ALIAS_CONFLICT','OWNERSHIP_CONFLICT','INVALID_RECEIPT','OWNED_DRIFT','INSTALLATION_CONFLICT','POLICY_CONFLICT','UNSAFE_PATH','UNSAFE_FILE','STALE_PLAN','RECOVERY_REQUIRED','ROLLBACK_CONFLICT','INVALID_PLAN','PLATFORM_UNSUPPORTED','INSTALL_LOCKED','INSTALL_FAILED','EACCES','EPERM','ENOENT','ENOSPC','EIO','EROFS']);
 const safeError = error => ERRORS.has(error?.code) ? error.code : 'SETUP_FAILED';
 function actions(client,warnings) {
-  if (client === 'agy') return [{client,code:'exact_model_enforcement_unsupported',automatable:false}];
-  const result = [{client,code:client === 'codex' ? 'native_hook_trust_required' : 'native_hook_load_check_required',automatable:client !== 'codex'}];
-  if (warnings.includes('kimi-native-pool-unverified')) result.push({client,code:'kimi_native_pool_required',automatable:true});
-  if (warnings.includes('kimi-swarm-cap-launcher-only')) result.push({client,code:'kimi_policy_launcher_required',automatable:true});
-  return result;
+  return warnings.map(code=>({client,code,automatable:false}));
 }
 
-export async function setupDetected({home,stateDir,policyPath,packageRoot,nodePath,apply=false,client=null,env=process.env,hostHome} = {}) {
+export async function setupDetected({home,stateDir,policyPath,apply=false,client=null,env=process.env,hostHome} = {}) {
   const records = client === null ? await detectClients({env,hostHome}) : [await resolveClient(client,{env,hostHome})];
   const detected = summarizeDetection(records), results = [], requiredActions = [];
   const available = records.filter(r=>r.status === 'detected');
@@ -24,9 +20,9 @@ export async function setupDetected({home,stateDir,policyPath,packageRoot,nodePa
     try {
       // Planning and applying are sequential per client: the preceding transaction
       // can create shared policy/receipts that the next plan must capture afresh.
-      const plan = await planInstall({client:record.client,home,stateDir,policyPath,packageRoot,nodePath});
+      const plan = await planInstall({client:record.client,home,stateDir,policyPath});
       requiredActions.push(...actions(record.client,plan.warnings));
-      if (plan.status === 'unsupported') { results.push({client:record.client,status:'unsupported',plan:summarizePlan(plan)}); continue; }
+      if (plan.status === 'prerequisite') { results.push({client:record.client,status:'prerequisite',plan:summarizePlan(plan)}); continue; }
       if (apply) {
         const result = await applyInstall(plan);
         results.push({client:record.client,status:result.status === 'unchanged' ? 'unchanged' : 'configured',changedFiles:result.changedFiles,warnings:[...result.warnings]});
@@ -37,6 +33,6 @@ export async function setupDetected({home,stateDir,policyPath,packageRoot,nodePa
       requiredActions.push({client:record.client,code,automatable:false});
     }
   }
-  const failed = results.some(r=>['error','unsupported','invalid','timeout'].includes(r.status));
+  const failed = results.some(r=>['error','prerequisite','invalid','timeout'].includes(r.status));
   return {schemaVersion:1,status:available.length === 0 ? 'no_clients' : failed ? 'partial' : apply ? 'configured' : 'planned',detected,results,requiredActions,exitCode:available.length === 0 || failed ? 3 : 0};
 }
