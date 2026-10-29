@@ -38,3 +38,13 @@ test('Kimi hook tables append without touching native model pool and uninstall b
   assert.equal(parseToml(undone).hooks[0].command, 'echo later');
   assert.ok(undone.startsWith(original));
 });
+
+test('owned Kimi hook rejects nested table drift rather than transferring it to an earlier hook', () => {
+  for (const suffix of ['[hooks.extra]\nuser_value = 123\n','[[hooks.extra]]\nuser_value = 123\n','[hooks."quoted.extra"]\nuser_value = 123\n']) {
+    const original = '[[hooks]]\nevent = "Stop"\ncommand = "user"\n';
+    const entry = {event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:'owned',timeout:10};
+    const result = appendTomlHook(original,entry);
+    const changed = result.text + '\n' + suffix;
+    assert.throws(()=>removeTomlHook(changed,result.ownership),{code:'OWNED_DRIFT'});
+  }
+});

@@ -96,6 +96,7 @@ export function removeTomlHook(text, ownership) {
   const matches = tree.body[0].body.filter(n => n.type === 'TOMLTable' && n.kind === 'array' && same(n.resolvedKey.slice(0, -1), ['hooks']) && same(Object.fromEntries(n.body.map(kv => [keys(kv.key).join('.'), getStaticTOMLValue(kv.value)])), ownership.entry));
   if (matches.length !== 1) fail('OWNED_DRIFT');
   const table = matches[0];
+  if (tree.body[0].body.some(n => n.type === 'TOMLTable' && n.resolvedKey.length > table.resolvedKey.length && same(n.resolvedKey.slice(0,table.resolvedKey.length),table.resolvedKey))) fail('OWNED_DRIFT');
   // Node ranges span exactly the owned table, not the following user's table.
   const result = removeStatement(text, table);
   ast(result);

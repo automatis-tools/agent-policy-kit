@@ -12,6 +12,7 @@ const digest = value => value === null ? null : createHash('sha256').update(valu
 const json = value => JSON.stringify(value, null, 2) + '\n';
 const equal = isDeepStrictEqual;
 const own = (o, k) => Object.hasOwn(o, k);
+const canonical = value => Array.isArray(value) ? value.map(canonical) : object(value) ? Object.fromEntries(Object.keys(value).sort().map(k => [k,canonical(value[k])])) : value;
 function fail(code) { throw Object.assign(new Error(code), {code}); }
 function object(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 function absolute(value) { if (typeof value !== 'string' || !path.isAbsolute(value) || value.includes('\0')) fail('UNSAFE_PATH'); return path.resolve(value); }
@@ -46,6 +47,14 @@ async function read(file, base) {
     if (Buffer.byteLength(text) > LIMIT) fail('UNSAFE_FILE');
     return {text,mode:s.mode & 0o777};
   } finally { await handle.close(); }
+}
+async function readDependency(plan, file, base) {
+  const before = await read(file,base);
+  const snapshot = {path:file,base,beforeHash:digest(before.text),beforeMode:before.mode};
+  const earlier = plan.dependencies.find(d => d.path === file);
+  if (earlier && (earlier.beforeHash !== snapshot.beforeHash || earlier.beforeMode !== snapshot.beforeMode)) fail('STALE_PLAN');
+  if (!earlier) plan.dependencies.push(snapshot);
+  return before;
 }
 // JSON.parse validates grammar; this token pass additionally refuses duplicate object keys.
 function parseJson(text, code = 'INVALID_JSON') {
@@ -127,6 +136,17 @@ function undoJson(text, file) {
   return !file.existed && Object.keys(value).length === 0 ? null : json(value);
 }
 function allowedBases(plan) { return target => within(plan.stateDir,target) ? plan.stateDir : plan.home; }
+async function recoveryRequired(stateDir) {
+  const pending = path.join(stateDir,'pending.json');
+  await safePath(pending,stateDir);
+  if (await statOrNull(pending)) fail('RECOVERY_REQUIRED');
+  const lock = await read(path.join(stateDir,'.install.lock'),stateDir);
+  if (lock.text !== null && /^[a-f0-9-]{36}$/.test(lock.text)) {
+    const index = path.join(stateDir,'backups',lock.text,'index.json');
+    await safePath(index,stateDir);
+    if (await statOrNull(index)) fail('RECOVERY_REQUIRED');
+  }
+}
 async function context({client,home,stateDir}) {
   if (!CLIENTS.includes(client)) fail('INVALID_CLIENT');
   home = absolute(home); stateDir = absolute(stateDir);
@@ -139,11 +159,10 @@ async function context({client,home,stateDir}) {
   let anchor = within(home,stateDir) ? home : path.dirname(stateDir);
   while (!(await statOrNull(anchor))) anchor = path.dirname(anchor);
   await safePath(stateDir,anchor);
-  const result = {schemaVersion:1,client,home,stateDir,warnings:[],changes:[]};
+  const result = {schemaVersion:1,client,home,stateDir,warnings:[],changes:[],dependencies:[]};
   const l = locations(client,home,stateDir);
-  await safePath(path.join(stateDir,'pending.json'),stateDir);
-  if (await statOrNull(path.join(stateDir,'pending.json'))) fail('RECOVERY_REQUIRED');
-  const receipt = await read(l.receipt,stateDir);
+  await recoveryRequired(stateDir);
+  const receipt = await readDependency(result,l.receipt,stateDir);
   return {result,l,receipt};
 }
 function change(plan,target,before,after,mode=0o600) {
@@ -194,7 +213,7 @@ function validateReceipt(r, plan) {
 async function undoFiles(plan,r,verifyOnly=false) {
   const base = allowedBases(plan);
   for (const file of r.files) {
-    const before = await read(file.path,base(file.path));
+    const before = await readDependency(plan,file.path,base(file.path));
     if (before.text === null) fail('OWNED_DRIFT');
     let after;
     if (file.type === 'json') after = undoJson(before.text,file);
@@ -225,7 +244,8 @@ export async function planInstall(options) {
   plan.kind = 'install';
   if (plan.client === 'agy') return {...plan,status:'unsupported',warnings:['agy-exact-model-enforcement-unsupported']};
   plan.packageRoot = absolute(options.packageRoot); plan.nodePath = absolute(options.nodePath);
-  const policySource = await read(absolute(options.policyPath),path.dirname(absolute(options.policyPath)));
+  plan.policyPath = absolute(options.policyPath);
+  const policySource = await readDependency(plan,plan.policyPath,path.dirname(plan.policyPath));
   if (policySource.text === null) fail('INVALID_POLICY');
   const policy = parseJson(policySource.text,'INVALID_POLICY');
   try { validatePolicy(policy); } catch { fail('INVALID_POLICY'); }
@@ -233,20 +253,21 @@ export async function planInstall(options) {
   const selected = policy.clients[plan.client], maxConcurrent = selected.maxConcurrent;
   const defaultModel = selected.profiles[selected.defaultProfile].model;
   const policyText = json(policy);
-  const policyBefore = await read(l.policy,plan.stateDir);
+  const policyHash = digest(json(canonical(policy)));
+  const policyBefore = await readDependency(plan,l.policy,plan.stateDir);
   if (receipt.text !== null) {
     const r = validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
-    if (r.packageRoot !== plan.packageRoot || r.nodePath !== plan.nodePath || r.policyHash !== digest(policyText)) fail('INSTALLATION_CONFLICT');
+    if (r.packageRoot !== plan.packageRoot || r.nodePath !== plan.nodePath || r.policyHash !== policyHash) fail('INSTALLATION_CONFLICT');
     await undoFiles(plan,r,true);
-    if (policyBefore.text !== policyText) fail('OWNED_DRIFT');
+    if (policyBefore.text === null || !equal(parseJson(policyBefore.text,'OWNED_DRIFT'),policy)) fail('OWNED_DRIFT');
     return {...plan,status:'unchanged',warnings:r.warnings ?? []};
   }
-  if (policyBefore.text !== null && policyBefore.text !== policyText) fail('POLICY_CONFLICT');
+  if (policyBefore.text !== null && !equal(parseJson(policyBefore.text,'POLICY_CONFLICT'),policy)) fail('POLICY_CONFLICT');
   const cmd = command(plan), files = [];
-  const config = await read(l.config,plan.home);
+  const config = await readDependency(plan,l.config,plan.home);
   if (plan.client === 'claude' || plan.client === 'codex') {
     const target = plan.client === 'codex' ? l.hooks : l.config;
-    const before = plan.client === 'codex' ? await read(target,plan.home) : config;
+    const before = plan.client === 'codex' ? await readDependency(plan,target,plan.home) : config;
     const edited = jsonInstall(before.text,plan.client,cmd,maxConcurrent,defaultModel);
     change(plan,target,before,edited.text,before.mode);
     files.push({path:target,type:'json',existed:before.text !== null,ops:edited.ops,created:edited.created});
@@ -271,14 +292,14 @@ export async function planInstall(options) {
     const edit = appendTomlHook(text,{event:'PreToolUse',matcher:'^(Agent|AgentSwarm)$',command:cmd,timeout:10});
     change(plan,l.config,config,edit.text,config.mode);
     files.push({path:l.config,type:'toml',existed:config.text !== null,ops:[edit.ownership]});
-    const launcher = await read(l.launcher,plan.stateDir);
+    const launcher = await readDependency(plan,l.launcher,plan.stateDir);
     if (launcher.text !== null) fail('OWNERSHIP_CONFLICT');
     const launcherText = `#!/bin/sh\n# Owned by agent-policy-kit\nexport KIMI_CODE_AGENT_SWARM_MAX_CONCURRENCY=${maxConcurrent}\nexec kimi "$@"\n`;
     change(plan,l.launcher,launcher,launcherText,0o700);
     files.push({path:l.launcher,type:'owned',existed:false,afterHash:digest(launcherText)});
   }
-  change(plan,l.policy,policyBefore,policyText,0o600);
-  const record = {schemaVersion:1,client:plan.client,home:plan.home,stateDir:plan.stateDir,packageRoot:plan.packageRoot,nodePath:plan.nodePath,maxConcurrent,defaultModel,policyHash:digest(policyText),warnings:plan.warnings,files};
+  change(plan,l.policy,policyBefore,policyBefore.text ?? policyText,0o600);
+  const record = {schemaVersion:1,client:plan.client,home:plan.home,stateDir:plan.stateDir,packageRoot:plan.packageRoot,nodePath:plan.nodePath,maxConcurrent,defaultModel,policyHash,warnings:plan.warnings,files};
   change(plan,l.receipt,receipt,json(record),0o600);
   return {...plan,status:'planned'};
 }
@@ -301,25 +322,42 @@ async function syncDir(dir) {
   const handle = await fs.open(dir,constants.O_RDONLY);
   try { await handle.sync(); } finally { await handle.close(); }
 }
-async function verify(plan, c) {
-  const current = await read(c.path,allowedBases(plan)(c.path));
-  if (digest(current.text) !== c.beforeHash || (current.text !== null && current.mode !== c.beforeMode)) fail('STALE_PLAN');
+async function verifyDependencies(plan, committed = []) {
+  for (const dependency of plan.dependencies) {
+    const postimage = committed.find(c => c.path === dependency.path);
+    const current = await read(dependency.path,dependency.base);
+    const hash = postimage ? postimage.afterHash : dependency.beforeHash;
+    const mode = postimage ? postimage.mode : dependency.beforeMode;
+    if (digest(current.text) !== hash || (current.text !== null && current.mode !== mode)) fail('STALE_PLAN');
+  }
 }
 function validPlan(plan) {
-  if (!object(plan) || plan.schemaVersion !== 1 || !CLIENTS.includes(plan.client) || !['install','uninstall'].includes(plan.kind) || !Array.isArray(plan.changes)) fail('INVALID_PLAN');
+  if (!object(plan) || plan.schemaVersion !== 1 || !CLIENTS.includes(plan.client) || !['install','uninstall'].includes(plan.kind) || !Array.isArray(plan.changes) || !Array.isArray(plan.dependencies)) fail('INVALID_PLAN');
   absolute(plan.home); absolute(plan.stateDir);
   const l = locations(plan.client,plan.home,plan.stateDir), allowed = [l.config,l.policy,l.receipt,...(plan.client === 'codex' ? [l.hooks] : []),...(plan.client === 'kimi' ? [l.launcher] : [])];
+  if (plan.policyPath !== undefined) absolute(plan.policyPath);
+  if (new Set(plan.dependencies.map(d=>d.path)).size !== plan.dependencies.length) fail('INVALID_PLAN');
+  for (const d of plan.dependencies) {
+    const source = d.path === plan.policyPath;
+    if ((!allowed.includes(d.path) && !source) || (d.base !== allowedBases(plan)(d.path) && !(source && d.base === path.dirname(d.path))) || !(d.beforeHash === null || /^[a-f0-9]{64}$/.test(d.beforeHash)) || !Number.isInteger(d.beforeMode)) fail('INVALID_PLAN');
+  }
   if (new Set(plan.changes.map(c=>c.path)).size !== plan.changes.length) fail('INVALID_PLAN');
   for (const c of plan.changes) {
     if (!allowed.includes(c.path) || !(c.before === null || typeof c.before === 'string') || !(c.after === null || typeof c.after === 'string') || digest(c.before) !== c.beforeHash || digest(c.after) !== c.afterHash || !Number.isInteger(c.mode) || (c.mode & ~0o777) || !Number.isInteger(c.beforeMode)) fail('INVALID_PLAN');
+    if (!plan.dependencies.some(d => d.path === c.path && d.beforeHash === c.beforeHash && d.beforeMode === c.beforeMode)) fail('INVALID_PLAN');
   }
 }
 export async function applyInstall(plan) {
   validPlan(plan);
-  if (plan.status === 'unsupported' || !plan.changes.length) return {status:plan.status === 'unsupported' ? 'unsupported' : 'unchanged',client:plan.client,changedFiles:0,warnings:[...plan.warnings]};
-  if (process.platform === 'win32') fail('PLATFORM_UNSUPPORTED');
+  if (plan.status === 'unsupported') return {status:'unsupported',client:plan.client,changedFiles:0,warnings:[...plan.warnings]};
   await safePath(plan.home,path.parse(plan.home).root);
   await safePath(plan.stateDir,path.parse(plan.stateDir).root);
+  if (!plan.changes.length) {
+    await recoveryRequired(plan.stateDir);
+    await verifyDependencies(plan);
+    return {status:'unchanged',client:plan.client,changedFiles:0,warnings:[...plan.warnings]};
+  }
+  if (process.platform === 'win32') fail('PLATFORM_UNSUPPORTED');
   // Lock creation is the first mutation. All target preimages were collected in plan-only mode.
   await privateDir(plan.stateDir,within(plan.home,plan.stateDir) ? plan.home : path.dirname(plan.stateDir));
   const lock = path.join(plan.stateDir,'.install.lock'), id = randomUUID();
@@ -327,12 +365,12 @@ export async function applyInstall(plan) {
   let held;
   try { held = await fs.open(lock,'wx',0o600); } catch (e) { if (e.code === 'EEXIST') fail('INSTALL_LOCKED'); throw e; }
   const pending = path.join(plan.stateDir,'pending.json'), staged = [], committed = [];
-  let journalCreated = false, rollbackConflict = false;
+  let journalCreated = false, rollbackConflict = false, journalText = null, retainLock = false;
   try {
     await held.writeFile(id); await held.sync();
     await safePath(pending,plan.stateDir);
     if (await statOrNull(pending)) fail('RECOVERY_REQUIRED');
-    for (const c of plan.changes) await verify(plan,c);
+    await verifyDependencies(plan);
     const backupDir = path.join(plan.stateDir,'backups',id);
     await privateDir(path.dirname(backupDir),plan.stateDir);
     await privateDir(backupDir,plan.stateDir);
@@ -347,22 +385,34 @@ export async function applyInstall(plan) {
       }
     }
     const journal = {schemaVersion:1,id,client:plan.client,kind:plan.kind,backupDir,changes:plan.changes.map((c,i)=>({path:c.path,beforeHash:c.beforeHash,afterHash:c.afterHash,backup:c.before === null ? null : `${i}.before`,beforeMode:c.beforeMode}))};
-    await durableWrite(path.join(backupDir,'index.json'),json(journal),0o600);
+    journalText = json(journal);
+    await durableWrite(path.join(backupDir,'index.json'),journalText,0o600);
     await syncDir(backupDir);
     await syncDir(path.dirname(backupDir));
-    await durableWrite(pending,json(journal),0o600); journalCreated = true;
+    await durableWrite(pending,journalText,0o600); journalCreated = true;
     await syncDir(plan.stateDir);
     for (const [i,c] of plan.changes.entries()) {
-      await verify(plan,c);
+      await verifyDependencies(plan,committed);
       if (c.after === null) await fs.unlink(c.path);
       else await fs.rename(path.join(path.dirname(c.path),`.agent-policy-${id}-${i}.tmp`),c.path);
       committed.push(c);
       await syncDir(path.dirname(c.path));
     }
-    await fs.unlink(pending); journalCreated = false;
+    await verifyDependencies(plan,committed);
+    await fs.unlink(pending);
     await syncDir(plan.stateDir);
+    await verifyDependencies(plan,committed);
+    journalCreated = false;
     return {status:'applied',client:plan.client,changedFiles:plan.changes.length,warnings:[...plan.warnings]};
   } catch (error) {
+    if (journalCreated) retainLock = true;
+    // Final directory sync can fail after unlink. Restore the recovery record before
+    // any rollback that might conflict. The retained lock UUID also locates the
+    // durable backup index if storage refuses recreation of pending.json.
+    if (journalCreated && !(await statOrNull(pending))) {
+      try { await durableWrite(pending,journalText,0o600); await syncDir(plan.stateDir); }
+      catch { retainLock = true; fail('RECOVERY_REQUIRED'); }
+    }
     for (const c of committed.toReversed()) {
       try {
         const current = await read(c.path,allowedBases(plan)(c.path));
@@ -377,13 +427,14 @@ export async function applyInstall(plan) {
       } catch { rollbackConflict = true; }
     }
     if (journalCreated && !rollbackConflict) { try { await fs.unlink(pending); } catch { rollbackConflict = true; } }
-    if (rollbackConflict) fail('ROLLBACK_CONFLICT');
+    if (rollbackConflict) { retainLock = true; fail('ROLLBACK_CONFLICT'); }
+    retainLock = false;
     if (typeof error.code === 'string' && ['STALE_PLAN','RECOVERY_REQUIRED','UNSAFE_PATH','UNSAFE_FILE'].includes(error.code)) throw error;
     fail('INSTALL_FAILED');
   } finally {
     for (const stage of staged) { try { await fs.unlink(stage); } catch {} }
     await held.close();
-    try { if ((await fs.readFile(lock,'utf8')) === id) await fs.unlink(lock); } catch {}
+    try { if (!retainLock && (await fs.readFile(lock,'utf8')) === id) await fs.unlink(lock); } catch {}
   }
 }
 

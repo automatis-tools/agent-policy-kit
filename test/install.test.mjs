@@ -293,3 +293,129 @@ test('atomic replacements preserve the exact existing config permission bits', a
   await uninstall({...f,apply:true});
   assert.equal((await fs.stat(target)).mode & 0o777,0o660);
 });
+
+test('apply rejects stale unchanged native config and shared policy dependencies', async t => {
+  for (const dependency of ['native','shared-policy','source-policy']) {
+    const f = await fixture(t);
+    const native = path.join(f.home,'.codex/config.toml');
+    const matching = '[agents]\nmax_concurrent_threads_per_session = 3\n[features]\nhooks = true\n';
+    await put(native,matching);
+    const policy = JSON.parse(await fs.readFile(f.policyPath,'utf8'));
+    await put(path.join(f.stateDir,'policy.json'),JSON.stringify(policy,null,2)+'\n');
+    const plan = await planInstall(f);
+    assert.ok(!plan.changes.some(c=>c.path === native));
+    assert.ok(!plan.changes.some(c=>c.path === path.join(f.stateDir,'policy.json')));
+    if (dependency === 'native') await fs.writeFile(native,matching.replace('= 3','= 999').replace('= true','= false'));
+    else await fs.writeFile(dependency === 'shared-policy' ? path.join(f.stateDir,'policy.json') : f.policyPath,'{}\n');
+    await assert.rejects(applyInstall(plan),{code:'STALE_PLAN'});
+    await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+    await assert.rejects(fs.stat(path.join(f.stateDir,'installations/codex.json')),{code:'ENOENT'});
+  }
+});
+
+test('apply rejects stale no-op installs and stale missing-receipt uninstall plans', async t => {
+  const f = await fixture(t);
+  await applyInstall(await planInstall(f));
+  const unchanged = await planInstall(f);
+  assert.equal(unchanged.status,'unchanged');
+  await fs.writeFile(path.join(f.stateDir,'policy.json'),'{}\n');
+  await assert.rejects(applyInstall(unchanged),{code:'STALE_PLAN'});
+  const absent = await fixture(t,'claude');
+  const noUninstall = await uninstall({...absent,apply:false});
+  await put(path.join(absent.stateDir,'installations/claude.json'),'{}\n');
+  await assert.rejects(applyInstall(noUninstall),{code:'STALE_PLAN'});
+});
+
+test('unchanged dependencies are rechecked after staging and after the last commit', async t => {
+  for (const during of ['staging','last-commit']) {
+    const f = await fixture(t);
+    const native = path.join(f.home,'.codex/config.toml');
+    const original = '[agents]\nmax_concurrent_threads_per_session = 3\n[features]\nhooks = true\n';
+    await put(native,original);
+    const preloader = path.join(f.root,'dependency-preloader.mjs');
+    const entry = path.join(f.root,'dependency-transaction.mjs');
+    const trigger = during === 'staging' ? path.join(f.stateDir,'pending.json') : path.join(f.stateDir,'installations/codex.json');
+    await fs.writeFile(preloader,`import fs from 'node:fs/promises'; import {syncBuiltinESMExports} from 'node:module'; const method = ${JSON.stringify(during === 'staging' ? 'open' : 'rename')}; const original = fs[method]; let changed = false; fs[method] = async (...args) => { const result = await original(...args); if (!changed && args[${during === 'staging' ? '0' : '1'}] === ${JSON.stringify(trigger)}) { changed = true; await fs.writeFile(${JSON.stringify(native)},${JSON.stringify(original.replace('= 3','= 999'))}); } return result; }; syncBuiltinESMExports();\n`);
+    await fs.writeFile(entry,`import {planInstall,applyInstall} from ${JSON.stringify(new URL('../src/install.mjs',import.meta.url).href)}; try { await applyInstall(await planInstall(${JSON.stringify(f)})); console.log('WRONGLY_APPLIED'); } catch(e) { console.log(e.code); }\n`);
+    const result = await run(process.execPath,['--import',preloader,entry]);
+    assert.equal(result.stdout.trim(),'STALE_PLAN');
+    assert.match(await fs.readFile(native,'utf8'),/= 999/);
+    await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+    await assert.rejects(fs.stat(path.join(f.stateDir,'installations/codex.json')),{code:'ENOENT'});
+  }
+});
+
+test('Kimi uninstall refuses a nested table added beneath the owned hook without reparenting it', async t => {
+  const f = await fixture(t,'kimi');
+  const target = path.join(f.home,'.kimi-code/config.toml');
+  await put(target,'[[hooks]]\nevent = "Stop"\ncommand = "user"\n');
+  await applyInstall(await planInstall(f));
+  await fs.appendFile(target,'\n[hooks.extra]\nuser_value = 123\n');
+  const before = await fs.readFile(target,'utf8');
+  await assert.rejects(uninstall({...f,apply:true}),{code:'OWNED_DRIFT'});
+  assert.equal(await fs.readFile(target,'utf8'),before);
+});
+
+test('late finalization sync failure preserves a recovery journal when rollback meets a competing edit', async t => {
+  const f = await fixture(t);
+  const hooks = path.join(f.home,'.codex/hooks.json');
+  const pending = path.join(f.stateDir,'pending.json');
+  const preloader = path.join(f.root,'finalization-preloader.mjs');
+  const entry = path.join(f.root,'finalization-transaction.mjs');
+  await fs.writeFile(preloader,`import fs from 'node:fs/promises'; import {syncBuiltinESMExports} from 'node:module'; const open = fs.open, unlink = fs.unlink; let removed = false, failed = false; fs.unlink = async file => { const result = await unlink(file); if (file === ${JSON.stringify(pending)}) removed = true; return result; }; fs.open = async (file,...args) => { const handle = await open(file,...args); if (file === ${JSON.stringify(f.stateDir)}) { const sync = handle.sync.bind(handle); handle.sync = async () => { if (removed && !failed) { failed = true; await fs.writeFile(${JSON.stringify(hooks)},'{"competing_edit":true}\\n'); throw Object.assign(new Error('injected finalization EIO'),{code:'EIO'}); } return sync(); }; } return handle; }; syncBuiltinESMExports();\n`);
+  await fs.writeFile(entry,`import {planInstall,applyInstall} from ${JSON.stringify(new URL('../src/install.mjs',import.meta.url).href)}; try { await applyInstall(await planInstall(${JSON.stringify(f)})); console.log('WRONGLY_APPLIED'); } catch(e) { console.log(e.code); }\n`);
+  const result = await run(process.execPath,['--import',preloader,entry]);
+  assert.equal(result.stdout.trim(),'ROLLBACK_CONFLICT');
+  assert.equal(await fs.readFile(hooks,'utf8'),'{"competing_edit":true}\n');
+  const journal = JSON.parse(await fs.readFile(pending,'utf8'));
+  assert.equal((await fs.stat(pending)).mode & 0o777,0o600);
+  assert.ok(await fs.stat(path.join(journal.backupDir,'index.json')));
+  await assert.rejects(planInstall(f),{code:'RECOVERY_REQUIRED'});
+});
+
+test('shared policies with identical semantics preserve formatting and stay idempotent across source key order', async t => {
+  const f = await fixture(t);
+  const source = await fs.readFile(f.policyPath,'utf8');
+  await put(path.join(f.stateDir,'policy.json'),source);
+  await applyInstall(await planInstall(f));
+  assert.equal(await fs.readFile(path.join(f.stateDir,'policy.json'),'utf8'),source);
+  const policy = JSON.parse(source);
+  await fs.writeFile(f.policyPath,JSON.stringify({clients:policy.clients,mode:policy.mode,schemaVersion:policy.schemaVersion}));
+  assert.equal((await planInstall(f)).status,'unchanged');
+  await uninstall({...f,apply:true});
+});
+
+test('finalization rechecks unchanged dependencies before reporting success', async t => {
+  const f = await fixture(t);
+  const native = path.join(f.home,'.codex/config.toml');
+  const original = '[agents]\nmax_concurrent_threads_per_session = 3\n[features]\nhooks = true\n';
+  await put(native,original);
+  const preloader = path.join(f.root,'final-dependency-preloader.mjs');
+  const entry = path.join(f.root,'final-dependency-transaction.mjs');
+  await fs.writeFile(preloader,`import fs from 'node:fs/promises'; import {syncBuiltinESMExports} from 'node:module'; const unlink = fs.unlink; let changed = false; fs.unlink = async file => { const result = await unlink(file); if (!changed && file === ${JSON.stringify(path.join(f.stateDir,'pending.json'))}) { changed = true; await fs.writeFile(${JSON.stringify(native)},${JSON.stringify(original.replace('= 3','= 999'))}); } return result; }; syncBuiltinESMExports();\n`);
+  await fs.writeFile(entry,`import {planInstall,applyInstall} from ${JSON.stringify(new URL('../src/install.mjs',import.meta.url).href)}; try { await applyInstall(await planInstall(${JSON.stringify(f)})); console.log('WRONGLY_APPLIED'); } catch(e) { console.log(e.code); }\n`);
+  const result = await run(process.execPath,['--import',preloader,entry]);
+  assert.equal(result.stdout.trim(),'STALE_PLAN');
+  assert.match(await fs.readFile(native,'utf8'),/= 999/);
+  await assert.rejects(fs.stat(path.join(f.home,'.codex/hooks.json')),{code:'ENOENT'});
+});
+
+test('failed recovery-journal recreation retains a private lock pointing to the backup index', async t => {
+  const f = await fixture(t);
+  const hooks = path.join(f.home,'.codex/hooks.json');
+  const pending = path.join(f.stateDir,'pending.json');
+  const preloader = path.join(f.root,'recovery-fallback-preloader.mjs');
+  const entry = path.join(f.root,'recovery-fallback-transaction.mjs');
+  await fs.writeFile(preloader,`import fs from 'node:fs/promises'; import {syncBuiltinESMExports} from 'node:module'; const open = fs.open, unlink = fs.unlink; let removed = false, failed = false; fs.unlink = async file => { const result = await unlink(file); if (file === ${JSON.stringify(pending)}) removed = true; return result; }; fs.open = async (file,...args) => { if (file === ${JSON.stringify(pending)} && removed) throw Object.assign(new Error('cannot recreate marker'),{code:'EIO'}); const handle = await open(file,...args); if (file === ${JSON.stringify(f.stateDir)}) { const sync = handle.sync.bind(handle); handle.sync = async () => { if (removed && !failed) { failed = true; await fs.writeFile(${JSON.stringify(hooks)},'{"competing_edit":true}\\n'); throw Object.assign(new Error('finalization EIO'),{code:'EIO'}); } return sync(); }; } return handle; }; syncBuiltinESMExports();\n`);
+  await fs.writeFile(entry,`import {planInstall,applyInstall} from ${JSON.stringify(new URL('../src/install.mjs',import.meta.url).href)}; try { await applyInstall(await planInstall(${JSON.stringify(f)})); console.log('WRONGLY_APPLIED'); } catch(e) { console.log(e.code); }\n`);
+  const result = await run(process.execPath,['--import',preloader,entry]);
+  assert.equal(result.stdout.trim(),'RECOVERY_REQUIRED');
+  assert.equal(await fs.readFile(hooks,'utf8'),'{"competing_edit":true}\n');
+  await assert.rejects(fs.stat(pending),{code:'ENOENT'});
+  const lock = path.join(f.stateDir,'.install.lock');
+  const id = await fs.readFile(lock,'utf8');
+  assert.equal((await fs.stat(lock)).mode & 0o777,0o600);
+  assert.ok(await fs.stat(path.join(f.stateDir,'backups',id,'index.json')));
+  await assert.rejects(planInstall(f),{code:'RECOVERY_REQUIRED'});
+  await assert.rejects(uninstall({...f,apply:true}),{code:'RECOVERY_REQUIRED'});
+});
