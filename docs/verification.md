@@ -4,11 +4,11 @@ Configuration-only release candidate 0.1.0, local macOS arm64, 2026-10-29. Previ
 
 | Layer | Status | Meaning |
 |---|---|---|
-| Shared preferences/native generation/installer/detection | PASS, 86/86 unit cases within both full suites | Native file shapes, ownership, preservation and safety |
-| Installed tarball with denied source access | PASS on Node 22.13.0 and 26.5.1, full suites 87/87 each | Distribution, rollback, repeat setup and owned removal |
+| Shared preferences/native generation/installer/detection | PASS, 98/98 unit cases within both full suites | Native file shapes, ownership, preservation and safety |
+| Installed tarball with denied source access | PASS on Node 22.13.0 and 26.5.1, full suites 99/99 each | Distribution, rollback, repeat setup and owned removal |
 | Package/state removal after setup | PASS on both runtimes | Native files and standalone consumer fixtures have no APK dependency |
 | Scoped native installer review | PASS after reserved Kimi alias correction | Independent 56/56 targeted tests |
-| Whole-change review | Pending | Configuration-only contract and integration |
+| Whole-change review and scoped fixes | PASS | Active native home, YAML scalar serialization, canonical updates and optional delegation verified |
 | Native Codex config parser | PASS, positive and malformed-config control | Native settings parse, role loading remains unchecked |
 | Native agy role discovery | PASS, four roles listed; malformed role omitted | Native definitions load without a model task |
 | Native Claude/Kimi role loading | NOT CHECKED | No documented safe role-list/parser-only command found |
@@ -19,3 +19,5 @@ Configuration-only release candidate 0.1.0, local macOS arm64, 2026-10-29. Previ
 Native formats were checked against current primary documentation. Last observed CLI versions during preparation: Codex 0.166.0, Claude Code 2.1.312, Kimi 2.4.0, agy 1.4.10. Working identity does not prove account access, model entitlement or native loading in a resumed session. New native sessions may be needed.
 
 The tarball gate uses fixture executable identities and standalone native-file consumers. It does not claim real provider execution. Private logs and profiles stay outside publication.
+
+Final native agy listing was repeated after quoted model serialization; all four roles load. A reference YAML parser preserved custom:, null and true as strings. Optional-delegation regressions retain disabled Codex agents and ordinary main settings.
