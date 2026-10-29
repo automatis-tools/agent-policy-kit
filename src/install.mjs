@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { constants } from 'node:fs';
 import { validatePolicy } from './policy.mjs';
+import { PACKAGE_VERSION } from './release.mjs';
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
 import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
 
@@ -150,58 +151,112 @@ function tomlSettings(client,preferences,maxConcurrent) {
   const selected=[...new Map([preferences.code,preferences.light].map(v=>[v.model,v])).values()];
   return [[['secondary_model','default_model'],preferences.code.model],...selected.map(v=>[['secondary_model','models',v.model],v.model===preferences.code.model?'Implementation and difficult analysis; apk-worker and apk-reviewer.':'Search and mechanical tasks; apk-explorer and apk-routine.']),...selected.map(v=>[['models',v.model,'overrides','default_effort'],v.effort])];
 }
-function validPriorLiteral(raw,type) {
-  if(raw===null)return true;
-  if(typeof raw!=='string')return false;
-  try { const parsed=parseToml(`value = ${raw}\n`);return Object.keys(parsed).length===1&&typeof parsed.value===type&& (type!=='number'||Number.isSafeInteger(parsed.value)); } catch { return false; }
+const HASH=/^[a-f0-9]{64}$/;
+const validHash=value=>typeof value==='string'&&HASH.test(value);
+const VERSION=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+const SOURCES=['release','custom','saved'];
+function version(value) {return typeof value==='string'&&value.length<=128&&VERSION.test(value);}
+function fields(value,allowed) {if(!object(value)||Object.keys(value).some(key=>!allowed.includes(key)))fail('INVALID_RECEIPT');}
+function literalValue(raw,type,nullable=false) {
+  if(raw===null&&nullable)return null;
+  if(typeof raw!=='string'||raw.length>8192)fail('INVALID_RECEIPT');
+  let value;
+  try {const parsed=parseToml(`value = ${raw}\n`);if(Object.keys(parsed).length!==1)fail('INVALID_RECEIPT');value=parsed.value;}catch {fail('INVALID_RECEIPT');}
+  if(typeof value!==type||(type==='number'&&!Number.isSafeInteger(value))||(type==='string'&&value.length>4096))fail('INVALID_RECEIPT');
+  return value;
+}
+function alias(value) {return typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}$/.test(value);}
+function scalar(op,target,type) {
+  fields(op,['kind','path','before','after','addedTable']);
+  if(op.kind!=='scalar'||!equal(op.path,target)||(op.addedTable&&!equal(op.addedTable,target.slice(0,-1))))fail('INVALID_RECEIPT');
+  literalValue(op.before,type,true);
+  return literalValue(op.after,type);
+}
+function validateTomlSnapshot(file,client) {
+  if(!Array.isArray(file.ops)||!file.ops.every(object))fail('INVALID_RECEIPT');
+  if(client==='codex') {
+    if(file.ops.length!==3)fail('INVALID_RECEIPT');
+    const cap=scalar(file.ops[0],['agents','max_concurrent_threads_per_session'],'number');
+    if(cap<1||cap>32)fail('INVALID_RECEIPT');
+    scalar(file.ops[1],['agents','default_subagent_model'],'string');scalar(file.ops[2],['agents','default_subagent_reasoning_effort'],'string');
+    return;
+  }
+  if(client!=='kimi'||![4,6].includes(file.ops.length))fail('INVALID_RECEIPT');
+  const removed=file.ops[0];fields(removed,['kind','path','before']);
+  if(removed.kind!=='removed'||!equal(removed.path,['secondary_model','default_effort']))fail('INVALID_RECEIPT');
+  literalValue(removed.before,'string',true);
+  const defaultAlias=scalar(file.ops[1],['secondary_model','default_model'],'string');
+  const count=(file.ops.length-2)/2,aliases=[];
+  for(let i=0;i<count;i++) {
+    const op=file.ops[2+i],name=op.path?.[2];
+    if(!alias(name)||aliases.includes(name))fail('INVALID_RECEIPT');aliases.push(name);
+    scalar(op,['secondary_model','models',name],'string');
+  }
+  if(!aliases.includes(defaultAlias))fail('INVALID_RECEIPT');
+  for(let i=0;i<count;i++)scalar(file.ops[2+count+i],['models',aliases[i],'overrides','default_effort'],'string');
+}
+function validateJsonSnapshot(file) {
+  if(!Array.isArray(file.ops)||file.ops.length!==2||!Array.isArray(file.created)||file.created.length>1||!file.created.every(keys=>equal(keys,['env'])))fail('INVALID_RECEIPT');
+  for(const[i,key]of ['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL'].entries()) {
+    const op=file.ops[i];fields(op,['kind','path','existed','before','after']);
+    if(op.kind!=='value'||!equal(op.path,['env',key])||typeof op.existed!=='boolean'||typeof op.after!=='string'||op.after.length>4096||(op.existed?typeof op.before!=='string'||op.before.length>4096:op.before!==null))fail('INVALID_RECEIPT');
+    if(i===0&&(!/^[1-9]\d?$/.test(op.after)||Number(op.after)>32))fail('INVALID_RECEIPT');
+  }
 }
 function validateReceipt(r,plan) {
-  if(object(r)&&(r.schemaVersion===1||own(r,'packageRoot')||own(r,'nodePath')||own(r,'mode')||(Array.isArray(r.files)&&r.files.some(f=>object(f)&&(['owned','hook'].includes(f.type)||(Array.isArray(f.ops)&&f.ops.some(op=>object(op)&&['hook','entry'].includes(op.kind))))))))fail('LEGACY_RUNTIME_RECEIPT');
+  if(object(r)&&(r.schemaVersion===1||own(r,'packageRoot')||own(r,'nodePath')||own(r,'mode')||(Array.isArray(r.files)&&r.files.some(file=>object(file)&&(['owned','hook'].includes(file.type)||(Array.isArray(file.ops)&&file.ops.some(op=>object(op)&&['hook','entry'].includes(op.kind))))))))fail('LEGACY_RUNTIME_RECEIPT');
+  fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source'])]);
   const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l);
-  if(!object(r)||r.schemaVersion!==2||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(f=>object(f)&&allowed.includes(f.path))||new Set(r.files.map(f=>f.path)).size!==allowed.length||!/^[a-f0-9]{64}$/.test(r.policyHash))fail('INVALID_RECEIPT');
-  try { validatePolicy({schemaVersion:1,maxConcurrent:r.maxConcurrent,clients:{[plan.client]:r.preferences}}); }catch {fail('INVALID_RECEIPT');}
-  if(!equal(r.warnings,nativeWarnings(plan.client)))fail('INVALID_RECEIPT');
-  const roles=nativeRoles(plan.client,r.preferences),block=instructionBlock(plan.client,r.preferences,r.maxConcurrent);
-  for(const f of r.files) {
-    if(typeof f.existed!=='boolean')fail('INVALID_RECEIPT');
-    if(l.roles.includes(f.path)) {
-      if(f.type!=='role'||f.existed||f.afterHash!==digest(roles[l.roles.indexOf(f.path)]))fail('INVALID_RECEIPT');
-    } else if(f.path===l.instructions) {
-      if(f.type!=='instructions'||f.block!==block||!['','\n','\n\n'].includes(f.prefix))fail('INVALID_RECEIPT');
+  if(![2,3].includes(r.schemaVersion)||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!validHash(r.policyHash)||!Array.isArray(r.warnings)||r.warnings.length>32||!r.warnings.every(w=>typeof w==='string'&&/^[a-z][a-z0-9-]{0,127}$/.test(w))||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(file=>object(file)&&allowed.includes(file.path))||new Set(r.files.map(file=>file.path)).size!==allowed.length)fail('INVALID_RECEIPT');
+  if(r.schemaVersion===3) {if(!version(r.releaseVersion)||!SOURCES.includes(r.source))fail('INVALID_RECEIPT');}
+  else if(!object(r.preferences)||!Number.isInteger(r.maxConcurrent)||r.maxConcurrent<1||r.maxConcurrent>32)fail('INVALID_RECEIPT');
+  for(const file of r.files) {
+    if(typeof file.existed!=='boolean')fail('INVALID_RECEIPT');
+    if(l.roles.includes(file.path)) {
+      fields(file,['path','type','existed','afterHash']);
+      if(file.type!=='role'||file.existed||!validHash(file.afterHash))fail('INVALID_RECEIPT');
+    } else if(file.path===l.instructions) {
+      fields(file,['path','type','existed','prefix','block']);
+      if(file.type!=='instructions'||!['','\n','\n\n'].includes(file.prefix)||typeof file.block!=='string'||file.block.length>65536||!file.block.startsWith(BEGIN+'\n')||!file.block.endsWith(END+'\n')||file.block.split(BEGIN).length!==2||file.block.split(END).length!==2)fail('INVALID_RECEIPT');
     } else if(plan.client==='claude') {
-      if(f.type!=='json'||!Array.isArray(f.ops)||f.ops.length!==2||!Array.isArray(f.created)||f.created.length>1||!f.created.every(p=>equal(p,['env'])))fail('INVALID_RECEIPT');
-      for(const [i,key]of ['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL'].entries()) {
-        const op=f.ops[i],after=i===0?String(r.maxConcurrent):r.preferences.code.model;
-        if(!object(op)||op.kind!=='value'||!equal(op.path,['env',key])||typeof op.existed!=='boolean'||op.after!==after||(op.existed?typeof op.before!=='string':op.before!==null))fail('INVALID_RECEIPT');
-      }
+      fields(file,['path','type','existed','ops','created']);if(file.type!=='json')fail('INVALID_RECEIPT');validateJsonSnapshot(file);
     } else {
-      const expected=tomlSettings(plan.client,r.preferences,r.maxConcurrent);
-      if(f.type!=='toml'||!Array.isArray(f.ops)||!f.ops.every(object))fail('INVALID_RECEIPT');
-      const removed=f.ops.filter(op=>op.kind==='removed');
-      if(removed.length!==(plan.client==='kimi'?1:0)||(removed.length&&f.ops[0]!==removed[0])||f.ops.length!==expected.length+removed.length)fail('INVALID_RECEIPT');
-      const scalars=f.ops.filter(op=>op.kind==='scalar');
-      for(const [i,[keys,value]]of expected.entries()) {
-        const op=scalars[i];
-        if(!object(op)||!equal(op.path,keys)||op.after!==JSON.stringify(value)||!validPriorLiteral(op.before,typeof value)||(op.addedTable&&!equal(op.addedTable,keys.slice(0,-1))))fail('INVALID_RECEIPT');
-      }
-      if(scalars.length!==expected.length)fail('INVALID_RECEIPT');
-      for(const op of removed)if(!equal(op.path,['secondary_model','default_effort'])||!validPriorLiteral(op.before,'string'))fail('INVALID_RECEIPT');
+      fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client);
     }
   }
   return r;
 }
-async function undoFiles(plan,r,verifyOnly=false) {
+function appliedRecord(r) {return r?{version:r.schemaVersion===3?r.releaseVersion:null,source:r.schemaVersion===3?r.source:'unknown'}:{version:null,source:null};}
+function releaseMetadata(plan,completed=false) {
+  return {targetReleaseVersion:plan.targetReleaseVersion??null,targetSource:plan.targetSource??null,previousReleaseVersion:plan.previousReleaseVersion??null,previousSource:plan.previousSource??null,appliedReleaseVersion:completed?(plan.kind==='uninstall'?null:plan.targetReleaseVersion??null):plan.appliedReleaseVersion??null,appliedSource:completed?(plan.kind==='uninstall'?null:plan.targetSource??null):plan.appliedSource??null};
+}
+function recordMetadata(plan,r) {
+  const previous=appliedRecord(r);
+  Object.assign(plan,{previousReleaseVersion:previous.version,previousSource:previous.source,appliedReleaseVersion:previous.version,appliedSource:previous.source});
+}
+async function undoFiles(plan,r,writeChanges=true) {
+  const baselines=new Map();
   for(const file of r.files) {
     const before=await readDependency(plan,file.path,plan.home);if(before.text===null)fail('OWNED_DRIFT');let after;
     if(file.type==='json')after=undoJson(before.text,file);
-    else if(file.type==='toml') { after=before.text;for(const op of file.ops.toReversed())after=restoreTomlValue(after,op);if(!file.existed&&!after.trim())after=null; }
+    else if(file.type==='toml') {after=before.text;for(const op of file.ops.toReversed())after=restoreTomlValue(after,op);if(!file.existed&&!after.trim())after=null;}
     else if(file.type==='instructions') {
       const owned=file.prefix+file.block;
       if(before.text.split(BEGIN).length!==2||before.text.split(END).length!==2||!before.text.includes(owned))fail('OWNED_DRIFT');
       after=before.text.replace(owned,'');if(!file.existed&&!after)after=null;
     } else {if(digest(before.text)!==file.afterHash)fail('OWNED_DRIFT');after=null;}
-    if(!verifyOnly)change(plan,file.path,before,after,before.mode);
+    baselines.set(file.path,{text:after,mode:before.mode,actual:before});
+    if(writeChanges)change(plan,file.path,before,after,before.mode);
   }
+  return baselines;
+}
+export async function inspectConfiguration(options) {
+  const {result:plan,receipt}=await context(options);
+  if(receipt.text===null)return {status:'not_configured',releaseVersion:null,source:null,warnings:[]};
+  const record=validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
+  await undoFiles(plan,record,false);await verifyDependencies(plan);
+  const applied=appliedRecord(record);
+  return {status:'verified',releaseVersion:applied.version,source:applied.source,warnings:[...record.warnings]};
 }
 function prerequisite(plan,warning) {return {...plan,status:'prerequisite',warnings:[warning],changes:[]};}
 function kimiPrerequisite(native,preferences) {
@@ -218,24 +273,29 @@ function kimiPrerequisite(native,preferences) {
   return null;
 }
 export async function planInstall(options) {
+  const {releaseVersion=PACKAGE_VERSION,replace=false,source='release'}=options;
+  if(!version(releaseVersion)||typeof replace!=='boolean'||!SOURCES.includes(source))fail('INVALID_RELEASE');
   const {result:plan,l,receipt}=await context(options);plan.kind='install';
-  // Refuse experimental runtime receipts before reading or rewriting configuration.
+  plan.targetReleaseVersion=releaseVersion;plan.targetSource=source;
   let record=null;
   if(receipt.text!==null)record=validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
+  recordMetadata(plan,record);
   plan.policyPath=absolute(options.policyPath);
-  const source=await readDependency(plan,plan.policyPath,path.dirname(plan.policyPath));if(source.text===null)fail('INVALID_POLICY');
-  const policy=parseJson(source.text,'INVALID_POLICY');try {validatePolicy(policy);}catch {fail('INVALID_POLICY');}
+  const input=await readDependency(plan,plan.policyPath,path.dirname(plan.policyPath));if(input.text===null)fail('INVALID_POLICY');
+  const policy=parseJson(input.text,'INVALID_POLICY');try {validatePolicy(policy);}catch {fail('INVALID_POLICY');}
   if(!own(policy.clients,plan.client))fail('INVALID_POLICY');
   const selected=policy.clients[plan.client],maxConcurrent=policy.maxConcurrent,policyHash=digest(json(canonical(policy)));
   const policyBefore=await readDependency(plan,l.policy,plan.stateDir);
-  if(record) {
+  const baselines=record?await undoFiles(plan,record,false):new Map();
+  if(record&&!replace) {
     if(record.policyHash!==policyHash)fail('INSTALLATION_CONFLICT');
-    await undoFiles(plan,record,true);
     if(policyBefore.text===null||!equal(parseJson(policyBefore.text,'OWNED_DRIFT'),policy))fail('OWNED_DRIFT');
-    return {...plan,status:'unchanged',warnings:record.warnings};
+    return {...plan,status:'unchanged',warnings:[...record.warnings]};
   }
-  if(policyBefore.text!==null&&!equal(parseJson(policyBefore.text,'POLICY_CONFLICT'),policy))fail('POLICY_CONFLICT');
-  const config=l.config?await readDependency(plan,l.config,plan.home):null;
+  if(!replace&&policyBefore.text!==null&&!equal(parseJson(policyBefore.text,'POLICY_CONFLICT'),policy))fail('POLICY_CONFLICT');
+  const baseline=async target=>baselines.get(target)??await readDependency(plan,target,plan.home);
+  const nativeChange=(target,before,after,mode=before.mode)=>change(plan,target,before.actual??before,after,mode);
+  const config=l.config?await baseline(l.config):null;
   let native;
   if(plan.client==='claude') {
     native=configJson(config.text);
@@ -252,38 +312,43 @@ export async function planInstall(options) {
   }
   const files=[];plan.warnings=nativeWarnings(plan.client);
   if(plan.client==='claude') {
-    const edited=jsonInstall(config.text,maxConcurrent,selected.code.model);change(plan,l.config,config,edited.text,config.mode);
+    const edited=jsonInstall(config.text,maxConcurrent,selected.code.model);nativeChange(l.config,config,edited.text);
     files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
   } else if(config) {
     let text=config.text??'';const ops=[];
-    if(plan.client==='kimi') {const edit=removeTomlValue(text,['secondary_model','default_effort']);text=edit.text;if(edit.ownership)ops.push(edit.ownership);}
+    if(plan.client==='kimi') {const edit=removeTomlValue(text,['secondary_model','default_effort']);text=edit.text;ops.push(edit.ownership);}
     for(const[keys,value]of tomlSettings(plan.client,selected,maxConcurrent)) {
       const previous=keys.reduce((at,key)=>at?.[key],native);
       if(previous!==undefined&&typeof previous!==typeof value)fail('UNSUPPORTED_CONFIG');
       const edit=setTomlValue(text,keys,value);text=edit.text;ops.push(edit.ownership);
     }
-    change(plan,l.config,config,text,config.mode);files.push({path:l.config,type:'toml',existed:config.text!==null,ops});
+    nativeChange(l.config,config,text);files.push({path:l.config,type:'toml',existed:config.text!==null,ops});
   }
   const roles=nativeRoles(plan.client,selected);
   for(const[i,target]of l.roles.entries()) {
-    const before=await readDependency(plan,target,plan.home);if(before.text!==null)fail('OWNERSHIP_CONFLICT');
-    change(plan,target,before,roles[i]);files.push({path:target,type:'role',existed:false,afterHash:digest(roles[i])});
+    const before=await baseline(target);if(before.text!==null)fail('OWNERSHIP_CONFLICT');
+    nativeChange(target,before,roles[i],0o600);files.push({path:target,type:'role',existed:false,afterHash:digest(roles[i])});
   }
-  const before=await readDependency(plan,l.instructions,plan.home),text=before.text??'';
+  const before=await baseline(l.instructions),text=before.text??'';
   if(text.includes(BEGIN)||text.includes(END))fail('OWNERSHIP_CONFLICT');
-  const prefix=!text||text.endsWith('\n\n')?'':text.endsWith('\n')?'\n':'\n\n';
-  const block=instructionBlock(plan.client,selected,maxConcurrent);
-  change(plan,l.instructions,before,text+prefix+block,before.mode);
+  const prefix=!text||text.endsWith('\n\n')?'':text.endsWith('\n')?'\n':'\n\n',block=instructionBlock(plan.client,selected,maxConcurrent);
+  nativeChange(l.instructions,before,text+prefix+block);
   files.push({path:l.instructions,type:'instructions',existed:before.text!==null,prefix,block});
-  change(plan,l.policy,policyBefore,policyBefore.text??json(policy),0o600);
-  const r={schemaVersion:2,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,maxConcurrent,preferences:selected,policyHash,warnings:plan.warnings,files};
+  const r={schemaVersion:3,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,releaseVersion,source,policyHash,warnings:plan.warnings,files};
+  validateReceipt(r,plan);
+  let canonicalText=policyBefore.text;
+  if(canonicalText===null||replace) {
+    let matches=false;try {matches=canonicalText!==null&&equal(parseJson(canonicalText),policy);}catch {}
+    if(!matches)canonicalText=json(policy);
+  }
+  change(plan,l.policy,policyBefore,canonicalText,0o600);
   change(plan,l.receipt,receipt,json(r),0o600);
   return {...plan,status:'planned'};
 }
 
 export function summarizePlan(plan) {
   const relative = file => within(plan.home,file) ? '~/' + path.relative(plan.home,file).split(path.sep).join('/') : '<state-dir>/' + path.relative(plan.stateDir,file).split(path.sep).join('/');
-  return {client:plan.client,kind:plan.kind,status:plan.status,files:plan.changes.map(c => ({path:relative(c.path),action:c.after === null ? 'remove' : c.before === null ? 'create' : 'update'})),warnings:[...plan.warnings]};
+  return {client:plan.client,kind:plan.kind,status:plan.status,files:plan.changes.map(c => ({path:relative(c.path),action:c.after === null ? 'remove' : c.before === null ? 'create' : 'update'})),warnings:[...plan.warnings],...releaseMetadata(plan)};
 }
 
 async function privateDir(dir,base) {
@@ -326,13 +391,13 @@ function validPlan(plan) {
 }
 export async function applyInstall(plan) {
   validPlan(plan);
-  if (plan.status === 'prerequisite') return {status:'prerequisite',client:plan.client,changedFiles:0,warnings:[...plan.warnings]};
+  if (plan.status === 'prerequisite') return {status:'prerequisite',client:plan.client,changedFiles:0,warnings:[...plan.warnings],...releaseMetadata(plan)};
   await safePath(plan.home,path.parse(plan.home).root);
   await safePath(plan.stateDir,path.parse(plan.stateDir).root);
   if (!plan.changes.length) {
     await recoveryRequired(plan.stateDir);
     await verifyDependencies(plan);
-    return {status:'unchanged',client:plan.client,changedFiles:0,warnings:[...plan.warnings]};
+    return {status:'unchanged',client:plan.client,changedFiles:0,warnings:[...plan.warnings],...releaseMetadata(plan)};
   }
   if (process.platform === 'win32') fail('PLATFORM_UNSUPPORTED');
   // Lock creation is the first mutation. All target preimages were collected in plan-only mode.
@@ -380,7 +445,7 @@ export async function applyInstall(plan) {
     await syncDir(plan.stateDir);
     await verifyDependencies(plan,committed);
     journalCreated = false;
-    return {status:'applied',client:plan.client,changedFiles:plan.changes.length,warnings:[...plan.warnings]};
+    return {status:'applied',client:plan.client,changedFiles:plan.changes.length,warnings:[...plan.warnings],...releaseMetadata(plan,true)};
   } catch (error) {
     if (journalCreated) retainLock = true;
     // Final directory sync can fail after unlink. Restore the recovery record before
@@ -418,8 +483,10 @@ export async function applyInstall(plan) {
 export async function uninstall(options) {
   const {result:plan,l,receipt} = await context(options);
   plan.kind = 'uninstall';
+  plan.targetReleaseVersion=null;plan.targetSource=null;recordMetadata(plan,null);
   if (receipt.text === null) { plan.status = 'unchanged'; return options.apply ? applyInstall(plan) : plan; }
   const record = validateReceipt(parseJson(receipt.text,'INVALID_RECEIPT'),plan);
+  recordMetadata(plan,record);
   plan.warnings = record.warnings ?? [];
   await undoFiles(plan,record);
   change(plan,l.receipt,receipt,null,0o600);
