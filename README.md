@@ -2,43 +2,43 @@
 
 ```mermaid
 flowchart LR
-    Main["Main coding agent"] -->|Delegates a task| Kit["Agent Policy Kit<br/>Checks supported launches"]
-    Policy["Your model rules"] --> Kit
-    Kit -->|Code and review| Code["Allowed capable model"]
-    Kit -->|Search and routine| Light["Allowed light model"]
-    Kit -->|Outside policy| Block["Launch blocked"]
-    Kit -.-> Audit["Metadata audit<br/>Requested / reported / unknown"]
+    Main["Your coding agent"] -->|Delegates work| Kit["Agent Policy Kit"]
+    You["You choose the models"] --> Kit
+    Kit -->|Code and review| Code["Your capable model"]
+    Kit -->|File search and routine work| Light["Your light model"]
+    Kit -->|Disallowed model| Block["Block the launch<br/>where supported"]
 ```
 
-Keep coding subagents on the models you choose.
+**Choose which models do the work your AI delegates.**
 
-The kit detects installed coding agents, applies a shared local policy, and records metadata about supported subagent launches. Your main chat model stays unchanged. No new account or API key is needed.
+Coding agents can delegate tasks to helpers called **subagents**. You may want a capable model to change code and review it, and a lighter model to find files or collect facts.
 
-## Let your AI agent install it
+Agent Policy Kit applies those choices to supported subagent launches. Your main conversation keeps the model you chose.
 
-Give your agent this request:
+## Why use it?
 
-> Read the [AI installation and removal guide](https://unpkg.com/agent-policy-kit@0.1.0/AGENT_INSTALL.md). Install Agent Policy Kit for the coding agents actually present on my machine, verify the result, and report any client-imposed limits.
+- **Match models to the job.** Choose models for coding, review and routine work. Rule out unwanted models.
+- **Keep your choices consistent.** Maintain one set of rules across your installed coding tools.
+- **Keep control of your setup.** Detect existing tools, preserve unrelated settings, and remove integrations when you choose.
 
-The guide is also included as [`AGENT_INSTALL.md`](AGENT_INSTALL.md) in the package. An installed CLI can print it with `agent-policy instructions`.
+Works with **Codex, Claude Code and Kimi**. [Support varies by tool](docs/compatibility.md); exact-model control for Antigravity (agy) is currently unsupported.
 
-For removal, ask the same agent to follow that guide and remove the kit's integrations. It will preserve unrelated settings.
+## Ask your agent to set it up
 
-## What you get
+Share this repository with your coding agent and ask:
 
-- Automatic detection from working CLI executables, not stale config folders.
-- A shared model policy, with native checks where supported.
-- Non-interactive JSON plans/results, backups, safe uninstall and drift checks.
-- Metadata-only audit; missing model/token evidence stays unknown.
+> Follow [AGENT_INSTALL.md](AGENT_INSTALL.md). Install Agent Policy Kit for the coding tools present on my computer. Use the balanced policy, verify what is active, and report anything unsupported.
 
-Support and activation differ by client; see the [capability matrix](docs/compatibility.md). The kit reports limits and missing evidence explicitly.
+Your agent handles setup and checks using your existing tools and accounts. For removal, ask it to follow the same guide.
 
-Node.js 22.x (22.13+) or 24+; macOS/Linux settings installation. No classifier, proxy, or telemetry endpoint.
+Version 0.1.0 is a local release candidate. The guide covers local tarballs and npm releases.
 
-## More detail
+## What to expect
 
-[Use cases](docs/use-cases.md) · [Capabilities](docs/compatibility.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md) · [Development](docs/development.md) · [npm release](docs/npm-release.md)
+Checks run locally and cover supported launches. Your provider controls model access, usage limits and billing. See [verified results](docs/verification.md) for what has actually been tested.
 
-Version 0.1.0 is being prepared for npm; the registry/CDN links become available after publication. Use the packed local tarball before then.
+Requires macOS or Linux and Node.js 22.x (22.13+) or 24+.
+
+[Examples](docs/use-cases.md) · [Support and limits](docs/compatibility.md) · [Privacy](docs/privacy.md) · [For contributors](docs/development.md) · [npm release](docs/npm-release.md)
 
 MIT licensed. Independent of the client vendors.

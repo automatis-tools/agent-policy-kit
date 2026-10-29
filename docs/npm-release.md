@@ -26,7 +26,7 @@ The acceptance gate installs a real tarball, removes its build snapshot and deni
 
 Use the tarball path from npm pack in the [operator guide](../AGENT_INSTALL.md) instead of agent-policy-kit@0.1.0. Keep a stable prefix; generated hooks contain installed paths. Uninstall integrations before removing that prefix.
 
-The README diagram is inline Mermaid, with no external image dependency. Its viewer must support Mermaid rendering. The operator guide uses a versioned unpkg link that becomes available after publication; the guide is also inside the tarball for local use.
+The README diagram is inline Mermaid, with no external image dependency. Its viewer must support Mermaid rendering. Documentation and the operator guide are bundled in the tarball and linked from the README. Check the rendered links before publication.
 
 ## Publication boundary
 
