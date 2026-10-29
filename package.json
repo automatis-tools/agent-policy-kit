@@ -1,0 +1,16 @@
+{
+  "name": "agent-policy-kit",
+  "version": "0.1.0",
+  "description": "Local policy checks and metadata audit for AI coding subagents",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22.13.0" },
+  "bin": { "agent-policy": "bin/agent-policy.mjs" },
+  "files": ["bin/", "src/", "hooks/", ".claude-plugin/", "policies/", "schema/", "examples/", "docs/", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "test:package": "node --test test/package-acceptance.test.mjs"
+  },
+  "dependencies": { "toml-eslint-parser": "1.0.3" }
+}
