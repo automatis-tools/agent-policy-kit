@@ -1,0 +1,15 @@
+{
+  "name": "agent-policy-kit",
+  "version": "0.1.0",
+  "description": "Local subagent model policy and metadata-only audit",
+  "license": "MIT",
+  "author": { "name": "Agent Policy Kit contributors" },
+  "userConfig": {
+    "policyPath": {
+      "type": "string",
+      "title": "Policy path",
+      "description": "Absolute local policy JSON path; empty uses the bundled balanced policy",
+      "default": ""
+    }
+  }
+}
