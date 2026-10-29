@@ -388,3 +388,30 @@ for(const kind of ['code','light']) test(`Kimi ${kind} reserved primary alias re
  await assert.rejects(fs.stat(rolePath(f,'worker')),{code:'ENOENT'});
  await assert.rejects(fs.stat(instructionPath(f)),{code:'ENOENT'});
 });
+
+function mainEffortConfig(alias,entryEffort='max',globalEffort) {
+ let text=modelConfig.replace('default_model = "main"',`default_model = "${alias}"`).replaceAll('support_efforts = ["low", "high"]','support_efforts = ["low", "high", "max"]');
+ text=text.replace(`[models."${alias}"]\n`,`[models."${alias}"]\ndefault_effort = "${entryEffort}"\n`);
+ if(globalEffort!==undefined)text+='\n[thinking]\neffort = '+JSON.stringify(globalEffort)+'\n';
+ return text;
+}
+for(const [kind,alias]of [['code','kimi-code/k3'],['light','kimi-code/kimi-for-coding']])test(`Kimi ${kind} alias cannot change the current main default effort without an explicit valid main pin`,async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=mainEffortConfig(alias);await put(target,original);
+ const preferences=JSON.parse(await fs.readFile(f.policyPath));preferences.clients.kimi.avoidModels=[];await fs.writeFile(f.policyPath,JSON.stringify(preferences));
+ const plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.deepEqual(plan.warnings,['kimi-main-effort-conflict']);assert.equal(plan.changes.length,0);assert.equal((await applyInstall(plan)).status,'prerequisite');assert.equal(await fs.readFile(target,'utf8'),original);await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});await assert.rejects(fs.stat(rolePath(f,'worker')),{code:'ENOENT'});
+});
+for(const effort of ['medium','unsupported',3])test(`Kimi global effort ${JSON.stringify(effort)} does not falsely protect a main alias effort change`,async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=mainEffortConfig('kimi-code/k3','max',effort);await put(target,original);const plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.deepEqual(plan.warnings,['kimi-main-effort-conflict']);assert.equal(plan.changes.length,0);assert.equal(await fs.readFile(target,'utf8'),original);await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+});
+test('Kimi main effort uses an existing model override when deciding whether native setup is safe',async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=mainEffortConfig('kimi-code/k3','high')+'\n[models."kimi-code/k3".overrides]\ndefault_effort = "max"\n';await put(target,original);const plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.deepEqual(plan.warnings,['kimi-main-effort-conflict']);assert.equal(plan.changes.length,0);assert.equal(await fs.readFile(target,'utf8'),original);
+});
+test('Kimi already matching main model default effort is preserved without requiring a global main pin',async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=mainEffortConfig('kimi-code/k3','high');await put(target,original);const plan=await planInstall(f);assert.equal(plan.status,'planned');await applyInstall(plan);const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.default_model,'kimi-code/k3');assert.equal(native.models['kimi-code/k3'].default_effort,'high');assert.equal(native.thinking,undefined);assert.equal((await planInstall(f)).status,'unchanged');await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),parseToml(original));
+});
+test('Kimi supported explicit global main effort permits per-alias subagent overrides and stays unchanged',async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=mainEffortConfig('kimi-code/k3','max','max');await put(target,original);const plan=await planInstall(f);assert.equal(plan.status,'planned');await applyInstall(plan);const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.default_model,'kimi-code/k3');assert.deepEqual(native.thinking,{effort:'max'});assert.equal(native.models['kimi-code/k3'].default_effort,'max');assert.equal(native.models['kimi-code/k3'].overrides.default_effort,'high');assert.equal((await planInstall(f)).status,'unchanged');await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),parseToml(original));
+});
+test('Kimi effort changes to a subagent alias leave an unselected current main alias unchanged',async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=mainEffortConfig('kimi-code/k3').replace('default_model = "kimi-code/k3"','default_model = "separate-main"')+'\n[models.separate-main]\nprovider = "fixture"\nmodel = "main-id"\nmax_context_size = 262144\nsupport_efforts = ["high", "max"]\ndefault_effort = "max"\n';await put(target,original);const plan=await planInstall(f);assert.equal(plan.status,'planned');await applyInstall(plan);const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.default_model,'separate-main');assert.deepEqual(native.models['separate-main'],parseToml(original).models['separate-main']);assert.equal(native.models['kimi-code/k3'].overrides.default_effort,'high');
+});

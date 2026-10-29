@@ -211,6 +211,9 @@ function kimiPrerequisite(native,preferences) {
     if(!object(model)||typeof model.provider!=='string'||typeof model.model!=='string'||!Number.isSafeInteger(model.max_context_size)||model.max_context_size<1||!object(native.providers?.[model.provider]))return 'kimi-provisioned-models-required';
     const effective={...model,...model.overrides};
     if(!Array.isArray(effective.support_efforts)||!effective.support_efforts.includes(selected.effort))return 'kimi-supported-effort-required';
+    const globalEffort=native.thinking?.effort;
+    const mainEffortPinned=['low','medium','high','xhigh','max'].includes(globalEffort)&&effective.support_efforts.includes(globalEffort);
+    if(selected.model===native.default_model&&effective.default_effort!==selected.effort&&!mainEffortPinned)return 'kimi-main-effort-conflict';
   }
   return null;
 }
