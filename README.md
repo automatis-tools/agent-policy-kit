@@ -1,5 +1,7 @@
 # Agent Policy Kit
 
+Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-maximenko/).
+
 Coding agents can delegate specific tasks to temporary subagents. Those tasks vary in complexity and importance. A single model for every task is rarely the best balance of capability, speed and cost.
 
 Agent Policy Kit lets you match subagent roles with models and effort. It configures your coding tools’ native environment, then exits. The main agent still decides when to delegate, and its model stays unchanged.
@@ -51,3 +53,10 @@ Prefer your AI agent to handle installation or removal? Give it the [AI operator
 [Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
 
 Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.1.0. MIT licensed.
+
+## Related projects
+
+Other open-source projects by [Mykola Maksymenko](https://www.linkedin.com/in/nick-maximenko/):
+
+- [Agents Can Communicate (ACC)](https://github.com/automatis-tools/agents-can-communicate) connects independent AI coding sessions across clients for local questions, code reviews, and handoffs. [Website](https://getacc.dev/).
+- [Automatis Skills](https://github.com/automatis-tools/automatis-skills) provides reusable engineering skills for GitHub workflows, Git cleanup, port conflicts, and technical writing.
