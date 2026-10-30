@@ -24,10 +24,11 @@ test('packed configurator produces independent native files that survive npm and
   const snapshot = path.join(root, 'source snapshot'); const consumer = path.join(root, "consumer's prefix");
   fs.mkdirSync(consumer); const freshHome = path.join(consumer, "fresh home's"); fs.mkdirSync(freshHome);
   const state = path.join(freshHome, '.agent-policy-kit');
+  const scratch=path.join(consumer,'scratch');fs.mkdirSync(scratch);
   const cache = process.env.npm_config_cache ?? path.join(os.homedir(), '.npm');
   const cleanPath = [path.dirname(process.execPath), ...(process.env.PATH ?? '').split(path.delimiter)
     .filter(part => part && !part.startsWith(source))].join(path.delimiter);
-  const env = { PATH: cleanPath, LANG: 'C.UTF-8', HOME: freshHome, USERPROFILE: freshHome, XDG_CONFIG_HOME: path.join(freshHome, 'xdg/config'),
+  const env = { TMPDIR:scratch, PATH: cleanPath, LANG: 'C.UTF-8', HOME: freshHome, USERPROFILE: freshHome, XDG_CONFIG_HOME: path.join(freshHome, 'xdg/config'),
     XDG_DATA_HOME: path.join(freshHome, 'xdg/data'), XDG_STATE_HOME: path.join(freshHome, 'xdg/state'),
     CODEX_HOME: path.join(freshHome, '.codex'), CLAUDE_CONFIG_DIR: path.join(freshHome, '.claude'), KIMI_CODE_HOME: path.join(freshHome, '.kimi-code'),
     AGENT_POLICY_HOME: state, npm_config_cache: cache, npm_config_registry: 'https://registry.npmjs.org',
@@ -55,7 +56,7 @@ test('packed configurator produces independent native files that survive npm and
   assert.ok(mac || linux, 'Source isolation requires sandbox-exec (macOS) or bubblewrap (Linux). No package PASS without isolation.');
   function isolated(exe, args, extra = {}) {
     return mac ? command('/usr/bin/sandbox-exec', ['-p', profile, exe, ...args], { cwd: consumer, env, ...extra })
-      : command(bwrap, ['--ro-bind', '/', '/', '--bind', consumer, consumer, '--tmpfs', source, '--chdir', consumer, exe, ...args], { env, ...extra });
+      : command(bwrap, ['--ro-bind', '/', '/', '--dev', '/dev', '--bind', consumer, consumer, '--bind', cache, cache, '--tmpfs', source, '--chdir', consumer, exe, ...args], { env, ...extra });
   }
   function cli(args, input) { return isolated(bin, args, input === undefined ? {} : { input }); }
   const isolationReady = isolated(process.execPath, ['-e', 'process.exit(0)']);
