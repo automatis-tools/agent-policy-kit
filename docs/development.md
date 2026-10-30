@@ -4,10 +4,13 @@ Use Node.js 22.x (22.13+) or 24+ and npm. No build step is required.
 
 ```sh
 npm ci --ignore-scripts --no-audit --no-fund
+npm run test:cache
 npm run check
 npm run test:unit
 npm run test:package
 ```
+
+npm run test:cache primes public dependency metadata on a fresh machine before the offline tarball consumers run. It installs only into a disposable directory and removes it afterward. npm ci alone may cache tarballs without the registry metadata required by a new offline consumer.
 
 npm test includes both unit tests and the installed-tarball gate. The gate needs macOS sandbox-exec or Linux bubblewrap. It must actually deny checkout access; unavailable isolation fails rather than skipping. Use a normal approved host if a managed sandbox forbids nesting.
 

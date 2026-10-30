@@ -44,7 +44,8 @@
     "test:unit": "node scripts/test-unit.mjs",
     "prepublishOnly": "npm run check && npm test",
     "build:site": "node scripts/build-site.mjs",
-    "build:host": "npm run build:site && node scripts/build-host.mjs"
+    "build:host": "npm run build:site && node scripts/build-host.mjs",
+    "test:cache": "node scripts/prime-test-cache.mjs"
   },
   "dependencies": {
     "toml-eslint-parser": "1.0.3"

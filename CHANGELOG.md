@@ -31,6 +31,7 @@ Codex effort choices/defaults now follow CLI 0.166.0 rather than API defaults; A
 
 ### What changed
 
+- Readable type uses a compact 36/20/15/13 px scale with more spacing; narrow layouts stack model controls and command actions.
 - A short collapsible explanation introduces role-specific models, native setup and optional delegation, using the same wording as the README.
 - The builder now starts with no roles, tools or chosen modes. Green checks track completed selections and successful copy, and Reset form restores a blank state. URL fragments restore visible settings without a backend. Conditional section hints and changed step markers use a two-second highlight hold plus two-second fade, respecting reduced motion. Selection controls share a soft treatment; Copy remains the primary action.
 - Page commands always list every selected role/model/effort under its tool, including presets. Explicit --roles, --max-concurrent and optional --avoid-TOOL preserve the existing selection, cap and guidance. :native represents unpinned effort; Antigravity remains tier-only. The shared codec validates complete role maps and rejects duplicate/mixed input before writes. Legacy release/config/policy inputs remain supported.
