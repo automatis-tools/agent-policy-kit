@@ -125,7 +125,7 @@ input[type=text]{font-size:11px;padding:0 9px}
       <div><span class="control-label" id="tool-label">Tool</span><div id="tool" class="tool-buttons" role="group" aria-labelledby="tool-label"></div></div>
       <fieldset class="preset-controls"><legend>Mode</legend><div id="preset" class="preset-options"></div></fieldset>
     </div>
-    <p class="custom-notice" id="custom-notice" role="status" hidden>Custom mode applies to all tools. Check each tool’s models and effort before applying.</p>
+    <p class="custom-notice" id="custom-notice" role="status" hidden></p>
     <div class="models" id="models" hidden><div class="table-head" aria-hidden="true"><span>Task</span><span>Model</span><span>Effort</span></div><div id="task-rows"></div></div>
     <div class="model-actions" id="model-actions" hidden><p class="tool-note" id="tool-note"> </p><button class="reset" id="reset" type="button">Reset preset</button></div>
   </section>
@@ -155,14 +155,28 @@ const RELEASE = __APK_RELEASE_DATA__;
   function effective(config, role) {
     return config.roles?.[role] ?? config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
   }
-  function initialState(preferences) {
-    return {selected: CLIENTS.filter(client => preferences.clients[client]), active: 'all', custom: false, maxConcurrent: preferences.maxConcurrent,
-      jobs: Object.fromEntries(CLIENTS.filter(client => preferences.clients[client]).map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
+  function initialState(preferences, presetId = 'balanced') {
+    const selected = CLIENTS.filter(client => preferences.clients[client]);
+    return {selected, active: 'all', maxConcurrent: preferences.maxConcurrent,
+      profiles: Object.fromEntries(selected.map(client => [client, {presetId, custom: false, preferences: clone(preferences.clients[client])}])),
+      jobs: Object.fromEntries(selected.map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
+  }
+  function modeFor(state, client = state.active) {
+    if (client !== 'all') return state.profiles[client].custom ? 'custom' : state.profiles[client].presetId;
+    const modes = state.selected.map(client => modeFor(state, client));
+    return modes.length && modes.every(mode => mode === modes[0]) ? modes[0] : 'custom';
   }
   function applyPreset(state, preset, confirmReplace = () => false) {
-    if (state.custom && !confirmReplace()) return state;
-    const next = initialState(preset.preferences);
-    if (state.active === 'all' || next.selected.includes(state.active)) next.active = state.active;
+    const all = state.active === 'all', targets = all ? state.selected : [state.active];
+    if (targets.some(client => !preset.preferences.clients[client])) return state;
+    if ((!all || modeFor(state, 'all') === 'custom') && !confirmReplace()) return state;
+    const next = clone(state);
+    for (const client of targets) {
+      const preferences = preset.preferences.clients[client];
+      next.profiles[client] = {presetId: preset.id ?? 'balanced', custom: false, preferences: clone(preferences)};
+      next.jobs[client] = Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences, role))]));
+    }
+    if (all) next.maxConcurrent = preset.preferences.maxConcurrent;
     return next;
   }
   function allowedEfforts(catalog, model) {
@@ -190,7 +204,7 @@ const RELEASE = __APK_RELEASE_DATA__;
     return {model, effort};
   }
   function updateEffort(state, client, role, effort) {
-    state.custom = true;
+    state.profiles[client].custom = true;
     const model = state.jobs[client][role].model;
     state.jobs[client][role].effort = effort;
     if (client === 'kimi') for (const choice of Object.values(state.jobs[client])) if (choice.model === model) choice.effort = effort;
@@ -202,8 +216,9 @@ const RELEASE = __APK_RELEASE_DATA__;
     if (!Array.isArray(state.selected) || !state.selected.length) errors.push('No tools configured. Reset defaults.');
     const clients = {};
     for (const client of CLIENTS.filter(client => state.selected?.includes(client))) {
-      if (!preferences.clients[client]) { errors.push(`${LABELS[client]} has no release defaults.`); continue; }
-      const config = clone(preferences.clients[client]);
+      const defaults = state.profiles?.[client]?.preferences ?? preferences.clients[client];
+      if (!defaults) { errors.push(`${LABELS[client]} has no release defaults.`); continue; }
+      const config = clone(defaults);
       const roles = {};
       const choices = [];
       for (const role of ROLES) {
@@ -214,7 +229,7 @@ const RELEASE = __APK_RELEASE_DATA__;
         if (client === 'agy' && (!TIERS.includes(choice.model) || choice.effort !== null)) {
           errors.push(`Antigravity ${TASKS[role]}: choose a supported native tier.`); continue;
         }
-        if (client !== 'agy' && !allowedEfforts(clientCatalog(client, preferences, catalog), choice.model).includes(choice.effort)) {
+        if (client !== 'agy' && !allowedEfforts(clientCatalog(client, {clients: {[client]: defaults}}, catalog), choice.model).includes(choice.effort)) {
           errors.push(`${LABELS[client]} ${TASKS[role]}: choose a supported effort.`); continue;
         }
         if (client === 'kimi' && choice.model === 'primary') {
@@ -261,12 +276,13 @@ const RELEASE = __APK_RELEASE_DATA__;
     if (preset && /^[a-z][a-z0-9-]{0,31}$/.test(preset.id)) return `${prefix} --release --preset ${preset.id} --apply`;
     return `${prefix} --config ${encodeConfig(config)} --apply`;
   }
-  globalThis.APKConfigurator = Object.freeze({initialState, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
+  globalThis.APKConfigurator = Object.freeze({initialState, modeFor, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id);
   const presets = RELEASE.presets?.length ? RELEASE.presets : [{id: 'balanced', label: 'Balanced', preferences: RELEASE.preferences}];
-  let selectedPreset = presets.find(preset => preset.id === 'balanced') ?? presets[0];
-  let state = initialState(selectedPreset.preferences);
+  const initialPreset = presets.find(preset => preset.id === 'balanced') ?? presets[0];
+  const toolLabel = client => RELEASE.catalog?.clients?.[client]?.label || LABELS[client];
+  let state = initialState(initialPreset.preferences, initialPreset.id);
   let currentCommand = '';
   let revision = 0;
   $('release-version').textContent = `v${RELEASE.version}`;
@@ -286,14 +302,17 @@ const RELEASE = __APK_RELEASE_DATA__;
     revision++;
     document.querySelectorAll('#tool button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.client === state.active)));
     document.querySelectorAll('input[name=preset]').forEach(input => {
-      input.checked = input.value === (state.custom ? 'custom' : selectedPreset.id);
+      input.checked = input.value === modeFor(state);
       input.disabled = input.value === 'custom' && state.active === 'all';
       input.title = input.disabled ? 'Choose a tool to customize its models.' : '';
     });
-    $('custom-notice').hidden = !state.custom;
+    $('custom-notice').hidden = modeFor(state) !== 'custom';
+    if (modeFor(state) === 'custom') $('custom-notice').textContent = state.active === 'all'
+      ? 'Tools use different or custom modes. Select a tool to review its settings.'
+      : `Custom mode for ${toolLabel(state.active)}. Review its models and effort.`;
     $('copy-feedback').textContent = '';
     document.querySelectorAll('[aria-invalid=true]').forEach(node => node.removeAttribute('aria-invalid'));
-    const {config, errors} = buildConfig(state, selectedPreset.preferences);
+    const {config, errors} = buildConfig(state, initialPreset.preferences);
     if (errors.length) {
       currentCommand = ''; $('command').value = ''; $('command-preview').textContent = 'Check your model choices';
       $('config-json').textContent = ''; $('config-error').textContent = errors.join(' '); $('config-error').hidden = false; $('copy').disabled = true;
@@ -302,7 +321,7 @@ const RELEASE = __APK_RELEASE_DATA__;
       });
       return;
     }
-    try { currentCommand = buildCommand(config, RELEASE, {custom: state.custom}); }
+    try { currentCommand = buildCommand(config, RELEASE, {custom: modeFor(state, 'all') === 'custom'}); }
     catch (error) {
       currentCommand = ''; $('command').value = ''; $('command-preview').textContent = 'Command unavailable'; $('config-json').textContent = '';
       $('config-error').textContent = error.message; $('config-error').hidden = false; $('copy').disabled = true; return;
@@ -318,8 +337,8 @@ const RELEASE = __APK_RELEASE_DATA__;
     $('models').hidden = client === 'all'; $('model-actions').hidden = client === 'all';
     if (client === 'all') return;
     $('tool-note').textContent = NOTES[client];
-    const config = selectedPreset.preferences.clients[client];
-    const catalog = clientCatalog(client, selectedPreset.preferences);
+    const config = state.profiles[client].preferences;
+    const catalog = clientCatalog(client, {clients: {[client]: config}});
     for (const role of ROLES) {
       const row = element('div', {class: 'task-row'});
       const id = `model-${client}-${role}`;
@@ -353,7 +372,7 @@ const RELEASE = __APK_RELEASE_DATA__;
         }
       }
       function chooseModel(model) {
-        state.custom = true;
+        state.profiles[client].custom = true;
         state.jobs[client][role] = preferenceForModel(config, role, model, state.jobs[client], catalog, client === 'kimi');
         populateEffort(); updateResult();
       }
@@ -376,15 +395,18 @@ const RELEASE = __APK_RELEASE_DATA__;
     const input = element('input', {type: 'radio', name: 'preset', value: preset.id});
     input.addEventListener('change', () => {
       if (!input.checked) return;
-      if (preset.id === 'custom') {state.custom = true; updateResult();}
+      if (preset.id === 'custom') {if (state.active !== 'all') state.profiles[state.active].custom = true; updateResult();}
       else restorePreset(preset);
     });
     label.append(input, element('span', {}, preset.label)); $('preset').append(label);
   }
-  function restorePreset(preset = selectedPreset) {
-    const next = applyPreset(state, preset, () => window.confirm(`Apply ${preset.label}? This replaces all custom model and effort choices for every tool.`));
+  function restorePreset(preset = presets.find(preset => preset.id === state.profiles[state.active]?.presetId) ?? initialPreset) {
+    const message = state.active === 'all'
+      ? `Apply ${preset.label} to all tools? This replaces every tool's mode, models and effort, including custom choices.`
+      : `Apply ${preset.label} to ${toolLabel(state.active)} only? This replaces only this tool's models and effort. Other tools keep their settings.`;
+    const next = applyPreset(state, preset, () => window.confirm(message));
     if (next === state) {updateResult(); return false;}
-    selectedPreset = preset; state = next;
+    state = next;
     renderRows(); updateResult();
     return true;
   }

@@ -21,7 +21,7 @@ test('All is the initial view without becoming a configuration client', () => {
 
 test('replacing custom settings requires confirmation and preserves the selected view', () => {
   const state = api.initialState(preferences);
-  state.active = 'all'; state.custom = true;
+  state.active = 'all'; state.profiles.codex.custom = true;
   state.jobs.codex.worker = {model: 'custom/code', effort: 'low'};
   const before = JSON.stringify(state);
   const fast = JSON.parse(fs.readFileSync(new URL('../policies/fast.json', import.meta.url), 'utf8'));
@@ -32,13 +32,37 @@ test('replacing custom settings requires confirmation and preserves the selected
   let confirmations = 0;
   const next = api.applyPreset(state, preset, () => {confirmations++; return true;});
   assert.equal(confirmations, 1);
-  assert.equal(next.active, 'all'); assert.equal(next.custom, false);
+  assert.equal(next.active, 'all'); assert.equal(api.modeFor(next), 'fast');
   assert.deepEqual(plain(api.buildConfig(next, fast).config), fast);
   assert.equal(JSON.stringify(state), before, 'replacement does not mutate the old state');
-  next.active = 'kimi';
-  const named = api.applyPreset(next, {preferences}, () => {throw new Error('Unchanged preset needs no confirmation');});
-  assert.equal(named.active, 'kimi');
+  const named = api.applyPreset(next, {id:'balanced',preferences}, () => {throw new Error('Named All preset needs no destructive-change confirmation');});
+  assert.equal(named.active, 'all');
   assert.deepEqual(plain(api.buildConfig(named, preferences).config), preferences);
+});
+
+test('an individual preset changes only that tool and All reports mixed modes',()=>{
+ const state=api.initialState(preferences);state.active='kimi';
+ const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
+ const preset={id:'quality',label:'Quality first',preferences:quality},before=JSON.stringify(state);
+ assert.equal(api.applyPreset(state,preset),state,'scope warning requires confirmation');
+ assert.equal(api.applyPreset(state,preset,()=>false),state);assert.equal(JSON.stringify(state),before);
+ let prompts=0;const next=api.applyPreset(state,preset,()=>{prompts++;return true;});assert.equal(prompts,1);
+ assert.equal(next.active,'kimi');assert.equal(api.modeFor(next),'quality');assert.equal(api.modeFor(next,'all'),'custom');
+ for(const client of ['codex','claude','agy']){assert.deepEqual(plain(next.jobs[client]),plain(state.jobs[client]));assert.deepEqual(plain(next.profiles[client]),plain(state.profiles[client]));assert.equal(api.modeFor(next,client),'balanced');}
+ const config=plain(api.buildConfig(next,preferences).config);assert.deepEqual(config.clients.kimi,quality.clients.kimi);
+ for(const client of ['codex','claude','agy'])assert.deepEqual(config.clients[client],preferences.clients[client]);
+ assert.equal(next.maxConcurrent,state.maxConcurrent);assert.equal(JSON.stringify(state),before);
+ next.active='all';const reset=api.applyPreset(next,{id:'balanced',preferences},()=>true);
+ assert.equal(api.modeFor(reset),'balanced');for(const client of reset.selected)assert.equal(api.modeFor(reset,client),'balanced');
+ assert.deepEqual(plain(api.buildConfig(reset,preferences).config),preferences);
+});
+
+test('manual effort edits mark only their tool Custom while other named modes remain',()=>{
+ const state=api.initialState(preferences);api.updateEffort(state,'codex','worker','low');
+ assert.equal(api.modeFor(state,'codex'),'custom');assert.equal(api.modeFor(state,'all'),'custom');
+ for(const client of ['claude','kimi','agy'])assert.equal(api.modeFor(state,client),'balanced');
+ const named=api.applyPreset({...state,active:'codex'},{id:'balanced',preferences},()=>true);
+ assert.equal(api.modeFor(named,'all'),'balanced');assert.equal(named.jobs.codex.worker.effort,'high');
 });
 
 test('configuration template has a single release marker and no external assets or network calls', () => {

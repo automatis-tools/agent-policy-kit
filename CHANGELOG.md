@@ -32,7 +32,7 @@ Codex effort choices/defaults now follow CLI 0.166.0 rather than API defaults; A
 ### What changed
 
 - Native role files and routing instructions apply only when the main agent chooses delegation. Main models and disabled delegation features are preserved.
-- A static page lets you choose models/effort separately for code, review, search and routine tasks, then generates one pinned command.
+- A static page lets each tool use its own mode and per-task models/effort. All shows mixed settings as Custom and can apply one preset to every tool. Scope warnings protect individual and global replacements; the page generates one pinned command.
 - Explicit release application supports safe upgrade/downgrade of owned settings; per-client receipts record the actual applied version and custom choices.
 - Ownership/drift checks, private backups and rollback preserve unrelated settings and earlier user values.
 - No custom hooks, proxy, plugin, launcher, daemon or normal-operation runtime is installed.
