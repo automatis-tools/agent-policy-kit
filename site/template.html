@@ -344,7 +344,7 @@ const RELEASE = __APK_RELEASE_DATA__;
  }
  function renderNow(){syncTargets();renderPickers();renderModes();renderResult();}
  function render(){if(!mounted){renderNow();mounted=true;}else animateUpdate(renderNow);}
- 
+
  $('setup-command').addEventListener('focus',()=>$('setup-command').select());
  $('copy').addEventListener('click',async()=>{
   if(!currentCommand)return;const copiedCommand=currentCommand,revision=commandRevision;
