@@ -1,6 +1,6 @@
 # Prepare a configuration release
 
-One version: package.json version identifies presets, model catalog, native templates, instructions and page. No second preset-version system. Current 0.1.0 is unreleased. The owner creates GitHub and authorizes publication separately; nothing publishes automatically.
+One version: package.json version identifies presets, model catalog, native templates, instructions and page. No second preset-version system. The owner authorizes each publication; nothing publishes automatically. New pull requests must remain draft, and only the owner merges them.
 
 ## Record what and why
 
@@ -18,8 +18,8 @@ Patch releases can correct documentation/configuration bugs; intentional recomme
 
 The package includes CHANGELOG.md and its matching page. Its CLI requires no compilation; only the page data is regenerated. No lifecycle install script mutates native settings.
 
-After explicit publication authorization, create the corresponding git version tag/release with the reviewed changelog text and publish that exact tarball through npm's normal authenticated process. This repository does not create the remote, publish, merge or enable auto-merge. Recheck registry contents and public page links after an authorized release.
+After explicit publication authorization, create the corresponding git version tag/release with the reviewed changelog text and publish that exact tarball through npm's normal authenticated process. Releases may target a verified feature-branch commit before its draft PR is merged. Never merge, mark a draft ready or enable auto-merge. Recheck registry contents and public page links after an authorized release.
 
 ## Static page
 
-Host each release's generated site/index.html at an immutable versioned path. A latest landing URL may link the current one. GitHub Pages or another static host can serve the one file; there is no backend. Add real public links after the owner chooses/creates them. Local preview uses only Google Chrome.
+Host each release's generated site/index.html at an immutable versioned path. A latest landing URL may link the current one. The public configurator uses an assets-only Cloudflare Worker: no Worker JavaScript, API, database or paid bindings. Run npm run build:host and wrangler deploy with the pinned Wrangler version in wrangler.jsonc. The root redirects to /v/VERSION/ so shared links retain their release. Before deploying a later version, retain earlier release pages under dist/v/ using their tagged package artifacts; never overwrite an already published versioned page. The deploy directory is allowlisted by scripts/build-host.mjs and excludes repository files and private evidence. Local preview uses Google Chrome.

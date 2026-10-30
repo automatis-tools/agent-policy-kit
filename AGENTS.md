@@ -7,5 +7,5 @@
 - Preserve main models, credentials, permissions, unrelated settings and later user edits. Default operations are plan-only; --apply writes owned changes. Drift must refuse destructive removal.
 - Never put account data, credentials, user paths, raw configs or test evidence in Git/npm.
 - Native configuration, client loading and actual model/provider execution are different evidence. Do not advertise universal policy enforcement or unsupported native caps.
-- This repository is local-only. The owner creates GitHub. Do not create remotes or publish packages.
+- Public repository and release publication are authorized by the owner. Publish only verified, explicitly requested versions; do not publish account data or private evidence. New PRs must remain draft.
 - Never merge branches or mark draft PRs ready.

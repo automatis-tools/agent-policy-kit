@@ -4,7 +4,7 @@
 
 ## Default settings from a specific release
 
-After publication, inspect the release and preview its plan:
+Inspect the release and preview its plan:
 
 ```sh
 npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy release
@@ -37,4 +37,4 @@ Current native receipt v4 records the selected subset of four bounded role filen
 
 A release reproduces declared settings and templates. Provider aliases/tiers can resolve to new models, old model IDs can retire, and account access can change. See [model maintenance](model-updates.md). No runtime updater or model gateway is installed.
 
-Read [CHANGELOG](../CHANGELOG.md) for what changed, why, who should update and migration limits. Version 0.1.0 is currently an unreleased local candidate; synthetic versions in acceptance tests are not real releases.
+Read [CHANGELOG](../CHANGELOG.md) for what changed, why, who should update and migration limits. Version 0.1.0 is the first release; synthetic versions in acceptance tests are not real releases.

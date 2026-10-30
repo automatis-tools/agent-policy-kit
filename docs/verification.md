@@ -17,7 +17,7 @@ Configuration release/page 0.1.0, macOS arm64, 2026-10-30. Configuration checks,
 | Native Codex/Antigravity loading | Historical parser/listing positive and malformed negative controls only. New subset behavior has file/consumer fixtures, not fresh vendor-client loading proof. |
 | Native Claude/Kimi loading and provider execution | NOT CHECKED; no live model tasks used as configuration proof |
 | npm packaging | PASS: 38-file package-content inspection and real local tarball consumption. No npm publication. |
-| Hosted macOS/Linux CI | Pending the first public CI run; local results above do not establish hosted CI. |
+| Hosted macOS/Linux CI | See the public workflow runs linked from the GitHub release; local results above do not establish hosted CI. |
 | Deployment/publication | Public status and downloadable artifacts are recorded in the GitHub release; package checks below concern the reviewed tarball. |
 
 The 0.2.0 packages are synthetic test fixtures, not public releases. Browser evidence, disposable homes, raw configuration fixtures and logs stay outside Git/npm. Expanded commands preserve the selected cap and avoid lists; :native round-trips unpinned effort. A 675-case preset/role/tool matrix produces identical native role files and routing instructions. Real-shell tests preserve colon/@/bracket IDs and prevent pathname expansion. The same pinned command consumes the published npm release. The verified local tarball supports testing before publication.
