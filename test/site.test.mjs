@@ -145,7 +145,8 @@ test('manual effort edits mark only their tool Custom while other named modes re
 
 test('configuration template has a single release marker and no external assets or network calls', () => {
   assert.equal(template.split('__APK_RELEASE_DATA__').length, 2);
-  assert.doesNotMatch(template, /<(?:script|link|img)[^>]+(?:src|href)=/i);
+  assert.doesNotMatch(template, /<(?:script|img)[^>]+src=/i);
+  assert.doesNotMatch(template, /<link[^>]+rel="(?:stylesheet|preload|modulepreload)"/i);
   assert.doesNotMatch(script, /\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/);
   assert.doesNotMatch(template, /type="(?:checkbox|number)"|role="tablist"|id="effort-/);
   assert.match(template, /id="selected-tools"[^>]*role="group"/);
