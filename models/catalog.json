@@ -1,0 +1,699 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-30",
+  "scope": "Documented/native coding-tool selectors at this release; account access and custom deployment IDs vary.",
+  "clients": {
+    "codex": {
+      "label": "Codex",
+      "efforts": [
+        "none",
+        "minimal",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "observedClientVersion": "0.166.0",
+      "observation": "codex debug models --bundled: 9 visible selectors; 3 hidden specialized/utility entries excluded",
+      "models": [
+        {
+          "id": "gpt-6-astra",
+          "label": "GPT-6 Astra",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "low",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+          "kind": "model",
+          "apiEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": null,
+          "nativeSource": "https://learn.chatgpt.com/docs/models",
+          "delegationModes": [
+            "ultra"
+          ]
+        },
+        {
+          "id": "gpt-6.1-sol",
+          "label": "GPT-6.1 Sol",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "low",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+          "kind": "model",
+          "apiEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models",
+          "delegationModes": [
+            "ultra"
+          ]
+        },
+        {
+          "id": "gpt-6.1-terra",
+          "label": "GPT-6.1 Terra",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "low",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6.1-terra",
+          "kind": "model",
+          "apiEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models",
+          "delegationModes": [
+            "ultra"
+          ]
+        },
+        {
+          "id": "gpt-6-sol",
+          "label": "GPT-6 Sol",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+          "kind": "model",
+          "apiEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models",
+          "delegationModes": [
+            "ultra"
+          ]
+        },
+        {
+          "id": "gpt-6-luna",
+          "label": "GPT-6 Luna",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+          "kind": "model",
+          "apiEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models"
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "label": "GPT-5.6 Sol",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "low",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+          "kind": "model",
+          "apiEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models",
+          "delegationModes": [
+            "ultra"
+          ]
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "label": "GPT-5.6 Terra",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+          "kind": "model",
+          "apiEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models",
+          "delegationModes": [
+            "ultra"
+          ]
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "label": "GPT-5.6 Luna",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+          "kind": "model",
+          "apiEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models"
+        },
+        {
+          "id": "gpt-5.5",
+          "label": "GPT-5.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://developers.openai.com/api/docs/models/gpt-5.5",
+          "kind": "model",
+          "apiEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "apiDefaultEffort": "medium",
+          "nativeSource": "https://learn.chatgpt.com/docs/models"
+        }
+      ],
+      "excluded": [
+        {
+          "id": "gpt-daybreak-blue-latest",
+          "reason": "hidden specialized selector"
+        },
+        {
+          "id": "gpt-daybreak-red-latest",
+          "reason": "hidden specialized selector"
+        },
+        {
+          "id": "codex-auto-review",
+          "reason": "hidden internal utility selector"
+        }
+      ],
+      "note": "Efforts and defaults follow the bundled Codex CLI 0.166.0 catalog. API capabilities are separate apiEfforts/apiDefaultEffort metadata. Ultra is a delegating execution mode, recorded separately and not offered as ordinary subagent effort. An API-supported level absent from the native catalog is unverified for manual per-role configuration, not proven runtime-rejected."
+    },
+    "claude": {
+      "label": "Claude Code",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "observedClientVersion": "2.1.312",
+      "models": [
+        {
+          "id": "sonnet",
+          "label": "Sonnet (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "alias",
+          "effortResolution": "Depends on the resolved model and provider; requested levels can be clamped or ignored by Claude Code."
+        },
+        {
+          "id": "opus",
+          "label": "Opus (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "alias",
+          "effortResolution": "Depends on the resolved model and provider; requested levels can be clamped or ignored by Claude Code."
+        },
+        {
+          "id": "haiku",
+          "label": "Haiku (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "alias",
+          "effortResolution": "Depends on the resolved model and provider; requested levels can be clamped or ignored by Claude Code."
+        },
+        {
+          "id": "fable",
+          "label": "Fable (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/sub-agents#choose-a-model",
+          "kind": "alias",
+          "effortResolution": "Depends on the resolved model and provider; requested levels can be clamped or ignored by Claude Code."
+        },
+        {
+          "id": "claude-fable-5-1",
+          "label": "Fable 5.1",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-5-5",
+          "label": "Opus 5.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-sonnet-5-5",
+          "label": "Sonnet 5.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-haiku-5-5",
+          "label": "Haiku 5.5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-fable-5",
+          "label": "Fable 5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-5",
+          "label": "Opus 5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-sonnet-5",
+          "label": "Sonnet 5",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-8",
+          "label": "Opus 4.8",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-7",
+          "label": "Opus 4.7",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "xhigh",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-6",
+          "label": "Opus 4.6",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-sonnet-4-6",
+          "label": "Sonnet 4.6",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "claude-opus-4-5-20251101",
+          "label": "Opus 4.5",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config#adjust-effort-level",
+          "kind": "model",
+          "apiEfforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "apiDefaultEffort": null,
+          "apiSource": "https://platform.claude.com/docs/en/build-with-claude/effort"
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929",
+          "label": "Sonnet 4.5 (deprecated)",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model",
+          "lifecycle": {
+            "status": "deprecated",
+            "retirementDate": "2026-11-30",
+            "scope": "Anthropic-operated platforms; partner lifecycles differ",
+            "source": "https://platform.claude.com/docs/en/about-claude/model-deprecations"
+          }
+        },
+        {
+          "id": "claude-haiku-4-5-20251001",
+          "label": "Haiku 4.5",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/model-config",
+          "kind": "model"
+        },
+        {
+          "id": "inherit",
+          "label": "Inherit main model",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": null,
+          "source": "https://code.claude.com/docs/en/sub-agents",
+          "kind": "inherit",
+          "effortResolution": "Depends on the resolved model and provider; requested levels can be clamped or ignored by Claude Code."
+        }
+      ],
+      "note": "Full model IDs use the current Claude Code native effort table, which differs from API support for Opus 4.5. Alias/inherit efforts are possible requested levels, not a guarantee for every resolved provider model; unsupported levels can clamp or be ignored. Current account access and provider alias resolution vary.",
+      "excluded": [
+        {
+          "id": "best",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "default",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "opus[1m]",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "opusplan",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        },
+        {
+          "id": "sonnet[1m]",
+          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
+        }
+      ]
+    },
+    "kimi": {
+      "label": "Kimi",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "models": [
+        {
+          "id": "kimi-code/k3.1-pro",
+          "label": "K3.1 Pro",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "k3.1-pro",
+          "thinkingRequired": true
+        },
+        {
+          "id": "kimi-code/k3.1-pro-highspeed",
+          "label": "K3.1 Pro Highspeed",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "k3.1-pro-highspeed",
+          "thinkingRequired": true
+        },
+        {
+          "id": "kimi-code/k3",
+          "label": "K3",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "k3"
+        },
+        {
+          "id": "kimi-code/k3-256k",
+          "label": "K3 · 256K",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "k3-256k"
+        },
+        {
+          "id": "kimi-code/kimi-for-coding",
+          "label": "K2.8 Preview",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "kimi-for-coding"
+        },
+        {
+          "id": "kimi-code/kimi-for-coding-highspeed",
+          "label": "K2.7 Code HighSpeed",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models",
+          "kind": "native-alias",
+          "upstreamModelId": "kimi-for-coding-highspeed"
+        }
+      ],
+      "note": "Current Kimi Code docs list six model IDs; the older kimi.ai/help page still lists four. K3.1 Pro and Highspeed require thinking and support low/high/max, default high. These are preferred native aliases: setup resolves a missing preferred alias only to a unique provisioned match; no provider identity is invented. Account tier controls access.",
+      "observedClientVersion": "2.4.0",
+      "observation": "Kimi Code CLI 2.4.0: all six documented preferred aliases and native effort/default capabilities corroborated through whitelisted provisioned metadata; no credentials or custom account aliases retained."
+    },
+    "agy": {
+      "label": "Antigravity",
+      "efforts": [],
+      "observedClientVersion": "1.4.10",
+      "models": [
+        {
+          "id": "pro",
+          "label": "Pro",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        },
+        {
+          "id": "flash",
+          "label": "Flash",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        },
+        {
+          "id": "flash_lite",
+          "label": "Flash Lite",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        },
+        {
+          "id": "inherit",
+          "label": "Inherit main model",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://antigravity.google/docs/subagents?tab=cli",
+          "kind": "tier"
+        }
+      ],
+      "note": "Native per-subagent selectors are tiers, not the session model inventory. CLI 1.4.10 parser explicitly accepts inherit/flash_lite/flash/pro, including Flash Lite absent from the shared docs App table. Per-role effort is not exposed by the agent-file schema."
+    }
+  }
+}

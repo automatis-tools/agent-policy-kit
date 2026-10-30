@@ -1,0 +1,361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent Policy Kit configuration preferences",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "maxConcurrent",
+    "clients"
+  ],
+  "properties": {
+    "selectedRoles": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "worker",
+          "reviewer",
+          "explorer",
+          "tester",
+          "writer",
+          "routine"
+        ]
+      },
+      "description": "Native subagent roles to configure. Omit to include all six roles in this release."
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "maxConcurrent": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 32
+    },
+    "clients": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "codex": {
+          "$ref": "#/$defs/client"
+        },
+        "claude": {
+          "$ref": "#/$defs/claudeClient"
+        },
+        "kimi": {
+          "$ref": "#/$defs/kimiClient"
+        },
+        "agy": {
+          "$ref": "#/$defs/tierClient"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/\\[\\]-]{0,127}$"
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/identifier"
+        },
+        "effort": {
+          "enum": [
+            null,
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      }
+    },
+    "tierProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "enum": [
+            "pro",
+            "flash",
+            "flash_lite",
+            "inherit"
+          ]
+        },
+        "effort": {
+          "type": "null"
+        }
+      }
+    },
+    "client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/profile"
+        },
+        "light": {
+          "$ref": "#/$defs/profile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/profile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/profile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/profile"
+            },
+            "routine": {
+              "$ref": "#/$defs/profile"
+            },
+            "tester": {
+              "$ref": "#/$defs/profile"
+            },
+            "writer": {
+              "$ref": "#/$defs/profile"
+            }
+          }
+        }
+      }
+    },
+    "tierClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/tierProfile"
+        },
+        "light": {
+          "$ref": "#/$defs/tierProfile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "routine": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "tester": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "writer": {
+              "$ref": "#/$defs/tierProfile"
+            }
+          }
+        }
+      }
+    },
+    "kimiProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/identifier"
+            },
+            {
+              "not": {
+                "const": "primary"
+              }
+            }
+          ]
+        },
+        "effort": {
+          "enum": [
+            null,
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      }
+    },
+    "kimiClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/kimiProfile"
+        },
+        "light": {
+          "$ref": "#/$defs/kimiProfile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "routine": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "tester": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "writer": {
+              "$ref": "#/$defs/kimiProfile"
+            }
+          }
+        }
+      }
+    },
+    "claudeProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/identifier"
+        },
+        "effort": {
+          "enum": [
+            null,
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      }
+    },
+    "claudeClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/claudeProfile"
+        },
+        "light": {
+          "$ref": "#/$defs/claudeProfile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "routine": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "tester": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "writer": {
+              "$ref": "#/$defs/claudeProfile"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$comment": "Model-specific supported effort is checked against the release catalog; null means no explicit effort override. Only conflicting non-null Kimi alias pins are invalid."
+}

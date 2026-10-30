@@ -1,0 +1,17 @@
+# Partial example: merge into the native config, never append duplicate tables.
+# The two aliases must already be provisioned with compatible model metadata.
+# Preserve provider/login entries. Remove a conflicting section-wide
+# secondary_model.default_effort so per-entry efforts can differ.
+
+[secondary_model]
+default_model = "kimi-code/k3"
+
+[secondary_model.models]
+"kimi-code/k3" = "Code changes, debugging and review. Use high effort."
+"kimi-code/kimi-for-coding" = "File search, facts and routine work. Use low effort."
+
+[models."kimi-code/k3".overrides]
+default_effort = "high"
+
+[models."kimi-code/kimi-for-coding".overrides]
+default_effort = "low"
