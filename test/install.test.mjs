@@ -479,3 +479,31 @@ test('Kimi custom provisioned effort xhigh and agy flash_lite are preserved as n
 test('native Kimi aliases containing at-signs retain bounded snapshot ownership',async t=>{
  const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),model='native-alias@20250929',original=modelConfig+extraKimi(model);await put(target,original);await useRoles(f,Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model,effort:'low'}])));await applyInstall(await planInstall(f));const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.secondary_model.default_model,model);assert.equal(native.models[model].overrides.default_effort,'low');assert.equal((await inspectConfiguration(f)).status,'verified');await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),parseToml(original));
 });
+
+test('K3.1 Pro catalog choices resolve provisioned aliases and preserve native identity on undo',async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');
+ const original=modelConfig+['k3.1-pro','k3.1-pro-highspeed'].map((model,i)=>`[models."native-pro-${i}"]\nprovider = "fixture"\nmodel = "${model}"\nmax_context_size = 1048576\nsupport_efforts = ["low", "high", "max"]\ndefault_effort = "high"\ncapabilities = ["thinking", "always_thinking", "tool_use"]\n`).join('');
+ await put(target,original);
+ await useRoles(f,{worker:{model:'kimi-code/k3.1-pro',effort:'high'},reviewer:{model:'kimi-code/k3.1-pro-highspeed',effort:'max'}});
+ const policy=JSON.parse(await fs.readFile(f.policyPath,'utf8'));policy.clients.kimi.avoidModels=policy.clients.kimi.avoidModels.filter(model=>model!=='kimi-code/k3.1-pro-highspeed');await fs.writeFile(f.policyPath,JSON.stringify(policy));
+ const plan=await planInstall(f);assert.equal(plan.status,'planned');await applyInstall(plan);
+ const native=parseToml(await fs.readFile(target,'utf8'));
+ assert.equal(native.default_model,'main');assert.deepEqual(native.providers,parseToml(original).providers);
+ assert.equal(native.secondary_model.default_model,'native-pro-0');
+ assert.equal(native.models['native-pro-0'].overrides.default_effort,'high');assert.equal(native.models['native-pro-1'].overrides.default_effort,'max');
+ assert.deepEqual(native.models['native-pro-0'].capabilities,['thinking','always_thinking','tool_use']);
+ assert.equal((await inspectConfiguration(f)).status,'verified');await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),parseToml(original));
+});
+
+test('K3.1 Pro requires compatible thinking even when every role leaves effort unpinned',async t=>{
+ for(const model of ['k3.1-pro','k3.1-pro-highspeed']){
+  const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');
+  const original=modelConfig+`[models."native-pro"]\nprovider = "fixture"\nmodel = "${model}"\nmax_context_size = 1048576\nsupport_efforts = ["low", "high", "max"]\ndefault_effort = "high"\ncapabilities = ["thinking", "always_thinking"]\n[thinking]\nenabled = false\n`;
+  await put(target,original);await useRoles(f,Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:'kimi-code/'+model,effort:null}])));
+  const policy=JSON.parse(await fs.readFile(f.policyPath,'utf8'));policy.clients.kimi.avoidModels=[];await fs.writeFile(f.policyPath,JSON.stringify(policy));
+  const plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.deepEqual(plan.warnings,['kimi-thinking-disabled']);assert.equal(plan.changes.length,0);assert.equal(await fs.readFile(target,'utf8'),original);await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
+  await put(target,original.replace('enabled = false','enabled = true'));
+  const compatible=await planInstall(f);assert.equal(compatible.status,'planned');await applyInstall(compatible);
+  const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.thinking.enabled,true);assert.equal(native.models['native-pro'].overrides,undefined);assert.equal(native.default_model,'main');
+ }
+});

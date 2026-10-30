@@ -9,7 +9,7 @@ Named presets and the dated model/effort catalog follow the npm package version.
 The installing AI agent should:
 
 1. Read the saved preferences and installed client versions. Preserve explicit user choices.
-2. Check current official documentation for model availability, supported effort and suitability for the assigned task. Check provisioned native aliases without printing credentials.
+2. Cross-check the provider's current dedicated model docs with native catalogs or schemas. Older official help pages can lag: Kimi's old help page omitted K3.1 Pro while its current Code Docs and provisioned metadata included it. Keep API capabilities separate from native choices; aliases and session modes are not additional versioned models. Check provisioned aliases without printing credentials.
 3. Compare proposed choices with the saved setup. A newer model is not automatically better for every task, account or usage constraint.
 4. Apply requested changes through the coordinated [preferences update procedure](../AGENT_INSTALL.md). Package installation alone must not rewrite native settings.
 

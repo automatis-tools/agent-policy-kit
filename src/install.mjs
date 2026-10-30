@@ -315,7 +315,10 @@ function kimiPrerequisite(native,preferences) {
     const model=native.models?.[value.model];
     if(!object(model)||typeof model.provider!=='string'||typeof model.model!=='string'||!Number.isSafeInteger(model.max_context_size)||model.max_context_size<1||!object(native.providers?.[model.provider]))return 'kimi-provisioned-models-required';
   }
-  if(!pinned.length)return null;
+  if(!pinned.length){
+    if(native.thinking?.enabled===false&&selected.some(value=>catalog.clients.kimi.models.some(model=>model.thinkingRequired&&model.upstreamModelId===native.models[value.model].model)))return 'kimi-thinking-disabled';
+    return null;
+  }
   if(pinned.length<selected.length&&native.secondary_model?.default_effort!==undefined)return 'kimi-mixed-native-default-effort';
   if(native.thinking?.enabled===false)return 'kimi-thinking-disabled';
   for(const value of pinned) {

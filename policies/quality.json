@@ -30,11 +30,11 @@
     },
     "kimi": {
       "code": {
-        "model": "kimi-code/k3",
+        "model": "kimi-code/k3.1-pro",
         "effort": "high"
       },
       "light": {
-        "model": "kimi-code/k3",
+        "model": "kimi-code/k3.1-pro",
         "effort": "high"
       },
       "avoidModels": [
