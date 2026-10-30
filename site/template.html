@@ -34,9 +34,12 @@ h1{font:650 clamp(30px,5vw,40px)/1.13 'Public Sans',sans-serif;letter-spacing:-.
 .tool-buttons button:hover{background:#eaf0ff;color:var(--accent)}
 .tool-buttons button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
 .preset-controls{min-width:0;margin:0;padding:0;border:0}
-.preset-options{display:flex;flex-wrap:wrap;gap:12px 24px}
-.preset-option{display:inline-flex;align-items:center;gap:8px;min-height:28px;font-size:13px;cursor:pointer}
-.preset-option input{appearance:auto;accent-color:var(--brand-blue);width:16px;height:16px;margin:0;cursor:pointer;flex-shrink:0}
+.preset-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.preset-option{position:relative;display:grid;grid-template-rows:20px auto;justify-items:center;align-items:center;align-content:start;gap:10px;padding:4px 4px 0;font-size:13px;line-height:1.5;text-align:center;cursor:pointer}
+.preset-option:not(:first-child)::before{content:'';position:absolute;top:13px;left:-50%;width:100%;height:2px;background:#ccd5e2}
+.preset-option input{appearance:none;position:relative;z-index:1;width:10px;height:10px;margin:0;border:0;border-radius:50%;background:var(--muted);cursor:pointer}
+.preset-option input:checked{width:18px;height:18px;border:3px solid #fff;background:var(--brand-blue);box-shadow:0 0 0 2px var(--brand-blue)}
+.preset-option input:checked+span{color:var(--accent);font-weight:600}
 .reset{border:0;background:none;padding:6px 0;color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px}
 .reset:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 select,input[type=text]{height:42px;border:1px solid #ccd5e2;border-radius:5px;background:#fff;color:var(--ink);padding:0 12px;min-width:0;width:100%;font-size:13px}
@@ -85,8 +88,7 @@ input[type=text]{font-size:11px;padding:0 9px}
 .command-line{align-items:stretch;flex-direction:column;gap:14px;padding:16px}
 .copy{width:100%}
 .tool-buttons button{font-size:12px;padding-inline:5px}
-.preset-options{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
-.preset-option{font-size:12px}
+.preset-option{font-size:12px;gap:8px}
 .task-row select{font-size:11px;padding:0 28px 0 5px;background-position:right 8px center}
 .task-row label{font-size:12px}
 .reset{font-size:11px}
@@ -98,7 +100,7 @@ input[type=text]{font-size:11px;padding:0 9px}
 .brand{font-size:12px}
 .tool-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(forced-colors:active){select{appearance:auto;background-image:none}.tool-buttons button[aria-pressed=true]{border:1px solid ButtonText}}
+@media(forced-colors:active){select{appearance:auto;background-image:none}.tool-buttons button[aria-pressed=true]{border:1px solid ButtonText}.preset-option::before{background:GrayText}.preset-option input,.preset-option input:checked{appearance:auto;width:18px;height:18px;border:0;background:Canvas;box-shadow:none}}
 </style>
 </head>
 <body>
