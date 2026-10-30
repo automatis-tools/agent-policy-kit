@@ -12,7 +12,13 @@ const preferences=validatePolicy(JSON.parse(fs.readFileSync(path.join(root,'poli
 const data={...release,packageSpec:`agent-policy-kit@${release.version}`,preferences,
   presets:release.presets.map(preset=>({...preset,preferences:presetPreferences(preset.id)})),catalog:modelCatalog(),
   unreleased:release.notes.includes(`## ${release.version} — Unreleased`)};
-const html=template.replace(marker,()=>JSON.stringify(data).replaceAll('<','\\u003c'));
+// Embed the font and its license so the release page remains a single offline file.
+const font=fs.readFileSync(path.join(root,'site/fonts/public-sans-latin.woff2')).toString('base64');
+const fontLicense=fs.readFileSync(path.join(root,'site/fonts/public-sans-OFL.txt'),'utf8').trim();
+const html=template
+  .replace('__APK_FONT_DATA__',()=>font)
+  .replace('__APK_FONT_LICENSE__',()=>fontLicense)
+  .replace(marker,()=>JSON.stringify(data).replaceAll('<','\\u003c'));
 const destination=path.join(root,'site/index.html');
 if(process.argv.includes('--check')){
   if(!fs.existsSync(destination)||fs.readFileSync(destination,'utf8')!==html)throw new Error('Configuration page is stale; run npm run build:site');

@@ -2,6 +2,8 @@
 
 Open site/index.html in Google Chrome. It is one self-contained HTML file with no external assets, network requests, backend, telemetry or access to native account files. Recommendations and version are embedded from the same package release.
 
+The page uses the Public Sans font and visual palette from getacc.dev. The build embeds the local font and its SIL Open Font License into the HTML; it needs no font service. Font sources are in site/fonts/.
+
 Choose a starting preset, then the tool whose models/effort you want to edit. The four task fields control code, review, search and routine work independently. All supported tools remain selected for the command; native autodetection skips absent tools. Effort is explicit per task and filtered by the selected model. Parallelism keeps the release recommendation. Antigravity exposes native tiers; Kimi needs compatible provisioned aliases. The CLI checks native prerequisites when the command runs.
 
 An unchanged preset generates a short pinned --release --preset command; edited choices generate a pinned npx --config command. It never runs that command itself. Expand configuration details to inspect the JSON/full command. Custom choices are base64url data, not shell fragments. Model availability is not granted or verified by the browser.

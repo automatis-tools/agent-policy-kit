@@ -8,7 +8,7 @@ Configuration release/page candidate 0.1.0, macOS arm64, 2026-10-29. Configurati
 | Minimum Node 22.13.0 suite | PASS: the same 186/186, including both package gates |
 | Two synthetic releases | PASS: actual 0.1.0/0.2.0 tarballs, changed preset/model and role/instruction templates; A→B→A, mixed applied versions, late replacement rollback, drift/prerequisite safety, final original-user restoration |
 | Package/state removal | PASS: generated native files/standalone consumer fixtures continue without source/npm/state |
-| Real Chrome page | PASS: desktop and 390 px Chrome emulation; presets, per-task effort, Fable, custom Google dated IDs, unsupported effort omission, native Antigravity tiers, copy feedback and invalid-input clearing; no horizontal overflow or console errors |
+| Real Chrome page | PASS: desktop and 320/390 px Chrome emulation; embedded Public Sans, getacc.dev visual palette, presets, effort and copy feedback; no external resource requests, horizontal overflow or console errors. Earlier Fable, custom Google dated IDs, native tier and invalid-input checks remain covered by the unchanged form logic. |
 | Actual page command via npx | PASS: local 0.1.0 tarball, fresh npm cache and disposable CLI identities; fast preset and custom maximum effort persisted, main model and disabled delegation preserved; no live settings or model calls |
 | Independent review | PASS after two catalog/provider-ID corrections; scoped re-review confirmed both fixes |
 | Native Codex config parser | Earlier positive/malformed negative controls passed; latest catalog additions have fixture coverage, not complete role/model execution |
