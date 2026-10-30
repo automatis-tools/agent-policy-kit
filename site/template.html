@@ -47,7 +47,7 @@ select{appearance:none;padding-right:34px;background-image:url("data:image/svg+x
 input[type=text]{font-family:var(--mono);font-size:11px}
 input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}
 .models{background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden}
-.table-head,.task-row{display:grid;grid-template-columns:82px minmax(0,1fr) 140px;align-items:center;gap:20px;padding:16px 22px}
+.table-head,.task-row{display:grid;grid-template-columns:68px minmax(0,1fr) minmax(0,1.5fr);align-items:center;gap:16px;padding:16px 22px}
 .table-head{background:var(--paper);padding-top:12px;padding-bottom:12px;color:var(--muted);font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
 .task-row{border-top:1px solid var(--line)}
 .task-row label{font-size:13px;font-weight:600}
@@ -55,8 +55,11 @@ input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}
 .model-actions{display:flex;justify-content:space-between;align-items:baseline;gap:15px}
 .model-actions .tool-note{flex:1}
 .task-row select{font-size:12px;padding:0 34px 0 9px}
-.task-row select:disabled{color:var(--muted);background-color:var(--paper)}
-.effort-field{min-width:0}
+.effort-field{display:flex;flex-wrap:wrap;gap:3px;min-width:0;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
+.effort-field button{min-height:32px;padding:5px 7px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:11px;white-space:nowrap}
+.effort-field button:hover{background:#eaf0ff;color:var(--accent)}
+.effort-field button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
+.effort-field button:disabled{opacity:1;background:transparent;color:var(--muted);cursor:default}
 .tool-note{font-size:12px;color:var(--muted);line-height:1.7;margin:12px 1px 0;min-height:20px}
 .result{margin-top:24px}
 .command-line{display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--brand-yellow);border-radius:5px;padding:16px 18px}
@@ -82,8 +85,12 @@ header,main,footer{width:calc(100% - 40px)}
 .heading{margin-top:28px;margin-bottom:26px}
 .heading p{font-size:14px}
 .brand{font-size:13px}
-.table-head,.task-row{grid-template-columns:55px minmax(0,1fr) 100px;gap:9px;padding-left:15px;padding-right:15px}
+.table-head,.task-row{grid-template-columns:55px minmax(0,1fr);gap:9px;padding-left:15px;padding-right:15px}
+.table-head span:nth-child(2)::after{content:' & effort'}
+.table-head span:last-child{display:none}
 .task-row{padding-top:14px;padding-bottom:14px}
+.effort-field{grid-column:1/-1}
+.effort-field button{padding-inline:6px}
 input[type=text]{font-size:11px;padding:0 9px}
 .command-line{align-items:stretch;flex-direction:column;gap:14px;padding:16px}
 .copy{width:100%}
@@ -95,12 +102,14 @@ input[type=text]{font-size:11px;padding:0 9px}
 .result{margin-top:20px}
 }
 @media(max-width:360px){
-.table-head,.task-row{grid-template-columns:47px minmax(0,1fr) 84px;gap:7px;padding-left:10px;padding-right:10px}
+.table-head,.task-row{grid-template-columns:47px minmax(0,1fr);gap:7px;padding-left:10px;padding-right:10px}
 .task-row select{font-size:10px}
+.effort-field button{padding-inline:4px}
+.effort-field:has(button:nth-child(7)){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .brand{font-size:12px}
 .tool-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(forced-colors:active){select{appearance:auto;background-image:none}.tool-buttons button[aria-pressed=true]{border:1px solid ButtonText}.preset-option::before{height:0;border-top:2px solid CanvasText}.preset-option input,.preset-option input:checked{appearance:auto;width:18px;height:18px;border:0;background:Canvas;box-shadow:none}}
+@media(forced-colors:active){select{appearance:auto;background-image:none}.tool-buttons button[aria-pressed=true],.effort-field button[aria-pressed=true]{border:1px solid ButtonText}.preset-option::before{height:0;border-top:2px solid CanvasText}.preset-option input,.preset-option input:checked{appearance:auto;width:18px;height:18px;border:0;background:Canvas;box-shadow:none}}
 </style>
 </head>
 <body>
@@ -307,13 +316,23 @@ const RELEASE = __APK_RELEASE_DATA__;
       const custom = element('input', {id: `custom-${client}-${role}`, type: 'text', maxlength: '128', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'Native model ID', 'aria-label': `${LABELS[client]} ${TASKS[role]} custom model`});
       custom.value = known ? '' : state.jobs[client][role].model;
       custom.hidden = select.value !== '__custom__'; custom.dataset.model = 'true';
-      const effort = element('select', {id: `effort-${client}-${role}`, 'aria-label': `${LABELS[client]} ${TASKS[role]} effort`});
+      const effort = element('div', {id: `effort-${client}-${role}`, class: 'effort-field', role: 'group', 'aria-label': `${LABELS[client]} ${TASKS[role]} effort`});
       function populateEffort() {
         effort.replaceChildren();
         const levels = client === 'agy' ? [null] : allowedEfforts(catalog, state.jobs[client][role].model);
-        levels.forEach(level => effort.append(element('option', {value: level ?? ''}, level === null ? 'Native default' : level === 'xhigh' ? 'Extra high' : level[0].toUpperCase() + level.slice(1))));
-        effort.value = state.jobs[client][role].effort ?? '';
-        effort.disabled = levels.length === 1;
+        for (const level of levels) {
+          const label = level === null ? 'Default' : level === 'xhigh' ? 'XHigh' : level[0].toUpperCase() + level.slice(1);
+          const button = element('button', {type: 'button', 'data-effort': level ?? '', 'aria-pressed': String(state.jobs[client][role].effort === level), title: level === null ? 'Native default' : level === 'xhigh' ? 'Extra high' : label}, label);
+          button.disabled = levels.length === 1;
+          button.addEventListener('click', () => {
+            updateEffort(state, client, role, level);
+            for (const otherRole of ROLES) for (const option of $(`effort-${client}-${otherRole}`).querySelectorAll('button')) {
+              option.setAttribute('aria-pressed', String(option.dataset.effort === (state.jobs[client][otherRole].effort ?? '')));
+            }
+            updateResult();
+          });
+          effort.append(button);
+        }
       }
       function chooseModel(model) {
         state.custom = true;
@@ -326,11 +345,6 @@ const RELEASE = __APK_RELEASE_DATA__;
         if (!custom.hidden) custom.focus();
       });
       custom.addEventListener('input', () => chooseModel(custom.value));
-      effort.addEventListener('change', () => {
-        updateEffort(state, client, role, effort.value || null);
-        for (const otherRole of ROLES) if (client === 'kimi' && state.jobs[client][otherRole].model === state.jobs[client][role].model) $(`effort-${client}-${otherRole}`).value = effort.value;
-        updateResult();
-      });
       populateEffort(); modelField.append(select, custom); row.append(modelField, effort); panel.append(row);
     }
   }
