@@ -4,6 +4,8 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## Unreleased
 
+- Automatically deploy the latest website from verified main while preserving exact tagged release pages and older share links. Configuration guards keep commands pinned to published package capabilities; npm releases remain explicit.
+
 - Credit Mykola Maksymenko in the configuration page and package metadata. Link the supplied LinkedIn profile and related projects, with static author/project structured data and a release-specific canonical URL.
 
 ## 0.1.0 — 2026-10-30

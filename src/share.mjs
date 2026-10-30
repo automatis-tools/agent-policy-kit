@@ -1,6 +1,6 @@
 // Pure URL state codec, also embedded in the offline configuration page.
 const SHARE_BYTES=65536,SHARE_TOKEN=87384;
-const SHARE_VERSION=/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const SHARE_VERSION=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
 const SHARE_UNSAFE=new Set(['__proto__','constructor','prototype']);
 function invalidShare(){throw Object.assign(new Error('Invalid shared configuration link.'),{code:'INVALID_SHARE_LINK'});}
 
@@ -58,9 +58,22 @@ function shareChoice(choice,id,metadata){
 }
 function sharePayload(payload,release,metadata){
  shareRecord(payload,['v','release','roles','tools','scope','maxConcurrent']);
- if(payload.v!==1||typeof payload.release!=='string'||!SHARE_VERSION.test(payload.release))invalidShare();
- if(payload.release!==release.version)throw Object.assign(new Error('This link uses a different release.'),{code:'SHARE_RELEASE_MISMATCH'});
+ if(payload.v!==1||typeof payload.release!=='string'||payload.release.length>128||!SHARE_VERSION.test(payload.release))invalidShare();
  if(!Number.isInteger(payload.maxConcurrent)||payload.maxConcurrent<1||payload.maxConcurrent>32)invalidShare();
+ if(payload.release!==release.version){
+  // Validate the wire shape without imposing today's models or preset values on
+  // an older release. Invalid links must never turn into navigation.
+  const identifier=value=>typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(value);
+  if(!Array.isArray(payload.roles)||payload.roles.length>1000||payload.roles.some(role=>!identifier(role)))invalidShare();
+  const roles=shareList(payload.roles,payload.roles),ids=[];
+  if(!Array.isArray(payload.tools)||payload.tools.length>32)invalidShare();
+  for(const tool of payload.tools){
+   shareRecord(tool,['id','mode','base','choices']);if(!identifier(tool.id)||ids.includes(tool.id)||!identifier(tool.base)||(tool.mode!==null&&!identifier(tool.mode)))invalidShare();ids.push(tool.id);
+   shareRecord(tool.choices,roles);for(const role of roles){const choice=shareRecord(tool.choices[role],['model','effort']);if(typeof choice.model!=='string'||choice.model.length>128||(choice.effort!==null&&(typeof choice.effort!=='string'||choice.effort.length>32)))invalidShare();}
+  }
+  if(payload.scope!==null&&(typeof payload.scope!=='string'||(payload.scope==='all'?ids.length<2:!ids.includes(payload.scope))))invalidShare();
+  throw Object.assign(new Error('This link uses a different release.'),{code:'SHARE_RELEASE_MISMATCH',releaseVersion:payload.release});
+ }
  const roles=shareList(payload.roles,[...metadata.roles.keys()]);
  if(!Array.isArray(payload.tools)||payload.tools.length>metadata.clients.length)invalidShare();
  const selected=[];
@@ -138,4 +151,13 @@ export function decodeFormState(fragment,release){
   const payload=shareJson(new TextDecoder('utf-8',{fatal:true}).decode(bytes));shareData(payload);
   return sharePayload(payload,release,shareRelease(release));
  }catch(error){if(error?.code==='INVALID_SHARE_LINK'||error?.code==='SHARE_RELEASE_MISMATCH')throw error;invalidShare();}
+}
+
+export function archivedReleaseUrl(error,href,hostedReleases=[]){
+ if(error?.code!=='SHARE_RELEASE_MISMATCH'||typeof error.releaseVersion!=='string'||error.releaseVersion.length>128||!SHARE_VERSION.test(error.releaseVersion)||!Array.isArray(hostedReleases)||!hostedReleases.includes(error.releaseVersion))return null;
+ try{
+  const current=new URL(href);if(!['http:','https:'].includes(current.protocol)||current.username||current.password||current.pathname!=='/'||!current.hash.startsWith('#setup='))return null;
+  const target=new URL(`/v/${error.releaseVersion}/`,current.origin);target.hash=current.hash;
+  return target.origin===current.origin?target.href:null;
+ }catch{return null;}
 }

@@ -1,0 +1,74 @@
+name: Deploy configurator
+on:
+  workflow_run:
+    workflows: [Verify package]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production-configurator
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == github.repository &&
+        (github.event.workflow_run.head_branch == 'main' || startsWith(github.event.workflow_run.head_branch, 'v'))))
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://agent-policy-kit.trymenow.io/
+    steps:
+      - name: Check out main, never workflow_run head code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+      - name: Verify main and its completed tests
+        id: guard
+        run: node scripts/deploy-guard.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install project dependencies
+        if: steps.guard.outputs.deploy == 'true'
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Validate and build latest plus immutable release pages
+        if: steps.guard.outputs.deploy == 'true'
+        run: npm run check && npm run build:host
+      - name: Install pinned deployment tooling without credentials
+        if: steps.guard.outputs.deploy == 'true'
+        run: npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund wrangler@4.151.3
+      - name: Prepare asset-only deployment configuration
+        if: steps.guard.outputs.deploy == 'true'
+        run: node scripts/prepare-site-deploy.mjs
+      - name: Recheck main immediately before deployment
+        if: steps.guard.outputs.deploy == 'true'
+        id: final_guard
+        run: node scripts/deploy-guard.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Deploy existing Cloudflare Worker
+        if: steps.final_guard.outputs.deploy == 'true'
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
+          npx --no-install wrangler deploy --config .agent-work/ci-wrangler.json --message "main $DEPLOY_SHA"
+        env:
+          DEPLOY_SHA: ${{ steps.final_guard.outputs.sha }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify public latest and immutable release pages
+        if: steps.final_guard.outputs.deploy == 'true'
+        run: node scripts/verify-hosted-site.mjs

@@ -238,7 +238,7 @@ __APK_SHARE_CODEC__
  syncTargets();
  const modeName=id=>id===null?'Choose mode':presets.find(p=>p.id===id)?.label??'Custom';
  function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n;}
- let mounted=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0,lastCopiedCommand=null,linkError='',lastAddress=location.hash;
+ let mounted=false,archiveNavigation=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0,lastCopiedCommand=null,linkError='',lastAddress=location.hash;
  $('release-version').textContent='v'+RELEASE.version;
  $('release-status').textContent=RELEASE.unreleased?'Release candidate · npm command available after publication.':`Configuration release ${RELEASE.version}`;
  const guideBase=location.protocol==='file:'?new URL('../',location.href).href:`https://unpkg.com/agent-policy-kit@${RELEASE.version}/`;
@@ -377,7 +377,11 @@ __APK_SHARE_CODEC__
     }
    }else if(!first)freshForm();
    linkError='';
-  }catch(error){freshForm();linkError=error?.code==='SHARE_RELEASE_MISMATCH'?'Open this setup link with its matching APK release, or reset the form.':'This setup link is invalid. Reset the form to start again.';}
+  }catch(error){
+   const archived=archivedReleaseUrl(error,location.href,RELEASE.hostedReleases??[]);
+   if(archived){archiveNavigation=true;location.replace(archived);return;}
+   freshForm();linkError=error?.code==='SHARE_RELEASE_MISMATCH'?'Open this setup link with its matching APK release, or reset the form.':'This setup link is invalid. Reset the form to start again.';
+  }
  }
  function publishAddress(){
   let message=linkError;
@@ -454,7 +458,7 @@ __APK_SHARE_CODEC__
   updateProgress();publishAddress();
  }
  function renderNow(){syncTargets();renderPickers();renderModes();renderResult();}
- function render({fromAddress=false}={}){if(mounted&&!fromAddress)linkError='';if(!mounted){renderNow();mounted=true;}else animateUpdate(renderNow);}
+ function render({fromAddress=false}={}){if(archiveNavigation)return;if(mounted&&!fromAddress)linkError='';if(!mounted){renderNow();mounted=true;}else animateUpdate(renderNow);}
  function addressChanged(){
   if(location.hash===lastAddress||(location.hash&&!location.hash.startsWith('#setup=')))return;
   lastAddress=location.hash;loadAddress();render({fromAddress:true});
