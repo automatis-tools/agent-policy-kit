@@ -1,20 +1,9 @@
 import path from 'node:path';
 import { ROLES, rolePreference } from './policy.mjs';
+import {ROLE_DEFINITIONS,ROLE_IDS} from './roles.mjs';
 
 export const BEGIN = '<!-- BEGIN agent-policy-kit -->';
 export const END = '<!-- END agent-policy-kit -->';
-const descriptions = {
-  worker:'Implements scoped code changes and difficult analysis.',
-  reviewer:'Reviews changes for correctness and reports actionable findings.',
-  explorer:'Searches code and documentation and gathers facts without edits.',
-  routine:'Performs clearly specified mechanical tasks and checks.'
-};
-const prompts = {
-  worker:'Implement the assigned change. You share the workspace with other agents: preserve their edits and stay within the assigned files. Report changes, validation, and remaining limitations.',
-  reviewer:'Review the assigned change without editing files. Report actionable findings with file and line evidence and explain their impact.',
-  explorer:'Search the assigned code and documentation without editing files. Return a concise factual answer with source paths and distinguish facts from assumptions.',
-  routine:'Complete only the explicitly specified mechanical task. Preserve other agents\' work. If the task requires ambiguous decisions or behavior changes, return it to the parent for implementation by apk-worker.'
-};
 const directory = {codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
 export function nativeHomeConflict(client,home,env) {
   const variable={codex:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME'}[client];
@@ -29,12 +18,12 @@ export function nativeLocations(client,home) {
     roles:Object.keys(ROLES).map(role=>path.join(root,client==='agy'?'config/agents':'agents',`apk-${role}.${client==='codex'?'toml':'md'}`))
   };
 }
-export function nativeRoles(client,config) {
-  return Object.keys(ROLES).map(role=>{
+export function nativeRoles(client,config,selectedRoles=ROLE_IDS) {
+  return selectedRoles.map(role=>{
     const selected=rolePreference(config,role),name='apk-'+role;
-    const prompt=prompts[role]+' Do not create child agents; return any need for further delegation to the parent.';
-    if(client==='codex') return Object.entries({name,description:descriptions[role],model:selected.model,...(selected.effort===null?{}:{model_reasoning_effort:selected.effort}),developer_instructions:prompt}).map(([k,v])=>`${k} = ${JSON.stringify(v)}\n`).join('');
-    const fields=[`name: ${name}`,`description: ${JSON.stringify(descriptions[role])}`];
+    const {description,prompt}=ROLE_DEFINITIONS.find(value=>value.id===role);
+    if(client==='codex') return Object.entries({name,description,model:selected.model,...(selected.effort===null?{}:{model_reasoning_effort:selected.effort}),developer_instructions:prompt}).map(([k,v])=>`${k} = ${JSON.stringify(v)}\n`).join('');
+    const fields=[`name: ${name}`,`description: ${JSON.stringify(description)}`];
     if(client==='kimi') {
       if(['reviewer','explorer'].includes(role))fields.push('tools: [Read, Grep, Glob]');
     } else {
@@ -48,14 +37,15 @@ export function nativeRoles(client,config) {
     return `---\n${fields.join('\n')}\n---\n\n${prompt}\n${routing}`;
   });
 }
-export function instructionBlock(client,config,maxConcurrent) {
-  const text=[BEGIN,'These preferences apply only if you choose to delegate to subagents. They do not require delegation or change how you handle work directly.','When delegating, use apk-worker for implementation and difficult analysis, apk-reviewer for review, apk-explorer for read-only search and fact gathering, and apk-routine for explicitly defined mechanical tasks.',`When delegating, run at most ${maxConcurrent} subagents concurrently in this session. Give each agent one concrete result and explicit file ownership. Preserve other agents' work. Child agents must return further delegation to the parent.`];
+export function instructionBlock(client,config,maxConcurrent,selectedRoles=ROLE_IDS) {
+  const routing=ROLE_DEFINITIONS.filter(role=>selectedRoles.includes(role.id)).map(role=>`apk-${role.id} for ${role.assignment}`).join(', ');
+  const text=[BEGIN,'These preferences apply only if you choose to delegate to subagents. They do not require delegation or change how you handle work directly.',`When delegating, use ${routing}.`,`When delegating, run at most ${maxConcurrent} subagents concurrently in this session. Give each agent one concrete result and explicit file ownership. Preserve other agents' work. Child agents must return further delegation to the parent.`];
   if(client==='kimi') {
-    for(const role of Object.keys(ROLES)) {const selected=rolePreference(config,role);text.push(`For apk-${role}, select pool alias ${selected.model} (effort ${selected.effort??'native default'}).`);}
+    for(const role of selectedRoles) {const selected=rolePreference(config,role);text.push(`For apk-${role}, select pool alias ${selected.model} (effort ${selected.effort??'native default'}).`);}
     text.push('Roles sharing an alias share its native effort default; an explicit effort pin for that alias also affects its native-default roles.');
     text.push("Use the Agent tool's model selection when spawning; the role file alone does not select a model. The concurrency limit is guidance; no native Agent cap is configured.");
   } else if(client==='agy') {
-    for(const role of Object.keys(ROLES))text.push(`When delegating to apk-${role}, use model tier ${rolePreference(config,role).model}.`);
+    for(const role of selectedRoles)text.push(`When delegating to apk-${role}, use model tier ${rolePreference(config,role).model}.`);
     text.push('Per-role effort and a hard concurrency cap are not supported by the documented native agent settings.');
   }
   else if(client==='claude')text.push('Use the named role definitions for model and effort selection. Session, project, managed settings, environment overrides and some spawn paths can supersede these user defaults; the native cap applies to ordinary Agent-tool spawns with documented exceptions.');

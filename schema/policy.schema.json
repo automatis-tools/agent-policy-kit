@@ -9,6 +9,14 @@
     "clients"
   ],
   "properties": {
+    "selectedRoles": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"enum": ["worker", "reviewer", "explorer", "routine"]},
+      "description": "Native subagent roles to configure. Omit to include all four roles."
+    },
     "schemaVersion": {
       "const": 1
     },

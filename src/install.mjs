@@ -3,7 +3,8 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { constants } from 'node:fs';
-import { validatePolicy, ROLES, rolePreference } from './policy.mjs';
+import { validatePolicy, rolePreference } from './policy.mjs';
+import {ROLE_IDS,selectedRoleIds} from './roles.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
 import catalog from '../models/catalog.json' with {type:'json'};
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
@@ -23,7 +24,7 @@ function within(base, target) { const relative = path.relative(base, target); re
 function locations(client,home,stateDir) {
   return {...nativeLocations(client,home),receipt:path.join(stateDir,'installations',client+'.json'),policy:path.join(stateDir,'policy.json')};
 }
-function nativeTargets(l) { return [...(l.config?[l.config]:[]),l.instructions,...l.roles]; }
+function nativeTargets(l,selectedRoles=ROLE_IDS) { return [...(l.config?[l.config]:[]),l.instructions,...l.roles.filter((_,i)=>selectedRoles.includes(ROLE_IDS[i]))]; }
 async function statOrNull(file) { try { return await fs.lstat(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; } }
 async function safePath(file, base) {
   if (!within(base, file)) fail('UNSAFE_PATH');
@@ -146,17 +147,17 @@ async function context({client,home,stateDir}) {
 function change(plan,target,before,after,mode=0o600) {
   if (before.text !== after) plan.changes.push({path:target,before:before.text,after,beforeHash:digest(before.text),afterHash:digest(after),mode,beforeMode:before.mode});
 }
-function effectiveRoles(preferences) {return Object.keys(ROLES).map(role=>({role,...rolePreference(preferences,role)}));}
-function selectedAliases(preferences) {
+function effectiveRoles(preferences,selectedRoles=ROLE_IDS) {return selectedRoles.map(role=>({role,...rolePreference(preferences,role)}));}
+function selectedAliases(preferences,selectedRoles=ROLE_IDS) {
   const aliases=new Map();
-  for(const selected of effectiveRoles(preferences))if(!aliases.has(selected.model)||selected.effort!==null)aliases.set(selected.model,selected);
+  for(const selected of effectiveRoles(preferences,selectedRoles))if(!aliases.has(selected.model)||selected.effort!==null)aliases.set(selected.model,selected);
   return [...aliases.values()];
 }
-function tomlSettings(client,preferences,maxConcurrent) {
-  const worker=rolePreference(preferences,'worker');
+function tomlSettings(client,preferences,maxConcurrent,selectedRoles=ROLE_IDS) {
+  const worker=rolePreference(preferences,selectedRoles[0]);
   if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],worker.model],...(worker.effort===null?[]:[[['agents','default_subagent_reasoning_effort'],worker.effort]])];
   if(client!=='kimi')return [];
-  const selected=selectedAliases(preferences),roles=effectiveRoles(preferences);
+  const selected=selectedAliases(preferences,selectedRoles),roles=effectiveRoles(preferences,selectedRoles);
   return [[['secondary_model','default_model'],worker.model],...selected.map(value=>[['secondary_model','models',value.model],'Use for '+roles.filter(role=>role.model===value.model).map(role=>'apk-'+role.role).join(', ')+'.']),...selected.filter(value=>value.effort!==null).map(value=>[['models',value.model,'overrides','default_effort'],value.effort])];
 }
 const HASH=/^[a-f0-9]{64}$/;
@@ -234,10 +235,11 @@ function validateJsonSnapshot(file) {
 }
 function validateReceipt(r,plan) {
   if(object(r)&&(r.schemaVersion===1||own(r,'packageRoot')||own(r,'nodePath')||own(r,'mode')||(Array.isArray(r.files)&&r.files.some(file=>object(file)&&(['owned','hook'].includes(file.type)||(Array.isArray(file.ops)&&file.ops.some(op=>object(op)&&['hook','entry'].includes(op.kind))))))))fail('LEGACY_RUNTIME_RECEIPT');
-  fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source','preset'])]);
-  const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l);
-  if(![2,3].includes(r.schemaVersion)||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!validHash(r.policyHash)||!Array.isArray(r.warnings)||r.warnings.length>32||!r.warnings.every(w=>typeof w==='string'&&/^[a-z][a-z0-9-]{0,127}$/.test(w))||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(file=>object(file)&&allowed.includes(file.path))||new Set(r.files.map(file=>file.path)).size!==allowed.length)fail('INVALID_RECEIPT');
-  if(r.schemaVersion===3) {if(!version(r.releaseVersion)||!SOURCES.includes(r.source)||(own(r,'preset')&&!validPreset(r.preset)))fail('INVALID_RECEIPT');}
+  fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source','preset']),...(r?.schemaVersion===4?['selectedRoles']:[])]);
+  if(r.schemaVersion===4&&(!Array.isArray(r.selectedRoles)||!r.selectedRoles.length||r.selectedRoles.length>ROLE_IDS.length||new Set(r.selectedRoles).size!==r.selectedRoles.length||r.selectedRoles.some(role=>!ROLE_IDS.includes(role))))fail('INVALID_RECEIPT');
+  const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l,r.schemaVersion===4?r.selectedRoles:ROLE_IDS);
+  if(![2,3,4].includes(r.schemaVersion)||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!validHash(r.policyHash)||!Array.isArray(r.warnings)||r.warnings.length>32||!r.warnings.every(w=>typeof w==='string'&&/^[a-z][a-z0-9-]{0,127}$/.test(w))||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(file=>object(file)&&allowed.includes(file.path))||new Set(r.files.map(file=>file.path)).size!==allowed.length)fail('INVALID_RECEIPT');
+  if(r.schemaVersion>=3) {if(!version(r.releaseVersion)||!SOURCES.includes(r.source)||(own(r,'preset')&&!validPreset(r.preset)))fail('INVALID_RECEIPT');}
   else if(!object(r.preferences)||!Number.isInteger(r.maxConcurrent)||r.maxConcurrent<1||r.maxConcurrent>32)fail('INVALID_RECEIPT');
   for(const file of r.files) {
     if(typeof file.existed!=='boolean')fail('INVALID_RECEIPT');
@@ -255,7 +257,7 @@ function validateReceipt(r,plan) {
   }
   return r;
 }
-function appliedRecord(r) {return r?{version:r.schemaVersion===3?r.releaseVersion:null,source:r.schemaVersion===3?r.source:'unknown',preset:r.schemaVersion===3?r.preset??null:null}:{version:null,source:null,preset:null};}
+function appliedRecord(r) {return r?{version:r.schemaVersion>=3?r.releaseVersion:null,source:r.schemaVersion>=3?r.source:'unknown',preset:r.schemaVersion>=3?r.preset??null:null}:{version:null,source:null,preset:null};}
 function releaseMetadata(plan,completed=false) {
   return {targetReleaseVersion:plan.targetReleaseVersion??null,targetSource:plan.targetSource??null,previousReleaseVersion:plan.previousReleaseVersion??null,previousSource:plan.previousSource??null,appliedReleaseVersion:completed?(plan.kind==='uninstall'?null:plan.targetReleaseVersion??null):plan.appliedReleaseVersion??null,appliedSource:completed?(plan.kind==='uninstall'?null:plan.targetSource??null):plan.appliedSource??null,targetPreset:plan.targetPreset??null,previousPreset:plan.previousPreset??null,appliedPreset:completed?(plan.kind==='uninstall'?null:plan.targetPreset??null):plan.appliedPreset??null};
 }
@@ -288,9 +290,9 @@ export async function inspectConfiguration(options) {
   return {status:'verified',releaseVersion:applied.version,source:applied.source,preset:applied.preset,warnings:[...record.warnings]};
 }
 function prerequisite(plan,warning) {return {...plan,status:'prerequisite',warnings:[warning],changes:[]};}
-function resolveKimiAliases(native,preferences) {
+function resolveKimiAliases(native,preferences,selectedRoles=ROLE_IDS) {
   const roles={},pins=new Map();let changed=false;
-  for(const selected of effectiveRoles(preferences)) {
+  for(const selected of effectiveRoles(preferences,selectedRoles)) {
     let actual=selected.model;
     if(!object(native.models)||!own(native.models,actual)) {
       const known=catalog.clients.kimi.models.find(value=>value.id===actual&&typeof value.upstreamModelId==='string');
@@ -309,8 +311,8 @@ function resolveKimiAliases(native,preferences) {
   }
   return {preferences:changed?{...preferences,roles}:preferences,changed};
 }
-function kimiPrerequisite(native,preferences) {
-  const selected=selectedAliases(preferences),pinned=selected.filter(value=>value.effort!==null);
+function kimiPrerequisite(native,preferences,selectedRoles=ROLE_IDS) {
+  const selected=selectedAliases(preferences,selectedRoles),pinned=selected.filter(value=>value.effort!==null);
   for(const value of selected) {
     const model=native.models?.[value.model];
     if(!object(model)||typeof model.provider!=='string'||typeof model.model!=='string'||!Number.isSafeInteger(model.max_context_size)||model.max_context_size<1||!object(native.providers?.[model.provider]))return 'kimi-provisioned-models-required';
@@ -344,6 +346,7 @@ export async function planInstall(options) {
   const policy=parseJson(input.text,'INVALID_POLICY');try {validatePolicy(policy);}catch {fail('INVALID_POLICY');}
   if(!own(policy.clients,plan.client))fail('INVALID_POLICY');
   let selected=policy.clients[plan.client],resolvedAliases=false;
+  const roleIds=selectedRoleIds(policy);
   const maxConcurrent=policy.maxConcurrent,policyHash=digest(json(canonical(policy)));
   const policyBefore=await readDependency(plan,l.policy,plan.stateDir);
   const baselines=record?await undoFiles(plan,record,false):new Map();
@@ -364,10 +367,10 @@ export async function planInstall(options) {
   } else if(config) {
     native=parseToml(config.text??'');
     if(plan.client==='kimi') {
-      const resolved=resolveKimiAliases(native,selected);if(resolved.prerequisite)return prerequisite(plan,resolved.prerequisite);
+      const resolved=resolveKimiAliases(native,selected,roleIds);if(resolved.prerequisite)return prerequisite(plan,resolved.prerequisite);
       selected=resolved.preferences;resolvedAliases=resolved.changed;
-      const required=kimiPrerequisite(native,selected);if(required)return prerequisite(plan,required);
-      if(selectedAliases(selected).some(value=>value.effort!==null)&&native.secondary_model?.default_effort!==undefined&&typeof native.secondary_model.default_effort!=='string')fail('UNSUPPORTED_CONFIG');
+      const required=kimiPrerequisite(native,selected,roleIds);if(required)return prerequisite(plan,required);
+      if(selectedAliases(selected,roleIds).some(value=>value.effort!==null)&&native.secondary_model?.default_effort!==undefined&&typeof native.secondary_model.default_effort!=='string')fail('UNSUPPORTED_CONFIG');
     }
     if(plan.client==='codex') {
       if(native.agents&&own(native.agents,'max_threads'))fail('CODEX_CAP_ALIAS_CONFLICT');
@@ -377,29 +380,30 @@ export async function planInstall(options) {
   }
   const files=[];plan.warnings=[...nativeWarnings(plan.client),...(resolvedAliases?['kimi-catalog-alias-resolved']:[])];
   if(plan.client==='claude') {
-    const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,'worker').model);nativeChange(l.config,config,edited.text);
+    const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,roleIds[0]).model);nativeChange(l.config,config,edited.text);
     files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
   } else if(config) {
     let text=config.text??'';const ops=[];
-    if(plan.client==='kimi'&&selectedAliases(selected).some(value=>value.effort!==null)) {const edit=removeTomlValue(text,['secondary_model','default_effort']);text=edit.text;ops.push(edit.ownership);}
-    for(const[keys,value]of tomlSettings(plan.client,selected,maxConcurrent)) {
+    if(plan.client==='kimi'&&selectedAliases(selected,roleIds).some(value=>value.effort!==null)) {const edit=removeTomlValue(text,['secondary_model','default_effort']);text=edit.text;ops.push(edit.ownership);}
+    for(const[keys,value]of tomlSettings(plan.client,selected,maxConcurrent,roleIds)) {
       const previous=keys.reduce((at,key)=>at?.[key],native);
       if(previous!==undefined&&typeof previous!==typeof value)fail('UNSUPPORTED_CONFIG');
       const edit=setTomlValue(text,keys,value);text=edit.text;ops.push(edit.ownership);
     }
     nativeChange(l.config,config,text);files.push({path:l.config,type:'toml',existed:config.text!==null,ops});
   }
-  const roles=nativeRoles(plan.client,selected);
-  for(const[i,target]of l.roles.entries()) {
+  const roles=nativeRoles(plan.client,selected,roleIds),targets=roleIds.map(role=>l.roles[ROLE_IDS.indexOf(role)]);
+  for(const[i,target]of targets.entries()) {
     const before=await baseline(target);if(before.text!==null)fail('OWNERSHIP_CONFLICT');
     nativeChange(target,before,roles[i],0o600);files.push({path:target,type:'role',existed:false,afterHash:digest(roles[i])});
   }
+  for(const target of l.roles.filter(target=>!targets.includes(target))) {const before=baselines.get(target);if(before)nativeChange(target,before,before.text);}
   const before=await baseline(l.instructions),text=before.text??'';
   if(text.includes(BEGIN)||text.includes(END))fail('OWNERSHIP_CONFLICT');
-  const prefix=!text||text.endsWith('\n\n')?'':text.endsWith('\n')?'\n':'\n\n',block=instructionBlock(plan.client,selected,maxConcurrent);
+  const prefix=!text||text.endsWith('\n\n')?'':text.endsWith('\n')?'\n':'\n\n',block=instructionBlock(plan.client,selected,maxConcurrent,roleIds);
   nativeChange(l.instructions,before,text+prefix+block);
   files.push({path:l.instructions,type:'instructions',existed:before.text!==null,prefix,block});
-  const r={schemaVersion:3,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,releaseVersion,source,...(preset===null?{}:{preset}),policyHash,warnings:plan.warnings,files};
+  const r={schemaVersion:4,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,releaseVersion,source,...(preset===null?{}:{preset}),selectedRoles:roleIds,policyHash,warnings:plan.warnings,files};
   validateReceipt(r,plan);
   let canonicalText=policyBefore.text;
   if(canonicalText===null||replace) {

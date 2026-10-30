@@ -1,6 +1,7 @@
 import catalog from '../models/catalog.json' with {type:'json'};
+import {ROLES,ROLE_IDS,selectedRoleIds} from './roles.mjs';
+export {ROLES} from './roles.mjs';
 export const CLIENTS = Object.freeze(['codex', 'claude', 'kimi', 'agy']);
-export const ROLES = Object.freeze({worker:'code', reviewer:'code', explorer:'light', routine:'light'});
 export const rolePreference=(config,role)=>config.roles?.[role]??config[ROLES[role]];
 export const NATIVE_EFFORTS=Object.freeze(Object.fromEntries(CLIENTS.map(client=>[client,Object.freeze([...catalog.clients[client].efforts])])));
 const identifier = /^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
@@ -14,8 +15,9 @@ function object(value, fields) {
 function model(value) { if (typeof value !== 'string' || !identifier.test(value)) invalid(); }
 function freeze(value) { for (const child of Object.values(value)) if (child && typeof child === 'object') freeze(child); return Object.freeze(value); }
 export function validatePolicy(value) {
-  object(value,['schemaVersion','maxConcurrent','clients']);
+  object(value,['schemaVersion','maxConcurrent','clients','selectedRoles']);
   if (value.schemaVersion !== 1 || !Number.isInteger(value.maxConcurrent) || value.maxConcurrent < 1 || value.maxConcurrent > 32) invalid();
+  if(value.selectedRoles!==undefined&&(!Array.isArray(value.selectedRoles)||!value.selectedRoles.length||value.selectedRoles.length>ROLE_IDS.length||new Set(value.selectedRoles).size!==value.selectedRoles.length||value.selectedRoles.some(role=>!ROLE_IDS.includes(role))))invalid();
   object(value.clients,CLIENTS);
   if (!Object.keys(value.clients).length) invalid();
   for (const [client,config] of Object.entries(value.clients)) {
@@ -33,7 +35,7 @@ export function validatePolicy(value) {
     }
     if (!Array.isArray(config.avoidModels) || config.avoidModels.length > 32 || new Set(config.avoidModels).size !== config.avoidModels.length) invalid();
     config.avoidModels.forEach(model);
-    const effective=Object.keys(ROLES).map(role=>rolePreference(config,role));
+    const effective=selectedRoleIds(value).map(role=>rolePreference(config,role));
     if (effective.some(selected=>config.avoidModels.includes(selected.model))) invalid();
     const pinned=effective.filter(value=>value.effort!==null);
     if (client==='kimi'&&new Set(pinned.map(v=>v.model+'\0'+v.effort)).size!==new Set(pinned.map(v=>v.model)).size) invalid();
