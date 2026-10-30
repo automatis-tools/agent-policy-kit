@@ -119,13 +119,20 @@ header{min-height:74px;display:flex;align-items:center;gap:12px;border-bottom:1p
 .heading{margin:36px 0 30px}
 h1{font:650 clamp(30px,5vw,40px)/1.13 'Public Sans',sans-serif;letter-spacing:-.03em;margin:0 0 14px;text-wrap:balance}
 .heading p{font-size:15px;line-height:1.65;color:var(--muted);margin:0}
-.toolbar{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:18px}
-.tool-field{display:flex;align-items:center;gap:12px}
-.tool-field label{font-size:13px;font-weight:600}
-.tool-field select{min-width:0}
+.toolbar{display:grid;gap:20px;margin-bottom:20px}
+.control-label,.preset-controls legend{display:block;font-size:13px;font-weight:600;margin-bottom:10px;padding:0}
+.tool-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}
+.tool-buttons button{min-width:0;min-height:40px;border:0;border-radius:5px;padding:9px 10px;background:transparent;color:var(--muted);font-size:13px;font-weight:500}
+.tool-buttons button:hover{background:#eaf0ff;color:var(--accent)}
+.tool-buttons button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
+.preset-controls{min-width:0;margin:0;padding:0;border:0}
+.preset-options{display:flex;flex-wrap:wrap;gap:12px 24px}
+.preset-option{display:inline-flex;align-items:center;gap:8px;min-height:28px;font-size:13px;cursor:pointer}
+.preset-option input{appearance:auto;accent-color:var(--brand-blue);width:16px;height:16px;margin:0;cursor:pointer;flex-shrink:0}
 .reset{border:0;background:none;padding:6px 0;color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px}
 .reset:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 select,input[type=text]{height:42px;border:1px solid #ccd5e2;border-radius:5px;background:#fff;color:var(--ink);padding:0 12px;min-width:0;width:100%;font-size:13px}
+select{appearance:none;padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%2359657a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px 16px}
 input[type=text]{font-family:var(--mono);font-size:11px}
 input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}
 .models{background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden}
@@ -136,8 +143,8 @@ input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}
 .model-field{display:grid;gap:7px;min-width:0}
 .model-actions{display:flex;justify-content:space-between;align-items:baseline;gap:15px}
 .model-actions .tool-note{flex:1}
-.task-row select{font-size:12px;padding:0 9px}
-.task-row select:disabled{color:var(--muted);background:var(--paper)}
+.task-row select{font-size:12px;padding:0 34px 0 9px}
+.task-row select:disabled{color:var(--muted);background-color:var(--paper)}
 .effort-field{min-width:0}
 .tool-note{font-size:12px;color:var(--muted);line-height:1.7;margin:12px 1px 0;min-height:20px}
 .result{margin-top:24px}
@@ -169,10 +176,10 @@ header,main,footer{width:calc(100% - 40px)}
 input[type=text]{font-size:11px;padding:0 9px}
 .command-line{align-items:stretch;flex-direction:column;gap:14px;padding:16px}
 .copy{width:100%}
-.tool-field{display:grid;gap:7px}
-.tool-field select{min-width:0}
-.toolbar{gap:12px}
-.task-row select{font-size:11px;padding:0 5px}
+.tool-buttons button{font-size:12px;padding-inline:5px}
+.preset-options{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+.preset-option{font-size:12px}
+.task-row select{font-size:11px;padding:0 28px 0 5px;background-position:right 8px center}
 .task-row label{font-size:12px}
 .reset{font-size:11px}
 .result{margin-top:20px}
@@ -181,7 +188,9 @@ input[type=text]{font-size:11px;padding:0 9px}
 .table-head,.task-row{grid-template-columns:47px minmax(0,1fr) 84px;gap:7px;padding-left:10px;padding-right:10px}
 .task-row select{font-size:10px}
 .brand{font-size:12px}
+.tool-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+@media(forced-colors:active){select{appearance:auto;background-image:none}.tool-buttons button[aria-pressed=true]{border:1px solid ButtonText}}
 </style>
 </head>
 <body>
@@ -191,8 +200,8 @@ input[type=text]{font-size:11px;padding:0 9px}
   <div class="heading"><h1>Configure subagent models.</h1><p>Creates one setup command for your installed coding tools.</p></div>
   <section aria-label="Model preferences">
     <div class="toolbar">
-      <div class="tool-field"><label for="tool">Tool</label><select id="tool" aria-label="Tool to edit"></select></div>
-      <div class="tool-field"><label for="preset">Preset</label><select id="preset" aria-label="Model preset"></select></div>
+      <div><span class="control-label" id="tool-label">Tool</span><div id="tool" class="tool-buttons" role="group" aria-labelledby="tool-label"></div></div>
+      <fieldset class="preset-controls"><legend>Mode</legend><div id="preset" class="preset-options"></div></fieldset>
     </div>
     <div class="models"><div class="table-head" aria-hidden="true"><span>Task</span><span>Model</span><span>Effort</span></div><div id="task-rows"></div></div>
     <div class="model-actions"><p class="tool-note" id="tool-note"> </p><button class="reset" id="reset" type="button">Reset preset</button></div>
@@ -224,7 +233,7 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
     return config.roles?.[role] ?? config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
   }
   function initialState(preferences) {
-    return {selected: CLIENTS.filter(client => preferences.clients[client]), active: CLIENTS.find(client => preferences.clients[client]), maxConcurrent: preferences.maxConcurrent,
+    return {selected: CLIENTS.filter(client => preferences.clients[client]), active: CLIENTS.find(client => preferences.clients[client]), custom: false, maxConcurrent: preferences.maxConcurrent,
       jobs: Object.fromEntries(CLIENTS.filter(client => preferences.clients[client]).map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
   }
   function allowedEfforts(catalog, model) {
@@ -252,6 +261,7 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
     return {model, effort};
   }
   function updateEffort(state, client, role, effort) {
+    state.custom = true;
     const model = state.jobs[client][role].model;
     state.jobs[client][role].effort = effort;
     if (client === 'kimi') for (const choice of Object.values(state.jobs[client])) if (choice.model === model) choice.effort = effort;
@@ -315,10 +325,10 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
     if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stableJSON(value[key])}`).join(',')}}`;
     return JSON.stringify(value);
   }
-  function buildCommand(config, release) {
+  function buildCommand(config, release, {custom = false} = {}) {
     if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(release.version)) throw new Error('Invalid release version.');
     const prefix = `npx --yes --ignore-scripts --package agent-policy-kit@${release.version} agent-policy setup`;
-    const preset = release.presets?.find(preset => stableJSON(preset.preferences) === stableJSON(config));
+    const preset = !custom && release.presets?.find(preset => stableJSON(preset.preferences) === stableJSON(config));
     if (preset && /^[a-z][a-z0-9-]{0,31}$/.test(preset.id)) return `${prefix} --release --preset ${preset.id} --apply`;
     return `${prefix} --config ${encodeConfig(config)} --apply`;
   }
@@ -345,6 +355,8 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
   }
   function updateResult() {
     revision++;
+    document.querySelectorAll('#tool button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.client === state.active)));
+    document.querySelectorAll('input[name=preset]').forEach(input => {input.checked = input.value === (state.custom ? 'custom' : selectedPreset.id);});
     $('copy-feedback').textContent = '';
     document.querySelectorAll('[aria-invalid=true]').forEach(node => node.removeAttribute('aria-invalid'));
     const {config, errors} = buildConfig(state, selectedPreset.preferences);
@@ -356,7 +368,7 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
       });
       return;
     }
-    try { currentCommand = buildCommand(config, RELEASE); }
+    try { currentCommand = buildCommand(config, RELEASE, {custom: state.custom}); }
     catch (error) {
       currentCommand = ''; $('command').value = ''; $('command-preview').textContent = 'Command unavailable'; $('config-json').textContent = '';
       $('config-error').textContent = error.message; $('config-error').hidden = false; $('copy').disabled = true; return;
@@ -394,6 +406,7 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
         effort.disabled = levels.length === 1;
       }
       function chooseModel(model) {
+        state.custom = true;
         state.jobs[client][role] = preferenceForModel(config, role, model, state.jobs[client], catalog, client === 'kimi');
         populateEffort(); updateResult();
       }
@@ -411,15 +424,25 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
       populateEffort(); modelField.append(select, custom); row.append(modelField, effort); panel.append(row);
     }
   }
-  for (const client of state.selected) $('tool').append(element('option', {value: client}, RELEASE.catalog?.clients?.[client]?.label || LABELS[client]));
-  for (const preset of presets) $('preset').append(element('option', {value: preset.id}, preset.label));
-  $('tool').value = state.active; $('preset').value = selectedPreset.id;
-  $('tool').addEventListener('change', () => {state.active = $('tool').value; renderRows(); updateResult();});
+  for (const client of state.selected) {
+    const button = element('button', {type: 'button', 'data-client': client, 'aria-pressed': 'false'}, RELEASE.catalog?.clients?.[client]?.label || LABELS[client]);
+    button.addEventListener('click', () => {state.active = client; renderRows(); updateResult();});
+    $('tool').append(button);
+  }
+  for (const preset of [...presets, {id: 'custom', label: 'Custom'}]) {
+    const label = element('label', {class: 'preset-option'});
+    const input = element('input', {type: 'radio', name: 'preset', value: preset.id});
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      if (preset.id === 'custom') {state.custom = true; updateResult();}
+      else {selectedPreset = preset; restorePreset();}
+    });
+    label.append(input, element('span', {}, preset.label)); $('preset').append(label);
+  }
   function restorePreset() {
     const active = state.active; state = initialState(selectedPreset.preferences); state.active = state.selected.includes(active) ? active : state.active;
-    $('tool').value = state.active; renderRows(); updateResult();
+    renderRows(); updateResult();
   }
-  $('preset').addEventListener('change', () => {selectedPreset = presets.find(preset => preset.id === $('preset').value); restorePreset();});
   $('reset').addEventListener('click', () => {restorePreset(); $('copy-feedback').textContent = 'Preset restored.';});
   $('copy').addEventListener('click', async () => {
     if (!currentCommand) return;

@@ -17,7 +17,7 @@ test('configuration template has a single release marker and no external assets 
   assert.doesNotMatch(template, /<(?:script|link|img)[^>]+(?:src|href)=/i);
   assert.doesNotMatch(script, /\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/);
   assert.doesNotMatch(template, /type="(?:checkbox|number)"|role="tablist"|id="effort-/);
-  assert.match(template, /<select id="tool"/);
+  assert.match(template, /id="tool"[^>]*role="group"/);
   assert.match(template, /<details class="inspection"/);
 });
 
@@ -131,7 +131,8 @@ test('command is version pinned, shell safe, and decodes to the chosen UTF-8 JSO
 test('compact controls show literal purpose, Antigravity, preset, model selection and effort', () => {
   assert.match(template, /Configure subagent models\./);
   assert.match(template, /Creates one setup command for your installed coding tools\./);
-  assert.match(template, /<select id="preset"/);
+  assert.match(template, /<fieldset class="preset-controls">/);
+  assert.match(script, /type: 'radio', name: 'preset'/);
   assert.match(template, /<span>Effort<\/span>/);
   assert.match(script, /agy: 'Antigravity'/);
   assert.match(script, /Custom model…/);
@@ -166,6 +167,9 @@ test('exact release presets generate short commands and edits use explicit confi
   const config = plain(api.buildConfig(api.initialState(preferences), preferences).config);
   const withPresets = {...release, presets: [{id: 'balanced', label: 'Balanced', preferences}]};
   assert.equal(api.buildCommand(config, withPresets), 'npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --preset balanced --apply');
+  const customCommand = api.buildCommand(config, withPresets, {custom: true});
+  assert.match(customCommand, /--config [A-Za-z0-9_-]+ --apply$/);
+  assert.deepEqual(JSON.parse(Buffer.from(customCommand.match(/--config ([A-Za-z0-9_-]+)/)[1], 'base64url').toString('utf8')), config);
   config.clients.codex.roles = {reviewer: {model: 'custom/reviewer', effort: 'high'}};
   assert.match(api.buildCommand(config, withPresets), /--config [A-Za-z0-9_-]+ --apply$/);
 });
