@@ -121,7 +121,7 @@ h1{font:650 clamp(30px,5vw,40px)/1.13 'Public Sans',sans-serif;letter-spacing:-.
 .heading p{font-size:15px;line-height:1.65;color:var(--muted);margin:0}
 .toolbar{display:grid;gap:20px;margin-bottom:20px}
 .control-label,.preset-controls legend{display:block;font-size:13px;font-weight:600;margin-bottom:10px;padding:0}
-.tool-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}
+.tool-buttons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}
 .tool-buttons button{min-width:0;min-height:40px;border:0;border-radius:5px;padding:9px 10px;background:transparent;color:var(--muted);font-size:13px;font-weight:500}
 .tool-buttons button:hover{background:#eaf0ff;color:var(--accent)}
 .tool-buttons button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
@@ -132,6 +132,8 @@ h1{font:650 clamp(30px,5vw,40px)/1.13 'Public Sans',sans-serif;letter-spacing:-.
 .preset-option input{appearance:none;position:relative;z-index:1;width:10px;height:10px;margin:0;border:0;border-radius:50%;background:var(--muted);cursor:pointer}
 .preset-option input:checked{width:18px;height:18px;border:3px solid #fff;background:var(--brand-blue);box-shadow:0 0 0 2px var(--brand-blue)}
 .preset-option input:checked+span{color:var(--accent);font-weight:600}
+.preset-option:has(input:disabled),.preset-option input:disabled{cursor:default}
+.custom-notice{margin:0 0 18px;padding:10px 12px;border-left:3px solid var(--brand-yellow);border-radius:5px;background:#fff4ce;color:#795700;font-size:12px;line-height:1.7}
 .reset{border:0;background:none;padding:6px 0;color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px}
 .reset:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 select,input[type=text]{height:42px;border:1px solid #ccd5e2;border-radius:5px;background:#fff;color:var(--ink);padding:0 12px;min-width:0;width:100%;font-size:13px}
@@ -148,10 +150,10 @@ input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}
 .model-actions .tool-note{flex:1}
 .task-row select{font-size:12px;padding:0 34px 0 9px}
 .effort-field{display:flex;flex-wrap:wrap;gap:3px;min-width:0;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
-.effort-field button{min-height:32px;padding:5px 7px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:11px;white-space:nowrap}
+.effort-field button{flex:1;min-width:max-content;min-height:32px;padding:5px 7px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:11px;white-space:nowrap}
 .effort-field button:hover{background:#eaf0ff;color:var(--accent)}
 .effort-field button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
-.effort-field button:disabled{opacity:1;background:transparent;color:var(--muted);cursor:default}
+.effort-unavailable{flex:1;text-align:center;color:var(--muted);font-size:12px;line-height:32px}
 .tool-note{font-size:12px;color:var(--muted);line-height:1.7;margin:12px 1px 0;min-height:20px}
 .result{margin-top:24px}
 .command-line{display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--brand-yellow);border-radius:5px;padding:16px 18px}
@@ -187,6 +189,8 @@ input[type=text]{font-size:11px;padding:0 9px}
 .command-line{align-items:stretch;flex-direction:column;gap:14px;padding:16px}
 .copy{width:100%}
 .tool-buttons button{font-size:12px;padding-inline:5px}
+.tool-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tool-buttons button[data-client=all]{grid-column:1/-1}
 .preset-option{font-size:12px;gap:8px}
 .task-row select{font-size:11px;padding:0 28px 0 5px;background-position:right 8px center}
 .task-row label{font-size:12px}
@@ -197,7 +201,6 @@ input[type=text]{font-size:11px;padding:0 9px}
 .table-head,.task-row{grid-template-columns:47px minmax(0,1fr);gap:7px;padding-left:10px;padding-right:10px}
 .task-row select{font-size:10px}
 .effort-field button{padding-inline:4px}
-.effort-field:has(button:nth-child(7)){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .brand{font-size:12px}
 .tool-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -214,8 +217,9 @@ input[type=text]{font-size:11px;padding:0 9px}
       <div><span class="control-label" id="tool-label">Tool</span><div id="tool" class="tool-buttons" role="group" aria-labelledby="tool-label"></div></div>
       <fieldset class="preset-controls"><legend>Mode</legend><div id="preset" class="preset-options"></div></fieldset>
     </div>
-    <div class="models"><div class="table-head" aria-hidden="true"><span>Task</span><span>Model</span><span>Effort</span></div><div id="task-rows"></div></div>
-    <div class="model-actions"><p class="tool-note" id="tool-note"> </p><button class="reset" id="reset" type="button">Reset preset</button></div>
+    <p class="custom-notice" id="custom-notice" role="status" hidden>Custom mode applies to all tools. Check each tool’s models and effort before applying.</p>
+    <div class="models" id="models" hidden><div class="table-head" aria-hidden="true"><span>Task</span><span>Model</span><span>Effort</span></div><div id="task-rows"></div></div>
+    <div class="model-actions" id="model-actions" hidden><p class="tool-note" id="tool-note"> </p><button class="reset" id="reset" type="button">Reset preset</button></div>
   </section>
   <section class="result" aria-label="Setup command">
     <p class="error" id="config-error" role="alert" hidden></p>
@@ -244,8 +248,14 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
     return config.roles?.[role] ?? config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
   }
   function initialState(preferences) {
-    return {selected: CLIENTS.filter(client => preferences.clients[client]), active: CLIENTS.find(client => preferences.clients[client]), custom: false, maxConcurrent: preferences.maxConcurrent,
+    return {selected: CLIENTS.filter(client => preferences.clients[client]), active: 'all', custom: false, maxConcurrent: preferences.maxConcurrent,
       jobs: Object.fromEntries(CLIENTS.filter(client => preferences.clients[client]).map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
+  }
+  function applyPreset(state, preset, confirmReplace = () => false) {
+    if (state.custom && !confirmReplace()) return state;
+    const next = initialState(preset.preferences);
+    if (state.active === 'all' || next.selected.includes(state.active)) next.active = state.active;
+    return next;
   }
   function allowedEfforts(catalog, model) {
     const supported = catalog?.models?.find(choice => choice.id === model)?.efforts ?? catalog?.efforts ?? [];
@@ -297,7 +307,7 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
           errors.push(`Antigravity ${TASKS[role]}: choose a supported native tier.`); continue;
         }
         if (client !== 'agy' && !allowedEfforts(clientCatalog(client, preferences, catalog), choice.model).includes(choice.effort)) {
-          errors.push(`${LABELS[client]} ${TASKS[role]}: choose a supported effort or Native default.`); continue;
+          errors.push(`${LABELS[client]} ${TASKS[role]}: choose a supported effort.`); continue;
         }
         if (client === 'kimi' && choice.model === 'primary') {
           errors.push(`Kimi ${TASKS[role]}: choose an explicit model alias, not primary.`); continue;
@@ -343,7 +353,7 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
     if (preset && /^[a-z][a-z0-9-]{0,31}$/.test(preset.id)) return `${prefix} --release --preset ${preset.id} --apply`;
     return `${prefix} --config ${encodeConfig(config)} --apply`;
   }
-  globalThis.APKConfigurator = Object.freeze({initialState, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
+  globalThis.APKConfigurator = Object.freeze({initialState, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id);
   const presets = RELEASE.presets?.length ? RELEASE.presets : [{id: 'balanced', label: 'Balanced', preferences: RELEASE.preferences}];
@@ -367,7 +377,12 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
   function updateResult() {
     revision++;
     document.querySelectorAll('#tool button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.client === state.active)));
-    document.querySelectorAll('input[name=preset]').forEach(input => {input.checked = input.value === (state.custom ? 'custom' : selectedPreset.id);});
+    document.querySelectorAll('input[name=preset]').forEach(input => {
+      input.checked = input.value === (state.custom ? 'custom' : selectedPreset.id);
+      input.disabled = input.value === 'custom' && state.active === 'all';
+      input.title = input.disabled ? 'Choose a tool to customize its models.' : '';
+    });
+    $('custom-notice').hidden = !state.custom;
     $('copy-feedback').textContent = '';
     document.querySelectorAll('[aria-invalid=true]').forEach(node => node.removeAttribute('aria-invalid'));
     const {config, errors} = buildConfig(state, selectedPreset.preferences);
@@ -392,6 +407,8 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
   function renderRows() {
     const client = state.active;
     const panel = $('task-rows'); panel.replaceChildren();
+    $('models').hidden = client === 'all'; $('model-actions').hidden = client === 'all';
+    if (client === 'all') return;
     $('tool-note').textContent = NOTES[client];
     const config = selectedPreset.preferences.clients[client];
     const catalog = clientCatalog(client, selectedPreset.preferences);
@@ -411,11 +428,12 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
       const effort = element('div', {id: `effort-${client}-${role}`, class: 'effort-field', role: 'group', 'aria-label': `${LABELS[client]} ${TASKS[role]} effort`});
       function populateEffort() {
         effort.replaceChildren();
-        const levels = client === 'agy' ? [null] : allowedEfforts(catalog, state.jobs[client][role].model);
+        const levels = client === 'agy' ? [] : allowedEfforts(catalog, state.jobs[client][role].model).filter(level => level !== null);
+        effort.setAttribute('aria-disabled', String(!levels.length));
+        if (!levels.length) effort.append(element('span', {class: 'effort-unavailable', title: 'Effort is unavailable for this tool or model.'}, '—'));
         for (const level of levels) {
-          const label = level === null ? 'Default' : level === 'xhigh' ? 'XHigh' : level[0].toUpperCase() + level.slice(1);
-          const button = element('button', {type: 'button', 'data-effort': level ?? '', 'aria-pressed': String(state.jobs[client][role].effort === level), title: level === null ? 'Native default' : level === 'xhigh' ? 'Extra high' : label}, label);
-          button.disabled = levels.length === 1;
+          const label = level === 'xhigh' ? 'XHigh' : level[0].toUpperCase() + level.slice(1);
+          const button = element('button', {type: 'button', 'data-effort': level, 'aria-pressed': String(state.jobs[client][role].effort === level), title: level === 'xhigh' ? 'Extra high' : label}, label);
           button.addEventListener('click', () => {
             updateEffort(state, client, role, level);
             for (const otherRole of ROLES) for (const option of $(`effort-${client}-${otherRole}`).querySelectorAll('button')) {
@@ -440,8 +458,8 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
       populateEffort(); modelField.append(select, custom); row.append(modelField, effort); panel.append(row);
     }
   }
-  for (const client of state.selected) {
-    const button = element('button', {type: 'button', 'data-client': client, 'aria-pressed': 'false'}, RELEASE.catalog?.clients?.[client]?.label || LABELS[client]);
+  for (const client of ['all', ...state.selected]) {
+    const button = element('button', {type: 'button', 'data-client': client, 'aria-pressed': 'false'}, client === 'all' ? 'All' : RELEASE.catalog?.clients?.[client]?.label || LABELS[client]);
     button.addEventListener('click', () => {state.active = client; renderRows(); updateResult();});
     $('tool').append(button);
   }
@@ -451,15 +469,18 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
     input.addEventListener('change', () => {
       if (!input.checked) return;
       if (preset.id === 'custom') {state.custom = true; updateResult();}
-      else {selectedPreset = preset; restorePreset();}
+      else restorePreset(preset);
     });
     label.append(input, element('span', {}, preset.label)); $('preset').append(label);
   }
-  function restorePreset() {
-    const active = state.active; state = initialState(selectedPreset.preferences); state.active = state.selected.includes(active) ? active : state.active;
+  function restorePreset(preset = selectedPreset) {
+    const next = applyPreset(state, preset, () => window.confirm(`Apply ${preset.label}? This replaces all custom model and effort choices for every tool.`));
+    if (next === state) {updateResult(); return false;}
+    selectedPreset = preset; state = next;
     renderRows(); updateResult();
+    return true;
   }
-  $('reset').addEventListener('click', () => {restorePreset(); $('copy-feedback').textContent = 'Preset restored.';});
+  $('reset').addEventListener('click', () => {if (restorePreset()) $('copy-feedback').textContent = 'Preset restored.';});
   $('copy').addEventListener('click', async () => {
     if (!currentCommand) return;
     const command = currentCommand; const copiedRevision = revision;

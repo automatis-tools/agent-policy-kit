@@ -12,6 +12,35 @@ vm.runInContext(script, context);
 const api = context.APKConfigurator;
 const plain = value => JSON.parse(JSON.stringify(value));
 
+test('All is the initial view without becoming a configuration client', () => {
+  const state = api.initialState(preferences);
+  assert.equal(state.active, 'all');
+  assert.deepEqual(plain(api.buildConfig(state, preferences).config), preferences);
+  assert.deepEqual(plain(state.selected), ['codex', 'claude', 'kimi', 'agy']);
+});
+
+test('replacing custom settings requires confirmation and preserves the selected view', () => {
+  const state = api.initialState(preferences);
+  state.active = 'all'; state.custom = true;
+  state.jobs.codex.worker = {model: 'custom/code', effort: 'low'};
+  const before = JSON.stringify(state);
+  const fast = JSON.parse(fs.readFileSync(new URL('../policies/fast.json', import.meta.url), 'utf8'));
+  const preset = {id: 'fast', label: 'Fast & economical', preferences: fast};
+  assert.equal(api.applyPreset(state, preset), state, 'no implicit confirmation');
+  assert.equal(api.applyPreset(state, preset, () => false), state);
+  assert.equal(JSON.stringify(state), before, 'cancel preserves every custom choice');
+  let confirmations = 0;
+  const next = api.applyPreset(state, preset, () => {confirmations++; return true;});
+  assert.equal(confirmations, 1);
+  assert.equal(next.active, 'all'); assert.equal(next.custom, false);
+  assert.deepEqual(plain(api.buildConfig(next, fast).config), fast);
+  assert.equal(JSON.stringify(state), before, 'replacement does not mutate the old state');
+  next.active = 'kimi';
+  const named = api.applyPreset(next, {preferences}, () => {throw new Error('Unchanged preset needs no confirmation');});
+  assert.equal(named.active, 'kimi');
+  assert.deepEqual(plain(api.buildConfig(named, preferences).config), preferences);
+});
+
 test('configuration template has a single release marker and no external assets or network calls', () => {
   assert.equal(template.split('__APK_RELEASE_DATA__').length, 2);
   assert.doesNotMatch(template, /<(?:script|link|img)[^>]+(?:src|href)=/i);

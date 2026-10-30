@@ -18,7 +18,7 @@ APK configures Codex, Claude Code, Kimi and Antigravity through their native fil
 
 ## Choose your setup
 
-Open the [configuration page](site/index.html) in **Google Chrome**. Choose a preset, then models and effort for code, review, search and routine work. Copy the generated command and run it once. Only installed tools are configured.
+Open the [configuration page](site/index.html) in **Google Chrome**. Choose a preset in All, or select a tool to customize its models and effort. Copy the generated command and run it once. Only installed tools are configured.
 
 The page is a self-contained HTML file: no backend or data upload. Before hosting, open site/index.html locally. See [page preview and hosting](docs/configuration-page.md).
 
