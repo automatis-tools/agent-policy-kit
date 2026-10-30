@@ -11,21 +11,19 @@ flowchart LR
     class Command action
 ```
 
-**Configure your coding subagents once.**
+**Give different jobs different models.** Use capable models for coding and review, and lighter ones for search and routine work, without editing each tool’s config by hand.
 
-APK sets up native subagent roles for Codex, Claude Code, Kimi and Antigravity. Choose the roles you need, their models and effort. One command configures your installed tools, then exits.
+APK configures native subagent roles for Codex, Claude Code, Kimi and Antigravity. Choose roles, models and effort. Run one command to configure your installed tools. APK writes native settings, then exits.
 
-**The main agent decides whether to use subagents.** Your preferences apply only when it delegates; the main model stays unchanged.
+**Your main agent stays in charge.** It decides when to delegate; its model stays unchanged. APK runs no background process during your coding sessions.
 
 ## Choose your setup
 
-Open the [configuration page](site/index.html) in **Google Chrome**. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. APK creates only the selected roles in installed, selected tools.
+Open the [configuration page](https://agent-policy-kit.maksymenko-ml.workers.dev/v/0.1.0/) in your browser. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. The page address saves your visible choices for sharing. APK creates only the selected roles in installed, selected tools.
 
-The page works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
+The [bundled page](site/index.html) also works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
 
 ## Use a specific release's defaults
-
-After npm publication:
 
 ```sh
 npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --apply
@@ -37,4 +35,4 @@ Prefer your AI agent to handle installation or removal? Give it the [AI operator
 
 [Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
 
-Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.1.0 is a local release candidate. MIT licensed.
+Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.1.0. MIT licensed.

@@ -2,7 +2,7 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
-## 0.1.0 — Unreleased
+## 0.1.0 — 2026-10-30
 
 ### Why this release
 
@@ -31,6 +31,8 @@ Codex effort choices/defaults now follow CLI 0.166.0 rather than API defaults; A
 
 ### What changed
 
+- A short collapsible explanation introduces role-specific models, native setup and optional delegation, using the same wording as the README.
+- The builder now starts with no roles, tools or chosen modes. Green checks track completed selections and successful copy, and Reset form restores a blank state. URL fragments restore visible settings without a backend. Conditional section hints and changed step markers use a two-second highlight hold plus two-second fade, respecting reduced motion. Selection controls share a soft treatment; Copy remains the primary action.
 - Page commands always list every selected role/model/effort under its tool, including presets. Explicit --roles, --max-concurrent and optional --avoid-TOOL preserve the existing selection, cap and guidance. :native represents unpinned effort; Antigravity remains tier-only. The shared codec validates complete role maps and rejects duplicate/mixed input before writes. Legacy release/config/policy inputs remain supported.
 - The four-step page now selects subagent roles and coding tools before mode/model/effort configuration. It generates and copies a real pinned command. Tool additions preserve All or a manually selected view. Role help uses the same prompt definitions as native generation.
 - Optional selectedRoles creates only the requested native roles. Receipt v4 binds that role set to owned files and supports safe expansion, reduction and removal. Earlier v2/v3 native receipts remain supported. Unselected Kimi aliases do not need provisioning or effort pins.
@@ -46,8 +48,6 @@ People who want consistent subagent preferences across their installed coding to
 
 ### Applying this version
 
-After publication:
-
 ```sh
 npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --apply
 ```
@@ -56,6 +56,6 @@ Without --apply the same command previews the changes. The page-generated explic
 
 ### Migration and limits
 
-This is the first public-release candidate; nothing has been published yet. Synthetic versions in tests are not real releases. Experimental runtime receipts from older development commits require their original owned removal. Supported native snapshot formats can be updated safely; unknown future formats/layouts are refused.
+This is the first public release. Synthetic versions in tests are not real releases. Experimental runtime receipts from older development commits require their original owned removal. Supported native snapshot formats can be updated safely; unknown future formats/layouts are refused.
 
 Kimi/Antigravity concurrency guidance and native tier/precedence limits remain explicit. A pinned release reproduces declared configuration, not provider weights, entitlement or model quality.

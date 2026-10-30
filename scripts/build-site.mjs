@@ -9,6 +9,7 @@ const template=fs.readFileSync(path.join(root,'site/template.html'),'utf8');
 const marker='__APK_RELEASE_DATA__';
 if(template.split(marker).length!==2)throw new Error('Configuration page must have one release-data marker');
 if(template.split('__APK_EXPLICIT_CODEC__').length!==2)throw new Error('Configuration page must have one command-codec marker');
+if(template.split('__APK_SHARE_CODEC__').length!==2)throw new Error('Configuration page must have one share-codec marker');
 const release=bundledReleaseInfo();
 const preferences=validatePolicy(JSON.parse(fs.readFileSync(path.join(root,'policies/balanced.json'),'utf8')));
 const data={...release,packageSpec:`agent-policy-kit@${release.version}`,preferences,
@@ -19,6 +20,7 @@ const font=fs.readFileSync(path.join(root,'site/fonts/public-sans-latin.woff2'))
 const fontLicense=fs.readFileSync(path.join(root,'site/fonts/public-sans-OFL.txt'),'utf8').trim();
 const html=template
   .replace('__APK_EXPLICIT_CODEC__',()=>fs.readFileSync(path.join(root,'src/explicit.mjs'),'utf8').replace(/^export /gm,''))
+  .replace('__APK_SHARE_CODEC__',()=>fs.readFileSync(path.join(root,'src/share.mjs'),'utf8').replace(/^export /gm,''))
   .replace('__APK_BASE_CSS__',()=>fs.readFileSync(path.join(root,'site/base.css'),'utf8'))
   .replace('__APK_FONT_DATA__',()=>font)
   .replace('__APK_FONT_LICENSE__',()=>fontLicense)

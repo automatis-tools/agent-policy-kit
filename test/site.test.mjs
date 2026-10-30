@@ -10,11 +10,47 @@ const template = fs.readFileSync(new URL('../site/template.html', import.meta.ur
 const preferences = JSON.parse(fs.readFileSync(new URL('../policies/balanced.json', import.meta.url), 'utf8'));
 const release = {version: '0.1.0', preferences, notes: 'A release.', unreleased: true};
 const codec=fs.readFileSync(new URL('../src/explicit.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
-const script = template.match(/<script>([\s\S]*?)<\/script>/)[1].replace('__APK_RELEASE_DATA__',()=>JSON.stringify(release)).replace('__APK_EXPLICIT_CODEC__',()=>codec);
+const shareCodec=fs.readFileSync(new URL('../src/share.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
+const script = template.match(/<script>([\s\S]*?)<\/script>/)[1].replace('__APK_RELEASE_DATA__',()=>JSON.stringify(release)).replace('__APK_EXPLICIT_CODEC__',()=>codec).replace('__APK_SHARE_CODEC__',()=>shareCodec);
 const context = vm.createContext({TextEncoder, btoa});
 vm.runInContext(script, context);
 const api = context.APKConfigurator;
 const plain = value => JSON.parse(JSON.stringify(value));
+
+test('empty form waits for an explicit mode selection before generating a command',()=>{
+ const state=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(state.selected),[]);assert.equal(state.active,null);assert.equal(api.modeFor(state),null);
+ state.selected=['codex'];state.active='codex';state.selectedRoles=['worker'];assert.equal(api.modeFor(state),null);assert.equal(api.buildConfig(state,preferences).config,null);
+ const chosen=api.applyPreset(state,{id:'balanced',preferences},()=>{throw new Error('first mode selection must not warn');});
+ assert.equal(chosen.profiles.codex.modeSelected,true);assert.equal(api.modeFor(chosen),'balanced');assert.ok(api.buildConfig(chosen,preferences).config);
+});
+
+test('a partially selected global mode warns before replacing existing choices',()=>{
+ let state=api.initialState(preferences,'balanced',{empty:true});state.selected=['codex','claude'];state.selectedRoles=['reviewer'];state.active='codex';
+ state=api.applyPreset(state,{id:'balanced',preferences});state.active='all';assert.equal(api.modeFor(state),null);assert.equal(api.buildConfig(state,preferences).config,null);
+ const fast=JSON.parse(fs.readFileSync(new URL('../policies/fast.json',import.meta.url),'utf8'));
+ assert.equal(api.applyPreset(state,{id:'fast',preferences:fast}),state);
+ const next=api.applyPreset(state,{id:'fast',preferences:fast},()=>true);assert.equal(api.modeFor(next),'fast');assert.ok(api.buildConfig(next,preferences).config);
+});
+
+test('manual effort selection chooses Custom for that tool',()=>{
+ const state=api.initialState(preferences,'balanced',{empty:true});state.selected=['codex'];state.active='codex';state.selectedRoles=['worker'];
+ api.updateEffort(state,'codex','worker','high');assert.equal(state.profiles.codex.modeSelected,true);assert.equal(api.modeFor(state),'custom');
+});
+
+test('switching All to Custom alone does not create a destructive preset change',()=>{
+ const state=api.initialState(preferences);for(const client of state.selected)state.profiles[client].custom=true;
+ const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
+ const next=api.applyPreset(state,{id:'quality',preferences:quality},()=>{throw new Error('No edited settings to overwrite');});
+ assert.equal(api.modeFor(next),'quality');
+});
+
+test('All still protects real edits, mixed bases and changed parallelism',()=>{
+ const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
+ for(const change of [state=>{state.jobs.codex.worker.effort='low';},state=>{state.profiles.claude.presetId='quality';},state=>{state.maxConcurrent=7;}]){
+  const state=api.initialState(preferences);for(const client of state.selected)state.profiles[client].custom=true;change(state);
+  assert.equal(api.applyPreset(state,{id:'quality',preferences:quality}),state);
+ }
+});
 function decodedCommand(command){
  const pattern=new RegExp('--('+EXPLICIT_FIELDS.join('|')+")\\s+(?:'([^']*)'|([^\\s]+))",'g');
  const pairs=[...command.matchAll(pattern)].map(match=>[match[1],match[2]??match[3]]);

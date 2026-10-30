@@ -13,30 +13,30 @@ __APK_FONT_LICENSE__
 <style>
 __APK_BASE_CSS__
 @font-face{font-family:'Public Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url('data:font/woff2;base64,__APK_FONT_DATA__') format('woff2')}
-:root{--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--text-hero:40px;--text-section:18px;--text-ui:14px;--text-support:12px;--text-meta:11px}
+:root{--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--text-hero:40px;--text-section:18px;--text-ui:14px;--text-support:12px;--text-meta:11px;--success:#237347;--success-paper:#edf7f0;--success-line:#c4dfce}
 *{box-sizing:border-box}body{background:var(--white)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:default}:focus-visible{outline:2px solid var(--accent);outline-offset:4px}[hidden]{display:none!important}::selection{color:var(--ink);background:var(--selection)}
 header,main,footer{width:min(calc(100% - 64px),920px);margin-inline:auto}header{min-height:74px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}.mark{display:grid;place-items:center;min-width:42px;height:34px;background:var(--brand-blue);border-bottom:3px solid var(--brand-yellow);border-radius:5px;color:var(--white);font-size:14px;font-weight:650;letter-spacing:-.5px}.brand{font-size:16px;font-weight:600;letter-spacing:-.2px}.concept{margin-left:auto;padding:4px 7px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:var(--text-meta);line-height:1.3}
 .intro{margin:32px 0}.intro h1{margin:0 0 12px;font-size:var(--text-hero);font-weight:650;line-height:1.12;letter-spacing:-.035em}.intro p{margin:0;color:var(--muted);font-size:15px;line-height:1.6;max-width:64ch}
-.builder{--step-gap:32px;display:grid;gap:var(--step-gap)}.builder>section{position:relative;padding-left:34px}.builder>section:not(:last-child)::before{content:"";position:absolute;left:10px;top:13px;width:2px;height:calc(100% + var(--step-gap));background:var(--line);pointer-events:none}.builder>section>.step-heading>.step-number{position:absolute;left:0;top:2px;z-index:1}.step-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}.step-heading h2{margin:0;font-size:var(--text-section);line-height:1.4;font-weight:600;letter-spacing:-.015em}.step-number{display:grid;place-items:center;width:22px;height:22px;background:var(--paper);border:1px solid var(--line);border-radius:50%;color:var(--muted);font:400 var(--text-meta)/1 var(--mono)}.step-hint{margin-left:auto;color:var(--muted);font-size:var(--text-support);line-height:1.4;font-weight:400}
-.tag-box{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:56px;padding:10px 12px;background:var(--white);border:1px solid var(--line);border-radius:7px}.tag-box:focus-within{outline:2px solid var(--accent);outline-offset:2px}.empty{padding:5px 1px;font-size:13px;color:var(--muted)}.suggestions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;min-height:34px}.suggestion{padding:6px 11px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink);font-size:var(--text-ui);line-height:1.4;font-weight:400}.suggestion:hover{border-color:var(--brand-blue);background:var(--control-hover);color:var(--accent)}.plus{color:var(--accent);margin-right:5px}
-.tag{display:inline-flex;align-items:center;min-height:32px;overflow:hidden;border:1px solid var(--brand-blue);border-radius:5px;background:var(--paper);color:var(--accent);font-size:var(--text-ui);line-height:1.4;font-weight:500}.tag-label{padding:5px 10px}.remove{display:grid;place-items:center;align-self:stretch;width:26px;border:0;border-left:1px solid var(--line);background:transparent;color:inherit;font-size:16px;font-weight:400}.remove:hover{background:var(--control-hover)}
-.tool-group{display:flex;gap:4px;min-height:54px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}.tool-group .tool-scope{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:44px;padding:8px 28px 8px 13px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-size:var(--text-ui);font-weight:500;line-height:1.4}.tool-group .tool-scope small{font-size:var(--text-meta);font-weight:400;line-height:1.3}.tool-group .tool-scope:hover{background:var(--control-hover);color:var(--accent)}.tool-item.active .tool-scope{background:var(--brand-blue);color:var(--white)}.tool-item{position:relative;display:flex;flex:1;min-width:0}.tool-item .tool-scope{width:100%}.tool-remove{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:24px;height:30px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:15px;opacity:.8}.tool-item.active .tool-remove{color:var(--white)}.tool-remove:hover{background:var(--control-hover);opacity:1}.tool-item.active .tool-remove:hover{background:var(--accent-hover)}
-.mode-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}.scope-label{color:var(--muted);font-size:var(--text-support);line-height:1.5}.mode-placeholder{padding:20px;border:1px dashed var(--line);border-radius:7px;color:var(--muted);font-size:var(--text-support)}#mode-options{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 16px}#mode-options::before{content:"";position:absolute;top:13px;left:12.5%;right:12.5%;height:2px;background:var(--line)}.mode-option{position:relative;z-index:1;display:grid;grid-template-rows:20px auto;align-content:start;align-items:center;justify-items:center;gap:10px;padding:4px;text-align:center;font-size:var(--text-ui);font-weight:400;line-height:1.5;cursor:pointer}.mode-option input{appearance:none;position:relative;z-index:1;width:10px;height:10px;margin:0;border:0;border-radius:50%;background:var(--muted);cursor:pointer}.mode-option input:checked{width:18px;height:18px;border:3px solid var(--white);box-shadow:0 0 0 2px var(--brand-blue);background:var(--brand-blue)}.mode-option input:checked+span{color:var(--accent);font-weight:600}.mode-option:has(input:disabled){cursor:default}.notice{padding:10px 12px;margin:0 0 14px;border-left:3px solid var(--brand-yellow);border-radius:4px;background:var(--yellow-paper);color:var(--amber);font-size:var(--text-support);line-height:1.6}
-.advanced{border-top:1px solid var(--line);padding-top:12px}.advanced summary{width:fit-content;color:var(--accent);font-size:var(--text-support);line-height:1.5;cursor:pointer}.editor{display:grid;grid-template-columns:140px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;margin-top:16px}.editor label{display:block;margin-bottom:7px;color:var(--muted);font-size:var(--text-support);line-height:1.4}.editor select{appearance:none;width:100%;min-width:0;height:42px;padding:0 32px 0 10px;border:1px solid var(--line);border-radius:5px;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%2359657a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center/16px 16px;color:var(--ink);font-size:var(--text-ui)}.efforts{display:flex;gap:3px;align-items:center;min-height:42px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}.efforts button{flex:1;min-height:32px;padding:5px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:var(--text-support)}.efforts button[aria-pressed=true]{background:var(--brand-blue);color:var(--white)}.unavailable{width:100%;text-align:center;color:var(--muted);font-size:var(--text-support)}.role-description{margin:10px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}
-.output{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px 20px;padding:18px 20px;border:1px solid var(--line);border-left:3px solid var(--brand-yellow);border-radius:6px;background:var(--paper)}.output strong{font-size:var(--text-ui);font-weight:600;line-height:1.5}.output p{margin:5px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}.output p a{color:var(--accent);text-underline-offset:3px}.output[data-ready=false] .primary{background:var(--line);border-color:var(--line);color:var(--muted);opacity:1}.primary{white-space:nowrap}
+.builder{--step-gap:32px;display:grid;gap:var(--step-gap)}.builder>section{position:relative;padding-left:34px}.builder>section:not(:last-child)::before{content:"";position:absolute;left:10px;top:13px;width:2px;height:calc(100% + var(--step-gap));background:var(--line);pointer-events:none}.builder>section>.step-heading>.step-number{position:absolute;left:0;top:2px;z-index:1}.step-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}.step-heading h2{margin:0;font-size:var(--text-section);line-height:1.4;font-weight:600;letter-spacing:-.015em}.step-number{display:grid;place-items:center;width:22px;height:22px;background:var(--paper);border:1px solid var(--line);border-radius:50%;color:var(--muted);font:400 var(--text-meta)/1 var(--mono)}.step-hint{margin-left:auto;padding:3px 6px;border-radius:4px;color:var(--accent);font-size:var(--text-support);line-height:1.4;font-weight:500}.step-hint[data-success=true]{color:var(--success);font-weight:600}
+.tag-box{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:56px;padding:10px 12px;background:var(--white);border:1px solid var(--line);border-radius:7px}.tag-box:focus-within{outline:2px solid var(--accent);outline-offset:2px}.empty{padding:5px 1px;font-size:13px;color:var(--muted)}.suggestions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;min-height:34px}.suggestion{padding:6px 11px;border:1px dashed var(--line);border-radius:5px;background:var(--white);color:var(--ink);font-size:var(--text-ui);line-height:1.4;font-weight:400}.suggestion:hover{border-color:var(--brand-blue);background:var(--control-hover);color:var(--accent)}.plus{color:var(--accent);margin-right:5px}
+.tag{display:inline-flex;align-items:center;min-height:32px;overflow:hidden;border:1px solid var(--line);border-radius:5px;background:var(--control-hover);color:var(--ink);font-size:var(--text-ui);line-height:1.4;font-weight:500}.tag-label{padding:5px 10px}.remove{display:grid;place-items:center;align-self:stretch;width:26px;border:0;border-left:1px solid var(--line);background:transparent;color:inherit;font-size:16px;font-weight:400}.remove:hover{background:var(--control-hover)}
+.tool-group{display:flex;gap:4px;min-height:54px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}.tool-group .tool-scope{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:44px;padding:8px 28px 8px 13px;border:0;border-radius:5px;background:transparent;color:var(--ink);font-size:var(--text-ui);font-weight:500;line-height:1.4}.tool-group .tool-scope small{border-radius:3px;font-size:var(--text-meta);font-weight:400;line-height:1.3;color:var(--muted)}.tool-group .tool-scope:hover{background:var(--control-hover);color:var(--accent)}.tool-item.active .tool-scope{background:transparent;color:var(--accent);font-weight:600}.tool-item.active{box-shadow:inset 0 -2px 0 var(--brand-blue)}.tool-item{position:relative;display:flex;flex:1;min-width:0;border:1px solid var(--line);border-radius:5px;background:var(--control-hover)}.tool-item .tool-scope{width:100%}.tool-remove{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:24px;height:30px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:15px;opacity:.8}.tool-item.active .tool-remove{color:var(--muted)}.tool-remove:hover{background:var(--control-hover);opacity:1}.tool-item.active .tool-remove:hover{background:var(--control-hover);color:var(--accent)}
+.mode-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}.scope-label{display:inline-block;padding:3px 6px;margin-left:-6px;border-radius:4px;color:var(--muted);font-size:var(--text-support);line-height:1.5}.mode-placeholder{padding:20px;border:1px dashed var(--line);border-radius:7px;color:var(--muted);font-size:var(--text-support)}#mode-options{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 16px}#mode-options::before{content:"";position:absolute;top:13px;left:12.5%;right:12.5%;height:2px;background:var(--line)}.mode-option{position:relative;z-index:1;display:grid;grid-template-rows:20px auto;align-content:start;align-items:center;justify-items:center;gap:10px;padding:4px;text-align:center;font-size:var(--text-ui);font-weight:400;line-height:1.5;cursor:pointer}.mode-option input{appearance:none;position:relative;z-index:1;width:10px;height:10px;margin:0;border:0;border-radius:50%;background:var(--muted);cursor:pointer}.mode-option input:checked{width:18px;height:18px;border:3px solid var(--white);box-shadow:0 0 0 2px var(--brand-blue);background:var(--brand-blue)}.mode-option input:checked+span{color:var(--accent);font-weight:600}.mode-option:has(input:disabled){cursor:default}.notice{padding:0;margin:0 0 14px;color:var(--muted);font-size:var(--text-support);line-height:1.6}
+.advanced{border-top:1px solid var(--line);padding-top:12px}.advanced summary{width:fit-content;color:var(--accent);font-size:var(--text-support);line-height:1.5;cursor:pointer}.editor{display:grid;grid-template-columns:140px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;margin-top:16px}.editor label{display:block;margin-bottom:7px;color:var(--muted);font-size:var(--text-support);line-height:1.4}.editor select{appearance:none;width:100%;min-width:0;height:42px;padding:0 32px 0 10px;border:1px solid var(--line);border-radius:5px;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%2359657a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center/16px 16px;color:var(--ink);font-size:var(--text-ui)}.efforts{display:flex;gap:3px;align-items:center;min-height:42px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}.efforts button{flex:1;min-height:32px;padding:5px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:var(--text-support)}.efforts button[aria-pressed=true]{background:var(--control-hover);color:var(--accent);font-weight:600;box-shadow:inset 0 0 0 1px var(--brand-blue)}.unavailable{width:100%;text-align:center;color:var(--muted);font-size:var(--text-support)}.role-description{margin:10px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}
+.output{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px 20px;padding:18px 20px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}.output[data-ready=true]{border-color:var(--brand-blue)}.output strong{font-size:var(--text-ui);font-weight:600;line-height:1.5}.output p{margin:5px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}.output p a{color:var(--accent);text-underline-offset:3px}.output[data-ready=false] .primary{background:var(--line);border-color:var(--line);color:var(--muted);opacity:1}.primary{white-space:nowrap}
 footer{display:flex;justify-content:space-between;gap:20px;margin-top:20px;padding:16px 0 24px;border-top:1px solid var(--line);color:var(--muted);font-size:var(--text-meta);line-height:1.6}
 @media(forced-colors:active){.tag,.suggestion{border-color:ButtonText}.tool-group .tool-scope[aria-pressed=true],.efforts button[aria-pressed=true]{outline:2px solid ButtonText;outline-offset:-3px}.mode-option input{appearance:auto}#mode-options::before{height:0;border-top:2px solid CanvasText}.editor select{appearance:auto;background-image:none}}
 
 html{scrollbar-gutter:stable}body{overflow-anchor:none}
-.helper-option{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:5px;background:var(--paper)}.helper-option>.suggestion{border:0;background:transparent;border-radius:4px 0 0 4px;padding-right:5px}
+.helper-option{display:inline-flex;align-items:stretch;border:1px dashed var(--line);border-radius:5px;background:var(--white)}.helper-option>.suggestion{border:0;background:transparent;border-radius:4px 0 0 4px;padding-right:5px}.helper-option:hover{border-color:var(--brand-blue);background:var(--control-hover)}.helper-option:hover>.suggestion{color:var(--accent)}
 .helper-info{display:grid;place-items:center;align-self:stretch;flex-shrink:0;width:27px;min-height:28px;border:0;padding:0 5px;background:transparent;color:var(--accent);cursor:help;border-radius:4px}.helper-info:hover{background:var(--control-hover)}.info-dot{display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:10px;line-height:1;font-weight:600}.tag .helper-info{margin-right:3px}.tag .tag-label{padding-right:4px}
 .role-tooltip{position:fixed;z-index:1000;width:min(420px,calc(100vw - 32px));padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);box-shadow:0 6px 15px #19283e07;opacity:0;transform:translateY(3px);transition:opacity 120ms ease,transform 120ms ease;view-transition-name:role-tooltip}.role-tooltip.visible{opacity:1;transform:none}.role-tooltip strong{font-size:14px;font-weight:600}.role-tooltip p{font-size:12px;line-height:1.6;margin:7px 0 12px;color:var(--muted)}.role-tooltip .definition-label{font-size:11px;font-weight:600;color:var(--muted);margin:0 0 7px}.role-tooltip pre{margin:0;padding:11px;border:1px solid var(--line);border-radius:5px;background:var(--paper);white-space:pre-wrap;font:11px/1.65 var(--mono)}.role-tooltip .definition-note{margin:10px 0 0;font-size:11px}
-button{transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease}
+button,.helper-option{transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease}
 section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}section[aria-labelledby=tools-heading]{view-transition-name:step-tools}section[aria-labelledby=mode-heading]{view-transition-name:step-mode}section[aria-labelledby=setup-heading]{view-transition-name:step-setup}
 #selected-helpers{view-transition-name:helpers-field}#helper-options{view-transition-name:helpers-catalog}#selected-tools{view-transition-name:tools-field}#tool-options{view-transition-name:tools-catalog}#mode-panel{view-transition-name:mode-panel}#mode-empty{view-transition-name:mode-empty}#editor{view-transition-name:model-editor}.output{view-transition-name:setup-output}footer{view-transition-name:setup-footer}
 ::view-transition-group(*){animation-duration:180ms;animation-timing-function:cubic-bezier(.2,.75,.2,1)}::view-transition-old(*),::view-transition-new(*){width:100%;height:100%;object-fit:none;object-position:left top;animation-duration:140ms;animation-timing-function:ease}::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
 .tool-item,.scope-all{view-transition-class:tool-choice}::view-transition-image-pair(.tool-choice){overflow:clip}::view-transition-old(.tool-choice),::view-transition-new(.tool-choice){object-position:center}
-@media(prefers-reduced-motion:reduce){button,.role-tooltip{transition:none}.role-tooltip{transform:none}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+@media(prefers-reduced-motion:reduce){button,.helper-option,.role-tooltip{transition:none}.role-tooltip{transform:none}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
 
 
 .editor-head,.editor-row{display:grid;grid-template-columns:156px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center}
@@ -52,17 +52,24 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 #selected-tools[hidden]+#tool-options{margin-top:0}
 
 .tool-group .empty{align-self:center;padding:8px 9px}
-.tool-group>.scope-all{padding:8px 13px}.tool-group>.scope-all[aria-pressed=true]{background:var(--brand-blue);color:var(--white)}
+.tool-group>.scope-all{padding:8px 13px}.tool-group>.scope-all[aria-pressed=true]{background:var(--control-hover);color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--brand-blue)}
 
+.reset-form{padding:4px 0;border:0;background:transparent;color:var(--muted);font-size:var(--text-support);text-decoration:underline;text-underline-offset:3px}.reset-form:hover{color:var(--accent)}.intro .link-error{margin-top:12px;color:var(--amber);font-size:var(--text-support)}.builder>section[data-complete=true]>.step-heading>.step-number{background:var(--success-paper);border-color:var(--success-line);color:var(--success);font-size:14px;font-weight:600}.builder>section[data-complete=true]::before{background:var(--success-line)}
+
+.how-it-works{margin-top:18px;border:1px solid var(--line);border-radius:7px;background:var(--paper);interpolate-size:allow-keywords}.how-it-works summary{padding:12px 14px;color:var(--accent);font-size:var(--text-ui);font-weight:500;line-height:1.5;cursor:pointer}.how-it-works summary:hover{background:var(--control-hover);border-radius:6px}.how-it-works::details-content{height:0;overflow:hidden;opacity:0;transition:height 200ms ease,opacity 180ms ease,content-visibility 200ms allow-discrete}.how-it-works[open]::details-content{height:auto;opacity:1}.how-it-works .explanation{padding:0 14px 14px;display:grid;gap:9px}.intro .how-it-works p{max-width:76ch;font-size:var(--text-support);line-height:1.65}.how-it-works strong{color:var(--ink);font-weight:600}@media(prefers-reduced-motion:reduce){.how-it-works::details-content{transition:none}}
 </style></head><body>
-<header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><span class="concept" id="release-version"></span></header>
+<header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><span class="concept" id="release-version"></span><button type="button" class="reset-form" id="reset-form">Reset form</button></header>
 <main>
-<div class="intro"><h1>Set up subagents for your coding tools.</h1><p>Choose roles, models and effort. Apply your setup locally with one command.</p></div>
+<div class="intro"><h1>Set up subagents for your coding tools.</h1><p>Choose roles, models and effort. Apply your setup locally with one command.</p><details class="how-it-works"><summary>How it works and why you need it</summary><div class="explanation">
+<p><strong>Give different jobs different models.</strong> Use capable models for coding and review, and lighter ones for search and routine work, without editing each tool’s config by hand.</p>
+<p><strong>Configure once, use native subagents.</strong> Choose roles, models and effort here. Run the generated command to configure your installed coding tools. APK writes native settings, then exits.</p>
+<p><strong>Your main agent stays in charge.</strong> It decides when to delegate; its model stays unchanged. APK runs no background process during your coding sessions.</p>
+</div></details><p class="link-error" id="link-error" role="status" hidden></p></div>
 <div class="builder">
-<section aria-labelledby="helpers-heading"><div class="step-heading"><span class="step-number">1</span><h2 id="helpers-heading" tabindex="-1">Subagent roles</h2></div><div class="tag-box" id="selected-helpers" role="group" aria-label="Selected subagent roles"></div><div class="suggestions" id="helper-options" role="group" aria-label="Available subagent roles"></div></section>
-<section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">Coding tools</h2><span class="step-hint">Click a coding tool to configure it individually.</span></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected coding tools"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available coding tools"></div></section>
-<section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading">Work mode</h2></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and coding tools above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected tools</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div></section></div></section>
-<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and a coding tool in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><p class="release-status" id="release-status"></p></section>
+<section aria-labelledby="helpers-heading"><div class="step-heading"><span class="step-number">1</span><h2 id="helpers-heading" tabindex="-1">Subagent roles</h2><span class="step-hint" id="step-hint-1" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="tag-box" id="selected-helpers" role="group" aria-label="Selected subagent roles"></div><div class="suggestions" id="helper-options" role="group" aria-label="Available subagent roles"></div></section>
+<section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">Coding tools</h2><span class="step-hint" id="step-hint-2" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected coding tools"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available coding tools"></div></section>
+<section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading" tabindex="-1">Work mode</h2><span class="step-hint" id="step-hint-3" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and coding tools above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected tools</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div></section></div></section>
+<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2><span class="step-hint" id="step-hint-4" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and a coding tool in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><p class="release-status" id="release-status"></p></section>
 </div>
 </main>
 <div id="role-tooltip" class="role-tooltip" role="tooltip" hidden></div>
@@ -71,6 +78,7 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 'use strict';
 const RELEASE = __APK_RELEASE_DATA__;
 __APK_EXPLICIT_CODEC__
+__APK_SHARE_CODEC__
 (() => {
   const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
   const ROLES = ['worker', 'reviewer', 'explorer', 'routine'];
@@ -83,25 +91,32 @@ __APK_EXPLICIT_CODEC__
   function effective(config, role) {
     return config.roles?.[role] ?? config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
   }
-  function initialState(preferences, presetId = 'balanced') {
-    const selected = CLIENTS.filter(client => preferences.clients[client]);
-    return {selected, active: 'all', maxConcurrent: preferences.maxConcurrent,
-      profiles: Object.fromEntries(selected.map(client => [client, {presetId, custom: false, preferences: clone(preferences.clients[client])}])),
-      jobs: Object.fromEntries(selected.map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
+  function initialState(preferences, presetId = 'balanced', {empty=false}={}) {
+    const available = CLIENTS.filter(client => preferences.clients[client]),selected=empty?[]:available;
+    return {selected, active: empty?null:'all', maxConcurrent: preferences.maxConcurrent,...(empty?{selectedRoles:[]}:{}),
+      profiles: Object.fromEntries(available.map(client => [client, {presetId, custom: false, modeSelected:!empty,presetCap:preferences.maxConcurrent,preferences: clone(preferences.clients[client])}])),
+      jobs: Object.fromEntries(available.map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
   }
   function modeFor(state, client = state.active) {
-    if (client !== 'all') return state.profiles[client].custom ? 'custom' : state.profiles[client].presetId;
-    const modes = state.selected.map(client => modeFor(state, client));
-    return modes.length && modes.every(mode => mode === modes[0]) ? modes[0] : 'custom';
+    if (client !== 'all') {const profile=state.profiles[client];return !profile||profile.modeSelected===false?null:profile.custom?'custom':profile.presetId;}
+    const modes = (Array.isArray(state.selected)?state.selected:[]).map(client => modeFor(state, client));
+    if(!modes.length||modes.some(mode=>mode===null))return null;
+    return modes.every(mode => mode === modes[0]) ? modes[0] : 'custom';
   }
   function applyPreset(state, preset, confirmReplace = () => false) {
     const all = state.active === 'all', targets = all ? state.selected : [state.active];
     if (targets.some(client => !preset.preferences.clients[client])) return state;
-    if ((!all || modeFor(state, 'all') === 'custom') && !confirmReplace()) return state;
+    const chosen=targets.filter(client=>state.profiles[client]?.modeSelected!==false),replacing=chosen.length>0;
+    const mixed=new Set(chosen.map(client=>state.profiles[client].presetId)).size>1,pending=chosen.length<targets.length;
+    const edited=chosen.some(client=>{
+      const profile=state.profiles[client];
+      return (Number.isInteger(profile.presetCap)&&state.maxConcurrent!==profile.presetCap)||ROLES.some(role=>{const current=state.jobs?.[client]?.[role],base=effective(profile.preferences,role);return current?.model!==base.model||current?.effort!==base.effort;});
+    });
+    if(replacing&&(!all||mixed||pending||edited)&&!confirmReplace())return state;
     const next = clone(state);
     for (const client of targets) {
       const preferences = preset.preferences.clients[client];
-      next.profiles[client] = {presetId: preset.id ?? 'balanced', custom: false, preferences: clone(preferences)};
+      next.profiles[client] = {presetId: preset.id ?? 'balanced', custom: false, modeSelected:true,presetCap:preset.preferences.maxConcurrent,preferences: clone(preferences)};
       next.jobs[client] = Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences, role))]));
     }
     if (all) next.maxConcurrent = preset.preferences.maxConcurrent;
@@ -133,6 +148,7 @@ __APK_EXPLICIT_CODEC__
   }
   function updateEffort(state, client, role, effort) {
     state.profiles[client].custom = true;
+    state.profiles[client].modeSelected = true;
     const model = state.jobs[client][role].model;
     state.jobs[client][role].effort = effort;
     if (client === 'kimi') for (const choice of Object.values(state.jobs[client])) if (choice.model === model) choice.effort = effort;
@@ -148,6 +164,7 @@ __APK_EXPLICIT_CODEC__
     const selectedRoles=ROLES.filter(role=>selection.includes(role));
     const clients = {};
     for (const client of (Array.isArray(state.selected)?state.selected:[]).filter(client => CLIENTS.includes(client))) {
+      if(state.profiles?.[client]?.modeSelected===false){errors.push(`${LABELS[client]}: choose a work mode.`);continue;}
       const defaults = state.profiles?.[client]?.preferences ?? preferences.clients[client];
       if (!defaults) { errors.push(`${LABELS[client]} has no release defaults.`); continue; }
       const config = clone(defaults);
@@ -202,10 +219,10 @@ __APK_EXPLICIT_CODEC__
 
 (() => {
  const A=globalThis.APKConfigurator,$=id=>document.getElementById(id);
- const roles=RELEASE.roles;
+ const roles=RELEASE.roles,toolModeLabels=new Map();
  const clients=Object.keys(RELEASE.preferences.clients),toolName=id=>RELEASE.catalog.clients[id].label;
  const presets=RELEASE.presets,initial=presets.find(p=>p.id==='balanced')??presets[0];
- let state=A.initialState(initial.preferences,initial.id);state.selected=[];
+ let state=A.initialState(initial.preferences,initial.id,{empty:true});
  let helpers=[],pickedTools=[];
  let selectedScope=null;
  function syncTargets(){
@@ -214,9 +231,9 @@ __APK_EXPLICIT_CODEC__
   state.active=selectedScope??(pickedTools.length>=2?'all':pickedTools[0]??null);
  }
  syncTargets();
- const modeName=id=>presets.find(p=>p.id===id)?.label??'Custom';
+ const modeName=id=>id===null?'Choose mode':presets.find(p=>p.id===id)?.label??'Custom';
  function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n;}
- let mounted=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0;
+ let mounted=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0,lastCopiedCommand=null,linkError='',lastAddress=location.hash;
  $('release-version').textContent='v'+RELEASE.version;
  $('release-status').textContent=RELEASE.unreleased?'Release candidate · npm command available after publication.':`Configuration release ${RELEASE.version}`;
  const guideBase=location.protocol==='file:'?new URL('../',location.href).href:`https://unpkg.com/agent-policy-kit@${RELEASE.version}/`;
@@ -257,6 +274,21 @@ __APK_EXPLICIT_CODEC__
  window.addEventListener('resize',()=>hideRoleInfo(true));window.addEventListener('scroll',()=>hideRoleInfo(true),{passive:true});
  window.getTeamBuilderMotion=()=>({supported:typeof document.startViewTransition==='function',reduced:reducedMotion.matches,count:motionCount,active:!!activeTransition,ready:motionReady,animations:lastAnimationCount,duration:180});
 
+ function flashLabel(node,color='var(--yellow-paper)'){
+  if(reducedMotion.matches||typeof node.animate!=='function')return;const expected=node.textContent;
+  const flash=()=>{
+   if(!node.isConnected||node.textContent!==expected||reducedMotion.matches)return;
+   node.getAnimations?.().forEach(animation=>animation.cancel());
+   node.animate([{backgroundColor:color,offset:0},{backgroundColor:color,offset:.5},{backgroundColor:'transparent',offset:1}],{duration:4000,easing:'linear'});
+  };
+  if(activeTransition)activeTransition.finished.then(flash).catch(()=>{});else requestAnimationFrame(flash);
+ }
+ function toolModeLabel(client){
+  const text=modeName(A.modeFor(state,client));let node=toolModeLabels.get(client);
+  if(!node){node=el('small',{},text);toolModeLabels.set(client,node);}
+  else if(node.textContent!==text){node.textContent=text;flashLabel(node);}
+  return node;
+ }
  function renderPickers(){
   for(const kind of ['helpers','tools']){
    const isRole=kind==='helpers',chosen=isRole?helpers:pickedTools,available=isRole?roles:clients.map(id=>({id,name:toolName(id)}));
@@ -273,7 +305,7 @@ __APK_EXPLICIT_CODEC__
     const tag=el('span',{class:isRole?'tag':'tool-item'+(state.active===item.id?' active':'')});
     tag.style.viewTransitionName=(isRole?'helper-':'tool-')+item.id;
     if(isRole)tag.append(el('span',{class:'tag-label'},item.name),roleInfo(item));
-    else{const main=el('button',{type:'button',class:'tool-scope','aria-label':'Configure '+item.name,'aria-pressed':String(state.active===item.id)});main.append(el('span',{},item.name),el('small',{},modeName(A.modeFor(state,item.id))));main.addEventListener('click',()=>{selectedScope=item.id;render();});tag.append(main);}
+    else{const main=el('button',{type:'button',class:'tool-scope','aria-label':'Configure '+item.name,'aria-pressed':String(state.active===item.id)});main.append(el('span',{},item.name),toolModeLabel(item.id));main.addEventListener('click',()=>{selectedScope=item.id;render();});tag.append(main);}
     const remove=el('button',{type:'button',class:isRole?'remove':'tool-remove','aria-label':'Remove '+item.name},'×');remove.addEventListener('click',()=>{if(isRole){helpers=helpers.filter(id=>id!==item.id);}else{pickedTools=pickedTools.filter(id=>id!==item.id);}render();});tag.append(remove);box.append(tag);
    }
   }
@@ -285,14 +317,14 @@ __APK_EXPLICIT_CODEC__
  }
  function renderModes(){
   const ready=helpers.length>0&&state.selected.length>0;$('mode-empty').hidden=ready;$('mode-panel').hidden=!ready;if(!ready){$('editor').replaceChildren();return;}
-  const all=state.active==='all',mode=A.modeFor(state);$('scope-label').textContent=all?'All selected tools':toolName(state.active);
+  const all=state.active==='all',mode=A.modeFor(state),scope=all?'All selected tools':toolName(state.active);if($('scope-label').textContent!==scope){$('scope-label').textContent=scope;flashLabel($('scope-label'));}
   const options=$('mode-options');options.replaceChildren();
-  for(const p of [...presets,{id:'custom',label:'Custom'}]){const label=el('label',{class:'mode-option'}),radio=el('input',{type:'radio',name:'mode',value:p.id,'aria-label':p.label});label.style.viewTransitionName='mode-'+p.id;radio.checked=mode===p.id;radio.addEventListener('change',()=>{if(p.id==='custom'){for(const client of (all?state.selected:[state.active]))state.profiles[client].custom=true;render();}else apply(p);});label.append(radio,el('span',{},p.label));options.append(label);}
+  for(const p of [...presets,{id:'custom',label:'Custom'}]){const label=el('label',{class:'mode-option'}),radio=el('input',{type:'radio',name:'mode',value:p.id,'aria-label':p.label});label.style.viewTransitionName='mode-'+p.id;radio.checked=mode===p.id;radio.addEventListener('change',()=>{if(p.id==='custom'){for(const client of (all?state.selected:[state.active])){state.profiles[client].custom=true;state.profiles[client].modeSelected=true;}render();}else apply(p);});label.append(radio,el('span',{},p.label));options.append(label);}
   const notice=$('mode-notice');notice.hidden=mode!=='custom';notice.replaceChildren();if(all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.textContent=`Custom models and effort for ${toolName(state.active)}.`;
-  $('advanced').hidden=all;renderEditor();
+  $('advanced').hidden=all||mode===null;renderEditor();
  }
  function renderEditor(){
-  const parent=$('editor');parent.replaceChildren();if(!helpers.length||!state.active||state.active==='all')return;
+  const parent=$('editor');parent.replaceChildren();if(!helpers.length||!state.active||state.active==='all'||state.profiles[state.active].modeSelected===false)return;
   const client=state.active,catalog=RELEASE.catalog.clients[client],profile=state.profiles[client].preferences;
   const header=el('div',{class:'editor-head','aria-hidden':'true'});for(const label of ['Role','Model','Effort'])header.append(el('span',{},label));parent.append(header);
   for(const role of roles.filter(role=>helpers.includes(role.id))){
@@ -301,9 +333,9 @@ __APK_EXPLICIT_CODEC__
    const name=el('div',{class:'editor-name'});name.append(el('span',{},role.name),roleInfo(role));row.append(name);
    const modelControl=el('div',{class:'model-control'}),modelSelect=el('select',{'aria-label':`${role.name} model`,'data-model-role':role.id});catalog.models.forEach(model=>modelSelect.append(el('option',{value:model.id},model.label)));if(client!=='agy')modelSelect.append(el('option',{value:'__custom__'},'Custom model…'));
    const known=catalog.models.some(model=>model.id===choice.model);modelSelect.value=known?choice.model:'__custom__';
-   const custom=el('input',{type:'text',class:'custom-model','aria-label':`${role.name} custom model ID`,placeholder:'Native model ID',autocomplete:'off',spellcheck:'false'});custom.hidden=known;custom.value=known?'':choice.model;
-   modelSelect.addEventListener('change',()=>{if(modelSelect.value==='__custom__'){state.jobs[client][role.id]={model:'',effort:choice.effort};state.profiles[client].custom=true;render();const focus=()=>{if(state.active===client)document.querySelector(`[aria-label="${role.name} custom model ID"]`)?.focus();};if(activeTransition)activeTransition.finished.then(focus);else focus();return;}state.jobs[client][role.id]=A.preferenceForModel(profile,role.id,modelSelect.value,state.jobs[client],catalog,client==='kimi');state.profiles[client].custom=true;render();});
-   custom.addEventListener('input',()=>{state.jobs[client][role.id]=A.preferenceForModel(profile,role.id,custom.value.trim(),state.jobs[client],catalog,client==='kimi');state.profiles[client].custom=true;custom.setAttribute('aria-invalid',String(!IDENTIFIER.test(custom.value.trim())||(client==='kimi'&&custom.value.trim()==='primary')));renderEfforts();renderResult();});
+   const custom=el('input',{type:'text',class:'custom-model','aria-label':`${role.name} custom model ID`,placeholder:'Native model ID',autocomplete:'off',spellcheck:'false',maxlength:'128'});custom.hidden=known;custom.value=known?'':choice.model;
+   modelSelect.addEventListener('change',()=>{if(modelSelect.value==='__custom__'){state.jobs[client][role.id]={model:'',effort:choice.effort};state.profiles[client].custom=true;state.profiles[client].modeSelected=true;render();const focus=()=>{if(state.active===client)document.querySelector(`[aria-label="${role.name} custom model ID"]`)?.focus();};if(activeTransition)activeTransition.finished.then(focus);else focus();return;}state.jobs[client][role.id]=A.preferenceForModel(profile,role.id,modelSelect.value,state.jobs[client],catalog,client==='kimi');state.profiles[client].custom=true;state.profiles[client].modeSelected=true;render();});
+   custom.addEventListener('input',()=>{state.jobs[client][role.id]=A.preferenceForModel(profile,role.id,custom.value.trim(),state.jobs[client],catalog,client==='kimi');state.profiles[client].custom=true;state.profiles[client].modeSelected=true;custom.setAttribute('aria-invalid',String(!IDENTIFIER.test(custom.value.trim())||(client==='kimi'&&custom.value.trim()==='primary')));renderEfforts();renderResult();});
    modelControl.append(modelSelect,custom);row.append(modelControl);
    const group=el('div',{class:'efforts',role:'group','aria-label':`${role.name} effort`});
    function renderEfforts(){
@@ -315,34 +347,116 @@ __APK_EXPLICIT_CODEC__
    row.append(group);parent.append(row);
   }
  }
- function renderResult(){
-  commandRevision++;currentCommand='';$('copy').disabled=true;$('copy').textContent='Copy command';$('copy-feedback').hidden=true;$('setup-command').value='';$('setup-command').hidden=true;$('copy').closest('.output').dataset.ready='false';
-  const description=$('setup-description');description.replaceChildren();
-  if(helpers.length&&state.selected.length){
-   const {config,errors}=A.buildConfig(state,RELEASE.preferences,RELEASE.catalog);
-   if(errors.length){$('setup-summary').textContent='Check your model settings.';description.textContent=errors[0];return;}
-   try{currentCommand=A.buildCommand(config,RELEASE);}catch{$('setup-summary').textContent='Command unavailable.';description.textContent='Check the configuration release.';return;}
-   $('setup-summary').textContent=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${state.selected.length} coding tool${state.selected.length===1?'':'s'}`;
-   description.textContent='Run this command in your terminal. Only installed tools are configured.';$('setup-command').value=currentCommand;$('setup-command').hidden=false;$('copy').disabled=false;$('copy').closest('.output').dataset.ready='true';return;
+ function freshForm(){
+  state=A.initialState(initial.preferences,initial.id,{empty:true});helpers=[];pickedTools=[];selectedScope=null;lastCopiedCommand=null;commandRevision++;for(const node of toolModeLabels.values())node.getAnimations?.().forEach(animation=>animation.cancel());toolModeLabels.clear();
+ }
+ function loadAddress(first=false){
+  try{
+   const data=decodeFormState(location.hash,RELEASE);
+   if(data){
+    freshForm();helpers=[...data.roles];pickedTools=data.tools.map(tool=>tool.id);selectedScope=data.scope;state.maxConcurrent=data.maxConcurrent;
+    for(const tool of data.tools){
+     const base=presets.find(preset=>preset.id===tool.base),preferences=JSON.parse(JSON.stringify(base.preferences.clients[tool.id]));
+     state.profiles[tool.id]={presetId:tool.base,custom:tool.mode==='custom',modeSelected:tool.mode!==null,presetCap:base.preferences.maxConcurrent,preferences};
+     state.jobs[tool.id]=Object.fromEntries(roles.map(role=>[role.id,JSON.parse(JSON.stringify(A.effective(preferences,role.id)))]));
+     for(const [role,choice]of Object.entries(tool.choices))state.jobs[tool.id][role]={...choice};
+    }
+   }else if(!first)freshForm();
+   linkError='';
+  }catch(error){freshForm();linkError=error?.code==='SHARE_RELEASE_MISMATCH'?'Open this setup link with its matching APK release, or reset the form.':'This setup link is invalid. Reset the form to start again.';}
+ }
+ function publishAddress(){
+  let message=linkError;
+  if(!message)try{
+   const fragment=encodeFormState({state,helpers,pickedTools,selectedScope},RELEASE);
+   if(location.hash!==fragment)history.replaceState(history.state,'',location.pathname+location.search+fragment);
+   lastAddress=fragment;
+  }catch{message='Check your model IDs before sharing this setup.';}
+  $('link-error').textContent=message;$('link-error').hidden=!message;
+ }
+ function setStepHint(number,message){
+  const node=$('step-hint-'+number);if(node.dataset.message===message)return;const wasHidden=node.hidden;node.dataset.message=message;
+  node.getAnimations?.().forEach(animation=>animation.cancel());node.dataset.success=String(number===4&&!!message);
+  const attention=()=>{if(node.dataset.message!==message||!message||reducedMotion.matches||typeof node.animate!=='function')return;const color=number===4?'var(--success-paper)':'var(--yellow-paper)';node.animate([{backgroundColor:color,offset:0},{backgroundColor:color,offset:.5},{backgroundColor:'transparent',offset:1}],{duration:4000,easing:'linear'});};
+  if(!message){
+   if(!activeTransition&&!reducedMotion.matches&&!wasHidden&&typeof node.animate==='function'){
+    node.animate([{opacity:1},{opacity:0,transform:'translateY(-2px)'}],{duration:120,easing:'ease-out'}).finished.then(()=>{if(node.dataset.message===''){node.hidden=true;node.textContent='';}}).catch(()=>{});
+   }else{node.hidden=true;node.textContent='';}
+   return;
   }
-  $('setup-summary').textContent='Complete the steps above.';
-  description.append('Choose ');
-  if(!helpers.length)description.append(el('a',{href:'#helpers-heading'},'a subagent role in step 1'));
-  if(!helpers.length&&!state.selected.length)description.append(' and ');
-  if(!state.selected.length)description.append(el('a',{href:'#tools-heading'},'a coding tool in step 2'));
-  description.append('.');
+  node.textContent=message;node.hidden=false;
+  if(activeTransition)activeTransition.finished.then(attention).catch(()=>{});
+  else if(wasHidden&&!reducedMotion.matches&&typeof node.animate==='function')node.animate([{opacity:0,transform:'translateY(2px)'},{opacity:1,transform:'none'}],{duration:160,easing:'ease-out'}).finished.then(attention).catch(()=>{});
+  else attention();
+ }
+ function flashStep(marker,complete){
+  marker.getAnimations?.().forEach(animation=>animation.cancel());if(reducedMotion.matches||typeof marker.animate!=='function')return;
+  const expected=String(complete),flash=()=>{
+   if(marker.dataset.complete!==expected||reducedMotion.matches)return;
+   const color=complete?'var(--success-line)':'var(--yellow-paper)',base=getComputedStyle(marker).backgroundColor;
+   marker.animate([{backgroundColor:color,offset:0},{backgroundColor:color,offset:.5},{backgroundColor:base,offset:1}],{duration:4000,easing:'linear'});
+  };
+  if(activeTransition)activeTransition.finished.then(flash).catch(()=>{});
+  else marker.animate([{opacity:0},{opacity:1}],{duration:160,easing:'ease-out'}).finished.then(flash).catch(()=>{});
+ }
+ function updateProgress(){
+  const copied=!!currentCommand&&lastCopiedCommand===currentCommand;
+  const complete=[helpers.length>0,pickedTools.length>0,!!currentCommand,copied];
+  document.querySelectorAll('.builder>section').forEach((section,index)=>{
+   const marker=section.querySelector('.step-number'),value=String(complete[index]),changed=marker.dataset.complete!==undefined&&marker.dataset.complete!==value;section.dataset.complete=value;marker.dataset.complete=value;
+   const text=complete[index]?'✓':String(index+1);if(marker.textContent!==text)marker.textContent=text;marker.setAttribute('role','img');marker.setAttribute('aria-label',`Step ${index+1}${complete[index]?' complete':''}`);if(changed)flashStep(marker,complete[index]);
+  });
+  setStepHint(1,helpers.length?(helpers.length<roles.length?'You can add more roles.':'All available roles added.'):'');
+  setStepHint(2,pickedTools.length===1?'You can add more coding tools.':pickedTools.length>=2?'Click a coding tool to configure it individually.':'');
+  setStepHint(3,helpers.length&&pickedTools.length?'Click a mode to select it.':'');
+  setStepHint(4,copied?'Copied':'');
+ }
+ function stepLink(id,text){
+  const link=el('a',{href:'#'+id},text);link.addEventListener('click',event=>{event.preventDefault();const target=$(id);target.scrollIntoView({behavior:reducedMotion.matches?'instant':'smooth',block:'center'});target.focus({preventScroll:true});});return link;
+ }
+ function renderResult(){
+  let next='',summary='Complete the steps above.',detail='',missing=[];
+  if(!helpers.length)missing.push(['helpers-heading','a subagent role in step 1']);
+  if(!pickedTools.length)missing.push(['tools-heading','a coding tool in step 2']);
+  if(!missing.length){
+   if(pickedTools.some(client=>A.modeFor(state,client)===null))missing.push(['mode-heading','a work mode for each selected coding tool in step 3']);
+   else{
+    const {config,errors}=A.buildConfig(state,RELEASE.preferences,RELEASE.catalog);
+    if(errors.length){summary='Check your model settings.';detail=errors[0];}
+    else try{next=A.buildCommand(config,RELEASE);summary=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${pickedTools.length} coding tool${pickedTools.length===1?'':'s'}`;detail='Run this command in your terminal. Only installed tools are configured.';}
+    catch{summary='Command unavailable.';detail='Check the configuration release.';}
+   }
+  }
+  if(next!==currentCommand){commandRevision++;lastCopiedCommand=null;}
+  currentCommand=next;
+  const copied=!!next&&lastCopiedCommand===next;
+  $('copy').disabled=!next;$('copy').textContent='Copy command';$('copy').closest('.output').dataset.ready=String(!!next);
+  $('copy-feedback').hidden=true;$('copy-feedback').textContent='';
+  $('setup-command').value=next;$('setup-command').hidden=!next;$('setup-summary').textContent=summary;
+  const description=$('setup-description');description.replaceChildren();
+  if(missing.length){description.append('Choose ');missing.forEach(([id,text],index)=>{if(index)description.append(' and ');description.append(stepLink(id,text));});description.append('.');}
+  else description.textContent=detail;
+  updateProgress();publishAddress();
  }
  function renderNow(){syncTargets();renderPickers();renderModes();renderResult();}
- function render(){if(!mounted){renderNow();mounted=true;}else animateUpdate(renderNow);}
+ function render({fromAddress=false}={}){if(mounted&&!fromAddress)linkError='';if(!mounted){renderNow();mounted=true;}else animateUpdate(renderNow);}
+ function addressChanged(){
+  if(location.hash===lastAddress||(location.hash&&!location.hash.startsWith('#setup=')))return;
+  lastAddress=location.hash;loadAddress();render({fromAddress:true});
+ }
+ window.addEventListener('hashchange',addressChanged);window.addEventListener('popstate',addressChanged);
+ $('reset-form').addEventListener('click',()=>{freshForm();linkError='';render();});
 
  $('setup-command').addEventListener('focus',()=>$('setup-command').select());
  $('copy').addEventListener('click',async()=>{
-  if(!currentCommand)return;const copiedCommand=currentCommand,revision=commandRevision;
-  try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(copiedCommand);if(revision!==commandRevision)return;$('copy').textContent='Copied';$('copy-feedback').textContent='Command copied.';}
-  catch{if(revision!==commandRevision)return;$('setup-command').focus();$('setup-command').select();$('copy-feedback').textContent='Command selected. Copy it with your keyboard.';}
-  $('copy-feedback').hidden=false;
+  if(!currentCommand)return;const commandToCopy=currentCommand,revision=commandRevision;
+  try{
+   if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(commandToCopy);
+   if(revision!==commandRevision)return;lastCopiedCommand=commandToCopy;$('copy-feedback').hidden=true;$('copy-feedback').textContent='';animateUpdate(updateProgress);
+  }catch{if(revision!==commandRevision)return;$('setup-command').focus();$('setup-command').select();$('copy-feedback').textContent='Command selected. Copy it with your keyboard.';$('copy-feedback').hidden=false;}
  });
- window.getTeamBuilderSnapshot=()=>JSON.parse(JSON.stringify({state,helpers,pickedTools,selectedScope,advancedOpen:true}));render();
+ window.getTeamBuilderSnapshot=()=>JSON.parse(JSON.stringify({state,helpers,pickedTools,selectedScope,copied:!!currentCommand&&lastCopiedCommand===currentCommand,advancedOpen:true}));
+ loadAddress(true);render();
 })();
 
 })();
