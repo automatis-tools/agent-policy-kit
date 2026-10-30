@@ -46,3 +46,7 @@ test('empty explicit selectors cannot fall back to changing all clients',t=>{
  const got=cli(f,['uninstall','--client','','--apply']);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,'UNSUPPORTED_CLIENT');assert.equal(fs.readFileSync(receipt,'utf8'),before);
  assert.equal(JSON.parse(cli(f,['setup','--preset','','--apply']).stdout).error,'UNKNOWN_PRESET');
 });
+
+test('Google dated Claude payload writes quoted native model strings and verifies without inference',t=>{
+ const f=fixture(t),model='claude-sonnet-4-5@20250929',payload={schemaVersion:1,maxConcurrent:2,clients:{claude:{code:{model,effort:null},light:{model:'haiku',effort:null},roles:{reviewer:{model:'fable',effort:'high'}},avoidModels:[]}}};const got=cli(f,['setup','--config',encode(payload),'--apply']);assert.equal(got.status,0,got.stdout+got.stderr);const body=fs.readFileSync(path.join(f.home,'.claude/agents/apk-worker.md'),'utf8');assert.equal(JSON.parse(body.match(/^model: (.+)$/m)[1]),model);assert.doesNotMatch(body,/^effort:/m);assert.equal(JSON.parse(fs.readFileSync(path.join(f.home,'.claude/settings.json'))).env.CLAUDE_CODE_SUBAGENT_MODEL,model);const review=fs.readFileSync(path.join(f.home,'.claude/agents/apk-reviewer.md'),'utf8');assert.equal(JSON.parse(review.match(/^model: (.+)$/m)[1]),'fable');assert.equal(JSON.parse(cli(f,['doctor','--client','claude']).stdout).clients.claude.configuration.status,'verified');assert.deepEqual(fs.readdirSync(path.join(f.home,'tmp')),[]);assert.equal(fs.existsSync(path.join(f.home,'.codex')),false);
+});

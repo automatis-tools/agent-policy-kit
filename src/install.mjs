@@ -174,7 +174,7 @@ function literalValue(raw,type,nullable=false) {
   if(typeof value!==type||(type==='number'&&!Number.isSafeInteger(value))||(type==='string'&&value.length>4096))fail('INVALID_RECEIPT');
   return value;
 }
-function alias(value) {return typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}$/.test(value);}
+function alias(value) {return typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/.test(value);}
 function scalar(op,target,type) {
   fields(op,['kind','path','before','after','addedTable']);
   if(op.kind!=='scalar'||!equal(op.path,target)||(op.addedTable&&!equal(op.addedTable,target.slice(0,-1))))fail('INVALID_RECEIPT');

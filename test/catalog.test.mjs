@@ -19,3 +19,7 @@ test('three named presets are valid editable recommendations from the same packa
  assert.equal(fingerprints.size,3);assert.throws(()=>presetPreferences('../outside'),e=>e.code==='UNKNOWN_PRESET');
  assert.equal(presetPreferences('fast').clients.codex.code.effort,'low');assert.equal(presetPreferences('quality').clients.claude.code.model,'opus');
 });
+
+test('Fable is a documented Claude subagent alias with current native effort choices',()=>{
+ const data=modelCatalog().clients.claude,row=data.models.find(model=>model.id==='fable');assert.ok(row);assert.equal(row.kind,'alias');assert.deepEqual(row.efforts,['low','medium','high','xhigh','max']);assert.equal(row.defaultEffort,'high');assert.match(row.source,/^https:\/\/code\.claude\.com\/docs\/en\/(?:sub-agents|model-config)/);assert.ok(!data.excluded.some(model=>model.id==='fable'));assert.deepEqual(data.excluded.map(model=>model.id),['best','default','opus[1m]','opusplan','sonnet[1m]']);
+});

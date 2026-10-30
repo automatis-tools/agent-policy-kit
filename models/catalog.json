@@ -219,6 +219,20 @@
           "kind": "alias"
         },
         {
+          "id": "fable",
+          "label": "Fable (alias)",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "source": "https://code.claude.com/docs/en/sub-agents#choose-a-model",
+          "kind": "alias"
+        },
+        {
           "id": "claude-fable-5-1",
           "label": "Fable 5.1",
           "efforts": [
@@ -421,10 +435,6 @@
         },
         {
           "id": "default",
-          "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
-        },
-        {
-          "id": "fable",
           "reason": "session/context selector rather than a distinct documented subagent model; custom native ID remains available"
         },
         {

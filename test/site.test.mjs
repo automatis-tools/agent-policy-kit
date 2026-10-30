@@ -211,3 +211,10 @@ test('Kimi native default can share an alias with one explicit effort pin', () =
   state.jobs.kimi.explorer = {...state.jobs.kimi.worker, effort: 'low'};
   assert.equal(api.buildConfig(state, preferences).config, null);
 });
+
+test('the release catalog offers Fable and the page composes an independent Fable task',()=>{
+ const catalog=JSON.parse(fs.readFileSync(new URL('../models/catalog.json',import.meta.url),'utf8')),state=api.initialState(preferences),claude=catalog.clients.claude;assert.ok(claude.models.some(model=>model.id==='fable'));state.jobs.claude.reviewer=api.preferenceForModel(preferences.clients.claude,'reviewer','fable',state.jobs.claude,claude);const result=plain(api.buildConfig(state,preferences,catalog));assert.deepEqual(result.errors,[]);assert.equal(result.config.clients.claude.roles.reviewer.model,'fable');assert.ok(!result.config.clients.claude.avoidModels.includes('fable'));
+});
+test('custom Google dated IDs retain native-default effort inside a shell-safe encoded payload',()=>{
+ const catalog=JSON.parse(fs.readFileSync(new URL('../models/catalog.json',import.meta.url),'utf8')),state=api.initialState(preferences),model='claude-sonnet-4-5@20250929';state.jobs.claude.worker={model,effort:null};const result=plain(api.buildConfig(state,preferences,catalog));assert.deepEqual(result.errors,[]);assert.deepEqual(result.config.clients.claude.roles.worker,{model,effort:null});const command=api.buildCommand(result.config,release),payload=command.match(/--config ([A-Za-z0-9_-]+) --apply$/)[1];assert.ok(!command.includes(model));assert.deepEqual(JSON.parse(Buffer.from(payload,'base64url').toString('utf8')).clients.claude.roles.worker,{model,effort:null});
+});

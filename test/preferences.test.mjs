@@ -67,3 +67,7 @@ for(const kind of ['code','light']) test(`Kimi ${kind} selection rejects the res
   p.clients.kimi[kind].model='primary';
   assert.throws(()=>validatePolicy(p),{code:'INVALID_POLICY'});
 });
+
+test('Google dated provider model IDs are bounded identifiers with native-default effort',()=>{
+ const model='claude-sonnet-4-5@20250929',p=preferences();p.clients.claude={code:{model,effort:null},light:{model:'haiku',effort:null},avoidModels:[]};assert.equal(validatePolicy(p).clients.claude.code.model,model);const schema=JSON.parse(fs.readFileSync(new URL('../schema/policy.schema.json',import.meta.url))),identifier=new RegExp(schema.$defs.identifier.pattern);assert.ok(identifier.test(model));for(const invalid of ['@model',model+' whitespace',model+';id','a'.repeat(129),'$(id)']){p.clients.claude.code.model=invalid;assert.throws(()=>validatePolicy(p),{code:'INVALID_POLICY'});assert.equal(identifier.test(invalid),false);}
+});

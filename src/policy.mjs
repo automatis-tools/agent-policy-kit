@@ -3,7 +3,7 @@ export const CLIENTS = Object.freeze(['codex', 'claude', 'kimi', 'agy']);
 export const ROLES = Object.freeze({worker:'code', reviewer:'code', explorer:'light', routine:'light'});
 export const rolePreference=(config,role)=>config.roles?.[role]??config[ROLES[role]];
 export const NATIVE_EFFORTS=Object.freeze(Object.fromEntries(CLIENTS.map(client=>[client,Object.freeze([...catalog.clients[client].efforts])])));
-const identifier = /^[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}$/;
+const identifier = /^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
 function invalid() { throw Object.assign(new Error('Invalid shared preferences.'), {code:'INVALID_POLICY'}); }
 function object(value, fields) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || ![Object.prototype,null].includes(Object.getPrototypeOf(value))) invalid();
