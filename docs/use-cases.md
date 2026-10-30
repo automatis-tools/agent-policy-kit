@@ -1,10 +1,14 @@
 # Examples
 
+## Add only reviewers and researchers
+
+Choose Reviewer and Researcher in the page, then select your coding tools. APK creates only apk-reviewer and apk-explorer. Later additions can expand this set. Removing a selected role removes its earlier owned definition while preserving unrelated files and edits.
+
 ## One role scheme across coding tools
 
 Use a code model for apk-worker/apk-reviewer and a light model for apk-explorer/apk-routine. Each tool receives native definitions and delegation instructions; no central dispatcher runs between it and its provider.
 
-## Keep main chats unchanged
+## Keep your main model
 
 Apply the shared preferences to delegated helpers while preserving each tool's main model, account, permissions and unrelated setup.
 

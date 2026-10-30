@@ -52,6 +52,9 @@ test('two real configuration packages upgrade and downgrade models and templates
   const compiler=path.join(snapshotB,'src/native.mjs'),originalCompiler=fs.readFileSync(compiler,'utf8');
   const changedCompiler=originalCompiler.replace('Implement the assigned change.','Fixture B worker. Implement the assigned change.').replace('text.push(END);',"text.push('Fixture B routing note.');text.push(END);");
   assert.notEqual(changedCompiler,originalCompiler);fs.writeFileSync(compiler,changedCompiler);
+  const definitions=path.join(snapshotB,'src/roles.mjs'),originalDefinitions=fs.readFileSync(definitions,'utf8');
+  const changedDefinitions=originalDefinitions.replace('Implement the assigned change.','Fixture B worker. Implement the assigned change.');
+  assert.notEqual(changedDefinitions,originalDefinitions);fs.writeFileSync(definitions,changedDefinitions);
   fs.writeFileSync(path.join(snapshotB,'CHANGELOG.md'),['# Changelog','','## 0.2.0 — Unreleased','','### Why this release',"Literal $& and $' in release notes must remain data.",'Synthetic test fixture, not a real release.',''].join('\n'));
   assert.equal(command(process.execPath,['scripts/build-site.mjs'],{cwd:snapshotB,env}).status,0);
   const packedB=parse(command('npm',['pack','--json','--ignore-scripts','--pack-destination',root],{cwd:snapshotB,env}));

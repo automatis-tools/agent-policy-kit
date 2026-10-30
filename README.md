@@ -2,25 +2,26 @@
 
 ```mermaid
 flowchart LR
-    Release("Choose a release") --> Models("Choose your models")
-    Models --> Command("Run one command")
-    Command --> Done("Configured. APK exits.")
-    classDef default fill:#f5f7f6,stroke:#bdc8c2,color:#1b2924
-    classDef action fill:#245e49,stroke:#245e49,color:#ffffff
+    Roles("1. Choose subagent roles") --> Tools("2. Choose your coding tools")
+    Tools --> Models("3. Choose models and effort")
+    Models --> Command("4. Run one setup command")
+    Command --> Done("Native configs saved<br/>APK exits")
+    classDef default fill:#f5f7fb,stroke:#e0e5ed,color:#19283e
+    classDef action fill:#3158c3,stroke:#3158c3,color:#ffffff
     class Command action
 ```
 
-**Your model choices. Your coding tools. One setup.**
+**Configure your coding subagents once.**
 
-APK configures Codex, Claude Code, Kimi and Antigravity through their native files, then exits. You can remove the npm package afterward.
+APK sets up native subagent roles for Codex, Claude Code, Kimi and Antigravity. Choose the roles you need, their models and effort. One command configures your installed tools, then exits.
 
 **The main agent decides whether to use subagents.** Your preferences apply only when it delegates; the main model stays unchanged.
 
 ## Choose your setup
 
-Open the [configuration page](site/index.html) in **Google Chrome**. Choose a preset in All for every tool, or select a tool to set its own mode, models and effort. Copy the generated command and run it once. Only installed tools are configured.
+Open the [configuration page](site/index.html) in **Google Chrome**. Choose roles and coding tools, keep a preset or adjust each role, then copy the setup command. APK creates only the selected roles in installed, selected tools.
 
-The page is a self-contained HTML file: no backend or data upload. Before hosting, open site/index.html locally. See [page preview and hosting](docs/configuration-page.md).
+The page works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
 
 ## Use a specific release's defaults
 
@@ -32,7 +33,7 @@ npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup -
 
 Omit --apply to preview. Each version includes its own presets, instructions and configuration page. [Release notes](CHANGELOG.md) explain what changed and why; [release usage](docs/releases.md) covers upgrade and downgrade.
 
-Prefer your AI agent to handle it? Give it the [setup and removal guide](AGENT_INSTALL.md).
+Prefer your AI agent to handle installation or removal? Give it the [AI operator guide](AGENT_INSTALL.md).
 
 [Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
 

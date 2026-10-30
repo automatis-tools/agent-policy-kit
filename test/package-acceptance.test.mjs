@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import vm from 'node:vm';
 
 // This gate tests the distributable, not imports from a checkout. The isolated
 // build snapshot is removed, and the real checkout is denied to each consumer.
@@ -182,7 +183,42 @@ command="echo user_hook"
   const layout=text=>text.split('\n').map(line=>line.replace(/\s*=\s*/,'=')).filter(line=>line.trim()).join('\n');
   assert.equal(layout(fs.readFileSync(kimiConfig,'utf8')),layout(kimiOriginal));
   for(const file of nativePaths.filter(f=>f.includes('apk-')))assert.equal(fs.existsSync(file),false);
-  parse(cli(['setup','--apply']));
+  // Use the shipped page's real encoder and run its payload via npx + local tarball.
+  const page=fs.readFileSync(path.join(installedRoot,'site/index.html'),'utf8'),context=vm.createContext({TextEncoder,btoa});
+  vm.runInContext(page.match(/<script>([\s\S]*?)<\/script>/)[1],context);
+  const pageRelease=vm.runInContext('RELEASE',context),api=context.APKConfigurator,selection=api.initialState(pageRelease.preferences);
+  selection.selected=['codex','claude'];selection.selectedRoles=['reviewer','explorer'];selection.jobs.codex.reviewer.effort='max';
+  const built=api.buildConfig(selection,pageRelease.preferences);assert.deepEqual(Array.from(built.errors),[]);
+  const generated=api.buildCommand(built.config,pageRelease),payload=generated.match(/ --config ([A-Za-z0-9_-]+) --apply$/)[1];
+  assert.match(generated,new RegExp(`--package agent-policy-kit@${packed[0].version.replaceAll('.','\\.')} `));
+  const kimiBeforeSubset=fs.readFileSync(kimiConfig,'utf8');
+  const subset=parse(isolated('npx',['--yes','--ignore-scripts','--offline','--package',tarball,'agent-policy','setup','--config',payload,'--apply']));
+  assert.equal(subset.status,'configured');assert.equal(subset.results.find(result=>result.client==='kimi').status,'not_selected');
+  assert.equal(subset.results.find(result=>result.client==='agy').status,'not_selected');
+  for(const client of ['codex','claude'])for(const role of ['worker','reviewer','explorer','routine'])assert.equal(fs.existsSync(path.join(freshHome,dirs[client],'agents',`apk-${role}.${client==='codex'?'toml':'md'}`)),['reviewer','explorer'].includes(role));
+  assert.match(fs.readFileSync(path.join(freshHome,'.codex/agents/apk-reviewer.toml'),'utf8'),/model_reasoning_effort = "max"/);
+  assert.equal(fs.readFileSync(kimiConfig,'utf8'),kimiBeforeSubset);
+  const subsetDoctor=parse(cli(['doctor']));for(const client of ['codex','claude'])assert.equal(subsetDoctor.clients[client].configuration.status,'verified');
+  const subsetReceipt=path.join(state,'installations/codex.json'),subsetSnapshot=JSON.parse(fs.readFileSync(subsetReceipt));
+  assert.equal(subsetSnapshot.schemaVersion,4);assert.deepEqual(subsetSnapshot.selectedRoles,['reviewer','explorer']);
+
+  // A late replacement failure must restore an owned role that was already removed.
+  const reduced=JSON.parse(JSON.stringify(built.config));reduced.selectedRoles=['reviewer'];
+  const reducedPayload=api.encodeConfig(reduced),explorer=path.join(freshHome,'.codex/agents/apk-explorer.toml');
+  const ownedBefore=new Map([...subsetSnapshot.files.map(file=>file.path),subsetReceipt,path.join(state,'policy.json')].map(file=>[file,fs.readFileSync(file,'utf8')]));
+  const reductionFault=path.join(consumer,'role-reduction-failure.mjs'),reductionMarker=path.join(consumer,'role-reduction-observed');
+  fs.writeFileSync(reductionFault,`import fs from 'node:fs/promises';import {syncBuiltinESMExports} from 'node:module';const rename=fs.rename;let failed=false;
+fs.rename=async(from,to)=>{if(to===${JSON.stringify(subsetReceipt)}&&!failed){failed=true;
+try{await fs.access(${JSON.stringify(explorer)});throw new Error('role was not removed');}catch(error){if(error.code!=='ENOENT')throw error;}
+await fs.writeFile(${JSON.stringify(reductionMarker)},'removed role observed');throw Object.assign(new Error('late reduction fault'),{code:'EIO'});}return rename(from,to);};syncBuiltinESMExports();`);
+  const reductionFailure=isolated(bin,['setup','--client','codex','--config',reducedPayload,'--apply'],{env:{...env,NODE_OPTIONS:`--import=${pathToFileURL(reductionFault).href}`}});
+  assert.equal(reductionFailure.status,3);assert.equal(fs.readFileSync(reductionMarker,'utf8'),'removed role observed');
+  for(const [file,text]of ownedBefore)assert.equal(fs.readFileSync(file,'utf8'),text,'failed subset replacement must restore the prior installation');
+  parse(cli(['setup','--config',reducedPayload,'--apply']));assert.equal(fs.existsSync(explorer),false);
+  parse(cli(['uninstall','--apply']));assert.equal(JSON.parse(fs.readFileSync(claudeConfig)).theme,'dark');
+  assert.equal(fs.readFileSync(kimiConfig,'utf8'),kimiBeforeSubset);
+
+  parse(cli(['setup','--release','--apply']));
   for(const file of [...nativePaths,codexConfig,claudeConfig,kimiConfig]) {
     const text=fs.readFileSync(file,'utf8');
     for(const forbidden of [source,installedRoot,state,process.execPath,'node_modules','agent-policy.mjs','AGENT_POLICY_'])assert.equal(text.includes(forbidden),false,`${path.basename(file)} references ${forbidden}`);

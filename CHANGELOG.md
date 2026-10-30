@@ -31,6 +31,8 @@ Codex effort choices/defaults now follow CLI 0.166.0 rather than API defaults; A
 
 ### What changed
 
+- The four-step page now selects subagent roles and coding tools before mode/model/effort configuration. It generates and copies a real pinned command. Tool additions preserve All or a manually selected view. Role help uses the same prompt definitions as native generation.
+- Optional selectedRoles creates only the requested native roles. Receipt v4 binds that role set to owned files and supports safe expansion, reduction and removal. Earlier v2/v3 native receipts remain supported. Unselected Kimi aliases do not need provisioning or effort pins.
 - Native role files and routing instructions apply only when the main agent chooses delegation. Main models and disabled delegation features are preserved.
 - A static page lets each tool use its own mode and per-task models/effort. All shows mixed settings as Custom and can apply one preset to every tool. Scope warnings protect individual and global replacements; the page generates one pinned command.
 - Explicit release application supports safe upgrade/downgrade of owned settings; per-client receipts record the actual applied version and custom choices.

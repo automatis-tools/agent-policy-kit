@@ -5,143 +5,68 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <meta name="description" content="Configure subagent models for your coding tools with one setup command.">
-<title>Agent Policy Kit — configure subagent models</title>
-<!-- Public Sans is embedded at build time under the SIL Open Font License.
+<title>APK — configure subagents for your coding tools</title>
+<!-- Public Sans is embedded under the SIL Open Font License.
 __APK_FONT_LICENSE__
 -->
+
 <style>
+__APK_BASE_CSS__
 @font-face{font-family:'Public Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url('data:font/woff2;base64,__APK_FONT_DATA__') format('woff2')}
-:root{color-scheme:light;font-family:'Public Sans',sans-serif;color:var(--ink);background:#fff;font-synthesis:none;--ink:#19283e;--muted:#59657a;--line:#e0e5ed;--paper:#f5f7fb;--accent:#284b91;--accent-hover:#193667;--brand-blue:#3158c3;--brand-yellow:#f2c94c;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
-*{box-sizing:border-box}
-body{margin:0;-webkit-font-smoothing:antialiased}
-::selection{color:var(--ink);background:#fff4ce}
-button,input,select,textarea{font:inherit}
-button,summary{cursor:pointer}
-button:disabled{opacity:.5;cursor:not-allowed}
-:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
-header,main,footer{width:min(calc(100% - 64px),760px);margin-inline:auto}
-header{min-height:74px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
-.mark{display:grid;place-items:center;min-width:42px;height:34px;background:var(--brand-blue);color:#fff;border-bottom:3px solid var(--brand-yellow);border-radius:5px;font-size:14px;font-weight:650;letter-spacing:-.5px}
-.brand{font-size:14px;font-weight:600;letter-spacing:-.2px}
-.version{color:var(--muted);font:11px var(--mono);border:1px solid var(--line);border-radius:5px;background:var(--paper);padding:5px 7px;margin-left:auto}
-.heading{margin:36px 0 30px}
-h1{font:650 clamp(30px,5vw,40px)/1.13 'Public Sans',sans-serif;letter-spacing:-.03em;margin:0 0 14px;text-wrap:balance}
-.heading p{font-size:15px;line-height:1.65;color:var(--muted);margin:0}
-.toolbar{display:grid;gap:20px;margin-bottom:20px}
-.control-label,.preset-controls legend{display:block;font-size:13px;font-weight:600;margin-bottom:10px;padding:0}
-.tool-buttons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}
-.tool-buttons button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:52px;border:0;border-radius:5px;padding:9px 10px;background:transparent;color:var(--muted);font-size:13px;font-weight:500}
-.tool-mode{font-size:10px;font-weight:400;line-height:1.3}
-.tool-buttons button[data-client=all]{min-height:40px}
-.tool-buttons button:hover{background:#eaf0ff;color:var(--accent)}
-.tool-buttons button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
-.preset-controls{min-width:0;margin:0;padding:0;border:0}
-.preset-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-.preset-option{position:relative;display:grid;grid-template-rows:20px auto;justify-items:center;align-items:center;align-content:start;gap:10px;padding:4px 4px 0;font-size:13px;line-height:1.5;text-align:center;cursor:pointer}
-.preset-option:not(:first-child)::before{content:'';position:absolute;top:13px;left:-50%;width:100%;height:2px;background:#ccd5e2}
-.preset-option input{appearance:none;position:relative;z-index:1;width:10px;height:10px;margin:0;border:0;border-radius:50%;background:var(--muted);cursor:pointer}
-.preset-option input:checked{width:18px;height:18px;border:3px solid #fff;background:var(--brand-blue);box-shadow:0 0 0 2px var(--brand-blue)}
-.preset-option input:checked+span{color:var(--accent);font-weight:600}
-.preset-option:has(input:disabled),.preset-option input:disabled{cursor:default}
-.custom-notice{margin:0 0 18px;padding:10px 12px;border-left:3px solid var(--brand-yellow);border-radius:5px;background:#fff4ce;color:#795700;font-size:12px;line-height:1.7}
-.reset{border:0;background:none;padding:6px 0;color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px}
-.reset:hover{color:var(--accent-hover);text-decoration-thickness:2px}
-select,input[type=text]{height:42px;border:1px solid #ccd5e2;border-radius:5px;background:#fff;color:var(--ink);padding:0 12px;min-width:0;width:100%;font-size:13px}
-select{appearance:none;padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%2359657a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px 16px}
-input[type=text]{font-family:var(--mono);font-size:11px}
-input[aria-invalid=true]{border-color:#b16b56;background:#fff9f4}
-.models{background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden}
-.table-head,.task-row{display:grid;grid-template-columns:68px minmax(0,1fr) minmax(0,1.5fr);align-items:center;gap:16px;padding:16px 22px}
-.table-head{background:var(--paper);padding-top:12px;padding-bottom:12px;color:var(--muted);font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
-.task-row{border-top:1px solid var(--line)}
-.task-row label{font-size:13px;font-weight:600}
-.model-field{display:grid;gap:7px;min-width:0}
-.model-actions{display:flex;justify-content:space-between;align-items:baseline;gap:15px}
-.model-actions .tool-note{flex:1}
-.task-row select{font-size:12px;padding:0 34px 0 9px}
-.effort-field{display:flex;flex-wrap:wrap;gap:3px;min-width:0;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
-.effort-field button{flex:1;min-width:max-content;min-height:32px;padding:5px 7px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:11px;white-space:nowrap}
-.effort-field button:hover{background:#eaf0ff;color:var(--accent)}
-.effort-field button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
-.effort-unavailable{flex:1;text-align:center;color:var(--muted);font-size:12px;line-height:32px}
-.tool-note{font-size:12px;color:var(--muted);line-height:1.7;margin:12px 1px 0;min-height:20px}
-.result{margin-top:24px}
-.command-line{display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--brand-yellow);border-radius:5px;padding:16px 18px}
-.command-preview{font:12px/1.75 var(--mono);overflow-wrap:anywhere;color:var(--ink);min-width:0}
-.copy{flex-shrink:0;min-height:44px;background:var(--brand-blue);color:#fff;border:1px solid var(--brand-blue);border-radius:7px;padding:9px 18px;font-size:13px;font-weight:500;white-space:nowrap}
-.copy:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
-.feedback{font-size:12px;color:var(--accent);line-height:1.6;min-height:20px;margin:9px 0 0}
-.error{font-size:12px;color:#8b3e2a;background:#fff4ed;border:1px solid #e5c4b4;border-radius:5px;padding:11px 13px;line-height:1.7;margin:0 0 16px}
-.inspection{margin-top:8px}
-.inspection summary,.release summary{color:var(--accent);font-size:12px;list-style-position:outside;margin-left:12px}
-.inspection summary:hover,.release summary:hover{color:var(--accent-hover)}
-.inspection h2{font-size:12px;font-weight:600;margin:18px 0 9px}
-.inspection pre{font:11px/1.75 var(--mono);max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:15px;margin:0}
-.full-command{width:100%;resize:vertical;min-height:95px;max-height:250px;font:11px/1.75 var(--mono);border:1px solid var(--line);border-radius:5px;padding:15px;background:var(--paper);color:var(--ink)}
-.note{font-size:12px;line-height:1.8;color:var(--muted);margin:23px 0 0;max-width:680px}
-.preview-note{color:#795700;font-size:11px;line-height:1.7;margin:12px 0 0}
-.release{margin-top:18px}
-.release pre{font:11px/1.75 var(--mono);color:var(--muted);max-height:150px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}
-.footer{margin-top:36px;padding-top:20px;padding-bottom:30px;border-top:1px solid var(--line);font-size:11px;line-height:1.8;color:var(--muted)}
-[hidden]{display:none!important}
-@media(max-width:560px){
-header,main,footer{width:calc(100% - 40px)}
-.heading{margin-top:28px;margin-bottom:26px}
-.heading p{font-size:14px}
-.brand{font-size:13px}
-.table-head,.task-row{grid-template-columns:55px minmax(0,1fr);gap:9px;padding-left:15px;padding-right:15px}
-.table-head span:nth-child(2)::after{content:' & effort'}
-.table-head span:last-child{display:none}
-.task-row{padding-top:14px;padding-bottom:14px}
-.effort-field{grid-column:1/-1}
-.effort-field button{padding-inline:6px}
-input[type=text]{font-size:11px;padding:0 9px}
-.command-line{align-items:stretch;flex-direction:column;gap:14px;padding:16px}
-.copy{width:100%}
-.tool-buttons button{font-size:12px;padding-inline:5px}
-.tool-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}
-.tool-buttons button[data-client=all]{grid-column:1/-1}
-.preset-option{font-size:12px;gap:8px}
-.task-row select{font-size:11px;padding:0 28px 0 5px;background-position:right 8px center}
-.task-row label{font-size:12px}
-.reset{font-size:11px}
-.result{margin-top:20px}
-}
-@media(max-width:360px){
-.table-head,.task-row{grid-template-columns:47px minmax(0,1fr);gap:7px;padding-left:10px;padding-right:10px}
-.task-row select{font-size:10px}
-.effort-field button{padding-inline:4px}
-.brand{font-size:12px}
-.tool-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(forced-colors:active){select{appearance:auto;background-image:none}.tool-buttons button[aria-pressed=true],.effort-field button[aria-pressed=true]{border:1px solid ButtonText}.preset-option::before{height:0;border-top:2px solid CanvasText}.preset-option input,.preset-option input:checked{appearance:auto;width:18px;height:18px;border:0;background:Canvas;box-shadow:none}}
-</style>
-</head>
-<body>
-<header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><span class="version" id="release-version"></span></header>
+:root{--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--text-hero:40px;--text-section:18px;--text-ui:14px;--text-support:12px;--text-meta:11px}
+*{box-sizing:border-box}body{background:var(--white)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:default}:focus-visible{outline:2px solid var(--accent);outline-offset:4px}[hidden]{display:none!important}::selection{color:var(--ink);background:var(--selection)}
+header,main,footer{width:min(calc(100% - 64px),920px);margin-inline:auto}header{min-height:74px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}.mark{display:grid;place-items:center;min-width:42px;height:34px;background:var(--brand-blue);border-bottom:3px solid var(--brand-yellow);border-radius:5px;color:var(--white);font-size:14px;font-weight:650;letter-spacing:-.5px}.brand{font-size:16px;font-weight:600;letter-spacing:-.2px}.concept{margin-left:auto;padding:4px 7px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:var(--text-meta);line-height:1.3}
+.intro{margin:32px 0}.intro h1{margin:0 0 12px;font-size:var(--text-hero);font-weight:650;line-height:1.12;letter-spacing:-.035em}.intro p{margin:0;color:var(--muted);font-size:15px;line-height:1.6;max-width:64ch}
+.builder{display:grid;gap:32px}.step-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}.step-heading h2{margin:0;font-size:var(--text-section);line-height:1.4;font-weight:600;letter-spacing:-.015em}.step-number{display:grid;place-items:center;width:22px;height:22px;background:var(--paper);border:1px solid var(--line);border-radius:50%;color:var(--muted);font:400 var(--text-meta)/1 var(--mono)}.step-count{margin-left:auto;color:var(--muted);font-size:var(--text-support);line-height:1.4;font-weight:400}
+.tag-box{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:56px;padding:10px 12px;background:var(--white);border:1px solid var(--line);border-radius:7px}.tag-box:focus-within{outline:2px solid var(--accent);outline-offset:2px}.empty{padding:5px 1px;font-size:13px;color:var(--muted)}.suggestions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;min-height:34px}.suggestion{padding:6px 11px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink);font-size:var(--text-ui);line-height:1.4;font-weight:400}.suggestion:hover{border-color:var(--brand-blue);background:var(--control-hover);color:var(--accent)}.plus{color:var(--accent);margin-right:5px}
+.tag{display:inline-flex;align-items:center;min-height:32px;overflow:hidden;border:1px solid var(--brand-blue);border-radius:5px;background:var(--paper);color:var(--accent);font-size:var(--text-ui);line-height:1.4;font-weight:500}.tag-label{padding:5px 10px}.remove{display:grid;place-items:center;align-self:stretch;width:26px;border:0;border-left:1px solid var(--line);background:transparent;color:inherit;font-size:16px;font-weight:400}.remove:hover{background:var(--control-hover)}
+.tool-group{display:flex;gap:4px;min-height:54px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}.tool-group .tool-scope{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:44px;padding:8px 28px 8px 13px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-size:var(--text-ui);font-weight:500;line-height:1.4}.tool-group .tool-scope small{font-size:var(--text-meta);font-weight:400;line-height:1.3}.tool-group .tool-scope:hover{background:var(--control-hover);color:var(--accent)}.tool-item.active .tool-scope{background:var(--brand-blue);color:var(--white)}.tool-item{position:relative;display:flex;flex:1;min-width:0}.tool-item .tool-scope{width:100%}.tool-remove{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:24px;height:30px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:15px;opacity:.8}.tool-item.active .tool-remove{color:var(--white)}.tool-remove:hover{background:var(--control-hover);opacity:1}.tool-item.active .tool-remove:hover{background:var(--accent-hover)}
+.mode-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}.scope-label{color:var(--muted);font-size:var(--text-support);line-height:1.5}.mode-placeholder{padding:20px;border:1px dashed var(--line);border-radius:7px;color:var(--muted);font-size:var(--text-support)}#mode-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 16px}.mode-option{position:relative;display:grid;grid-template-rows:20px auto;align-content:start;align-items:center;justify-items:center;gap:10px;padding:4px;text-align:center;font-size:var(--text-ui);font-weight:400;line-height:1.5;cursor:pointer}.mode-option:not(:first-child)::before{content:'';position:absolute;top:13px;left:-50%;width:100%;height:2px;background:var(--line)}.mode-option input{appearance:none;position:relative;z-index:1;width:10px;height:10px;margin:0;border:0;border-radius:50%;background:var(--muted);cursor:pointer}.mode-option input:checked{width:18px;height:18px;border:3px solid var(--white);box-shadow:0 0 0 2px var(--brand-blue);background:var(--brand-blue)}.mode-option input:checked+span{color:var(--accent);font-weight:600}.mode-option:has(input:disabled){cursor:default}.notice{padding:10px 12px;margin:0 0 14px;border-left:3px solid var(--brand-yellow);border-radius:4px;background:var(--yellow-paper);color:var(--amber);font-size:var(--text-support);line-height:1.6}
+.advanced{border-top:1px solid var(--line);padding-top:12px}.advanced summary{width:fit-content;color:var(--accent);font-size:var(--text-support);line-height:1.5;cursor:pointer}.editor{display:grid;grid-template-columns:140px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;margin-top:16px}.editor label{display:block;margin-bottom:7px;color:var(--muted);font-size:var(--text-support);line-height:1.4}.editor select{appearance:none;width:100%;min-width:0;height:42px;padding:0 32px 0 10px;border:1px solid var(--line);border-radius:5px;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%2359657a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center/16px 16px;color:var(--ink);font-size:var(--text-ui)}.efforts{display:flex;gap:3px;align-items:center;min-height:42px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}.efforts button{flex:1;min-height:32px;padding:5px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:var(--text-support)}.efforts button[aria-pressed=true]{background:var(--brand-blue);color:var(--white)}.unavailable{width:100%;text-align:center;color:var(--muted);font-size:var(--text-support)}.role-description{margin:10px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}
+.output{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 20px;border:1px solid var(--line);border-left:3px solid var(--brand-yellow);border-radius:6px;background:var(--paper)}.output strong{font-size:var(--text-ui);font-weight:600;line-height:1.5}.output p{margin:5px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}.output p a{color:var(--accent);text-underline-offset:3px}.output[data-ready=false] .primary{background:var(--line);border-color:var(--line);color:var(--muted);opacity:1}.primary{white-space:nowrap}
+footer{display:flex;justify-content:space-between;gap:20px;margin-top:20px;padding:16px 0 24px;border-top:1px solid var(--line);color:var(--muted);font-size:var(--text-meta);line-height:1.6}
+@media(forced-colors:active){.tag,.suggestion{border-color:ButtonText}.tool-group .tool-scope[aria-pressed=true],.efforts button[aria-pressed=true]{outline:2px solid ButtonText;outline-offset:-3px}.mode-option input{appearance:auto}.mode-option::before{height:0;border-top:2px solid CanvasText}.editor select{appearance:auto;background-image:none}}
+
+html{scrollbar-gutter:stable}body{overflow-anchor:none}
+.helper-option{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:5px;background:var(--paper)}.helper-option>.suggestion{border:0;background:transparent;border-radius:4px 0 0 4px;padding-right:5px}
+.helper-info{display:grid;place-items:center;align-self:stretch;flex-shrink:0;width:27px;min-height:28px;border:0;padding:0 5px;background:transparent;color:var(--accent);cursor:help;border-radius:4px}.helper-info:hover{background:var(--control-hover)}.info-dot{display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:10px;line-height:1;font-weight:600}.tag .helper-info{margin-right:3px}.tag .tag-label{padding-right:4px}
+.role-tooltip{position:fixed;z-index:1000;width:min(420px,calc(100vw - 32px));padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);box-shadow:0 6px 15px #19283e07;opacity:0;transform:translateY(3px);transition:opacity 120ms ease,transform 120ms ease;view-transition-name:role-tooltip}.role-tooltip.visible{opacity:1;transform:none}.role-tooltip strong{font-size:14px;font-weight:600}.role-tooltip p{font-size:12px;line-height:1.6;margin:7px 0 12px;color:var(--muted)}.role-tooltip .definition-label{font-size:11px;font-weight:600;color:var(--muted);margin:0 0 7px}.role-tooltip pre{margin:0;padding:11px;border:1px solid var(--line);border-radius:5px;background:var(--paper);white-space:pre-wrap;font:11px/1.65 var(--mono)}.role-tooltip .definition-note{margin:10px 0 0;font-size:11px}
+button{transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease}
+section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}section[aria-labelledby=tools-heading]{view-transition-name:step-tools}section[aria-labelledby=mode-heading]{view-transition-name:step-mode}section[aria-labelledby=setup-heading]{view-transition-name:step-setup}
+#selected-helpers{view-transition-name:helpers-field}#helper-options{view-transition-name:helpers-catalog}#selected-tools{view-transition-name:tools-field}#tool-options{view-transition-name:tools-catalog}#mode-panel{view-transition-name:mode-panel}#mode-empty{view-transition-name:mode-empty}#editor{view-transition-name:model-editor}.output{view-transition-name:setup-output}footer{view-transition-name:setup-footer}
+::view-transition-group(*){animation-duration:180ms;animation-timing-function:cubic-bezier(.2,.75,.2,1)}::view-transition-old(*),::view-transition-new(*){width:100%;height:100%;object-fit:none;object-position:left top;animation-duration:140ms;animation-timing-function:ease}::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+.tool-item,.scope-all{view-transition-class:tool-choice}::view-transition-image-pair(.tool-choice){overflow:clip}::view-transition-old(.tool-choice),::view-transition-new(.tool-choice){object-position:center}
+@media(prefers-reduced-motion:reduce){button,.role-tooltip{transition:none}.role-tooltip{transform:none}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+
+
+.editor-head,.editor-row{display:grid;grid-template-columns:156px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center}
+.editor-head{margin-top:16px;padding-bottom:9px;color:var(--muted);font-size:var(--text-support);line-height:1.4}
+.editor-row{margin-top:0;padding:11px 0;border-top:1px solid var(--line)}
+.editor-name{display:flex;align-items:center;gap:6px;font-size:var(--text-ui);font-weight:500;line-height:1.4;min-width:0}.editor-name .helper-info{width:24px;min-height:26px}
+
+
+.advanced h3{margin:0 0 12px;font-size:var(--text-ui);font-weight:600;line-height:1.5;color:var(--ink)}
+.setup-result{flex:1;min-width:0}.setup-command{display:block;width:100%;margin-top:12px;padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);font:var(--text-support)/1.5 var(--mono)}.release-status{margin:9px 0 0;color:var(--muted);font-size:var(--text-meta);line-height:1.5}.model-control{min-width:0}.custom-model{display:block;width:100%;margin-top:7px;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);font-size:var(--text-ui)}.custom-model[aria-invalid=true]{border-color:var(--amber)}
+
+
+#selected-tools[hidden]+#tool-options{margin-top:0}
+
+.tool-group .empty{align-self:center;padding:8px 9px}
+.tool-group>.scope-all{padding:8px 13px}.tool-group>.scope-all[aria-pressed=true]{background:var(--brand-blue);color:var(--white)}
+
+</style></head><body>
+<header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><span class="concept" id="release-version"></span></header>
 <main>
-  <noscript><p>Enable JavaScript to choose models and create your setup command.</p></noscript>
-  <div class="heading"><h1>Configure subagent models.</h1><p>Creates one setup command for your installed coding tools.</p></div>
-  <section aria-label="Model preferences">
-    <div class="toolbar">
-      <div><span class="control-label" id="tool-label">Tool</span><div id="tool" class="tool-buttons" role="group" aria-labelledby="tool-label"></div></div>
-      <fieldset class="preset-controls"><legend>Mode</legend><div id="preset" class="preset-options"></div></fieldset>
-    </div>
-    <p class="custom-notice" id="custom-notice" role="status" hidden></p>
-    <div class="models" id="models" hidden><div class="table-head" aria-hidden="true"><span>Task</span><span>Model</span><span>Effort</span></div><div id="task-rows"></div></div>
-    <div class="model-actions" id="model-actions" hidden><p class="tool-note" id="tool-note"> </p><button class="reset" id="reset" type="button">Reset preset</button></div>
-  </section>
-  <section class="result" aria-label="Setup command">
-    <p class="error" id="config-error" role="alert" hidden></p>
-    <div class="command-line"><code class="command-preview" id="command-preview"></code><button type="button" class="copy" id="copy">Copy setup command</button></div>
-    <p class="feedback" id="copy-feedback" role="status" aria-live="polite"></p>
-    <details class="inspection" id="inspection"><summary>View configuration</summary><h2>Full command</h2><textarea class="full-command" id="command" readonly spellcheck="false" aria-label="Full setup command"></textarea><h2>Preferences</h2><pre id="config-json"></pre></details>
-    <p class="note">Applies only if your main agent decides to use helpers. APK configures once, then exits. Your primary model stays unchanged.</p>
-    <p class="preview-note" id="release-warning" hidden></p>
-    <details class="release"><summary id="notes-title">Release notes</summary><pre id="release-notes"></pre></details>
-  </section>
+<div class="intro"><h1>Set up subagents for your coding tools.</h1><p>Choose roles, models and effort. Apply your setup locally with one command.</p></div>
+<div class="builder">
+<section aria-labelledby="helpers-heading"><div class="step-heading"><span class="step-number">1</span><h2 id="helpers-heading" tabindex="-1">Subagent roles</h2><span class="step-count" id="helper-count">0 selected</span></div><div class="tag-box" id="selected-helpers" role="group" aria-label="Selected subagent roles"></div><div class="suggestions" id="helper-options" role="group" aria-label="Available subagent roles"></div></section>
+<section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">Coding tools</h2><span class="step-count" id="tool-count">0 selected</span></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected coding tools"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available coding tools"></div></section>
+<section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading">Work mode</h2></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and coding tools above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected tools</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div></section></div></section>
+<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and a coding tool in step 2.</p></div><input class="setup-command" id="setup-command" readonly aria-label="Setup command" hidden><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><p class="release-status" id="release-status"></p></section>
+</div>
 </main>
-<footer class="footer">All four tools are included; setup skips tools that aren’t installed. Model access depends on your account.</footer>
+<div id="role-tooltip" class="role-tooltip" role="tooltip" hidden></div>
+<footer><span>Writes native config, then exits. Main model unchanged.</span><span><a id="agent-guide">AI installation guide</a> · <a id="release-notes">Release notes</a></span></footer>
 <script>
 'use strict';
 const RELEASE = __APK_RELEASE_DATA__;
@@ -215,7 +140,11 @@ const RELEASE = __APK_RELEASE_DATA__;
     const errors = [];
     const maxConcurrent = Number(state.maxConcurrent);
     if (!Number.isInteger(maxConcurrent) || maxConcurrent < 1 || maxConcurrent > 32) errors.push('Invalid preset parallelism. Reset defaults.');
-    if (!Array.isArray(state.selected) || !state.selected.length) errors.push('No tools configured. Reset defaults.');
+    if (!Array.isArray(state.selected) || !state.selected.length) errors.push('Choose at least one coding tool.');
+    else if(new Set(state.selected).size!==state.selected.length||state.selected.some(client=>!CLIENTS.includes(client)))errors.push('Choose supported coding tools.');
+    const selection=state.selectedRoles===undefined?ROLES:Array.isArray(state.selectedRoles)?state.selectedRoles:[];
+    if(!selection.length||new Set(selection).size!==selection.length||selection.some(role=>!ROLES.includes(role)))errors.push('Choose valid subagent roles.');
+    const selectedRoles=ROLES.filter(role=>selection.includes(role));
     const clients = {};
     for (const client of CLIENTS.filter(client => state.selected?.includes(client))) {
       const defaults = state.profiles?.[client]?.preferences ?? preferences.clients[client];
@@ -223,7 +152,7 @@ const RELEASE = __APK_RELEASE_DATA__;
       const config = clone(defaults);
       const roles = {};
       const choices = [];
-      for (const role of ROLES) {
+      for (const role of selectedRoles) {
         const choice = state.jobs[client]?.[role];
         if (!choice || typeof choice.model !== 'string' || !IDENTIFIER.test(choice.model)) {
           errors.push(`${LABELS[client]} ${TASKS[role]}: enter a valid model ID (1–128 ASCII characters, no spaces).`); continue;
@@ -258,7 +187,7 @@ const RELEASE = __APK_RELEASE_DATA__;
       config.avoidModels = config.avoidModels.filter(model => !chosen.has(model));
       clients[client] = config;
     }
-    return {config: errors.length ? null : {schemaVersion: preferences.schemaVersion, maxConcurrent, clients}, errors};
+    return {config: errors.length ? null : {schemaVersion: preferences.schemaVersion, maxConcurrent,...(selectedRoles.length===ROLES.length?{}:{selectedRoles}), clients}, errors};
   }
   function encodeConfig(config) {
     const bytes = new TextEncoder().encode(JSON.stringify(config));
@@ -280,166 +209,151 @@ const RELEASE = __APK_RELEASE_DATA__;
   }
   globalThis.APKConfigurator = Object.freeze({initialState, modeFor, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
-  const $ = id => document.getElementById(id);
-  const presets = RELEASE.presets?.length ? RELEASE.presets : [{id: 'balanced', label: 'Balanced', preferences: RELEASE.preferences}];
-  const initialPreset = presets.find(preset => preset.id === 'balanced') ?? presets[0];
-  const toolLabel = client => RELEASE.catalog?.clients?.[client]?.label || LABELS[client];
-  let state = initialState(initialPreset.preferences, initialPreset.id);
-  let currentCommand = '';
-  let revision = 0;
-  $('release-version').textContent = `v${RELEASE.version}`;
-  $('notes-title').textContent = `Release notes · v${RELEASE.version}`;
-  $('release-notes').textContent = typeof RELEASE.notes === 'string' ? RELEASE.notes : JSON.stringify(RELEASE.notes, null, 2);
-  if (RELEASE.unreleased) {
-    $('release-warning').hidden = false;
-    $('release-warning').textContent = 'Release preview. Run the pinned command after this version is published to npm.';
-  }
-  function element(tag, props = {}, text) {
-    const node = document.createElement(tag);
-    for (const [key, value] of Object.entries(props)) node.setAttribute(key, value);
-    if (text !== undefined) node.textContent = text;
-    return node;
-  }
-  function updateResult() {
-    revision++;
-    document.querySelectorAll('#tool button').forEach(button => {
-      const client = button.dataset.client;
-      button.setAttribute('aria-pressed', String(client === state.active));
-      const caption = button.querySelector('.tool-mode');
-      if (caption) {
-        const mode = modeFor(state, client), label = presets.find(preset => preset.id === mode)?.label ?? 'Custom';
-        caption.textContent = label;
-        button.setAttribute('aria-description', `Mode: ${label}`);
-      }
-    });
-    document.querySelectorAll('input[name=preset]').forEach(input => {
-      input.checked = input.value === modeFor(state);
-      input.disabled = input.value === 'custom' && state.active === 'all';
-      input.title = input.disabled ? 'Choose a tool to customize its models.' : '';
-    });
-    $('custom-notice').hidden = modeFor(state) !== 'custom';
-    if (modeFor(state) === 'custom') $('custom-notice').textContent = state.active === 'all'
-      ? 'Tools use different or custom modes. Select a tool to review its settings.'
-      : `Custom mode for ${toolLabel(state.active)}. Review its models and effort.`;
-    $('copy-feedback').textContent = '';
-    document.querySelectorAll('[aria-invalid=true]').forEach(node => node.removeAttribute('aria-invalid'));
-    const {config, errors} = buildConfig(state, initialPreset.preferences);
-    if (errors.length) {
-      currentCommand = ''; $('command').value = ''; $('command-preview').textContent = 'Check your model choices';
-      $('config-json').textContent = ''; $('config-error').textContent = errors.join(' '); $('config-error').hidden = false; $('copy').disabled = true;
-      document.querySelectorAll('[data-model]').forEach(node => {
-        if (!IDENTIFIER.test(node.value) || (state.active === 'kimi' && node.value === 'primary')) node.setAttribute('aria-invalid', 'true');
-      });
-      return;
+
+(() => {
+ const A=globalThis.APKConfigurator,$=id=>document.getElementById(id);
+ const roles=RELEASE.roles;
+ const clients=Object.keys(RELEASE.preferences.clients),toolName=id=>RELEASE.catalog.clients[id].label;
+ const presets=RELEASE.presets,initial=presets.find(p=>p.id==='balanced')??presets[0];
+ let state=A.initialState(initial.preferences,initial.id);state.selected=[];
+ let helpers=[],pickedTools=[];
+ let selectedScope=null;
+ function syncTargets(){
+  state.selected=[...pickedTools];state.selectedRoles=[...helpers];
+  if(selectedScope==='all'?pickedTools.length<2:!pickedTools.includes(selectedScope))selectedScope=null;
+  state.active=selectedScope??(pickedTools.length>=2?'all':pickedTools[0]??null);
+ }
+ syncTargets();
+ const modeName=id=>presets.find(p=>p.id===id)?.label??'Custom';
+ function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n;}
+ let mounted=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0;
+ $('release-version').textContent='v'+RELEASE.version;
+ $('release-status').textContent=RELEASE.unreleased?'Release candidate · npm command available after publication.':`Configuration release ${RELEASE.version}`;
+ const guideBase=location.protocol==='file:'?new URL('../',location.href).href:`https://unpkg.com/agent-policy-kit@${RELEASE.version}/`;
+ $('agent-guide').href=guideBase+'AGENT_INSTALL.md';$('release-notes').href=guideBase+'CHANGELOG.md';
+ const reducedMotion=matchMedia('(prefers-reduced-motion:reduce)');
+ function animateUpdate(update){
+  hideRoleInfo(true);
+  if(reducedMotion.matches||typeof document.startViewTransition!=='function'){update();return;}
+  activeTransition?.skipTransition();
+  const transition=document.startViewTransition(update);activeTransition=transition;motionCount++;
+  transition.ready.then(()=>{motionReady++;lastAnimationCount=document.getAnimations().length;}).catch(()=>{});transition.finished.then(()=>{if(activeTransition===transition)activeTransition=null;}).catch(()=>{});
+ }
+ let tipTrigger=null,tipTimer=null;
+ const tip=$('role-tooltip');
+ function hideRoleInfo(immediate=false){
+  clearTimeout(tipTimer);tip.classList.remove('visible');tipTrigger?.removeAttribute('aria-describedby');tipTrigger=null;
+  if(immediate)tip.hidden=true;else tipTimer=setTimeout(()=>{tip.hidden=true;},130);
+ }
+ function scheduleHide(){clearTimeout(tipTimer);tipTimer=setTimeout(()=>{if(!tip.matches(':hover')&&document.activeElement!==tipTrigger)hideRoleInfo();},100);}
+ function showRoleInfo(role,trigger){
+  clearTimeout(tipTimer);tipTrigger?.removeAttribute('aria-describedby');tipTrigger=trigger;
+  tip.replaceChildren(el('strong',{},role.name),el('p',{},role.description),el('div',{class:'definition-label'},'Base role prompt'),el('pre',{},role.prompt),el('p',{class:'definition-note'},'APK saves this description and prompt as a native role. Model and effort are configured separately.'));
+  tip.hidden=false;trigger.setAttribute('aria-describedby','role-tooltip');
+  const anchor=trigger.getBoundingClientRect(),box=tip.getBoundingClientRect();
+  tip.style.left=Math.max(16,Math.min(anchor.left-12,innerWidth-box.width-16))+'px';
+  const below=anchor.bottom+8;tip.style.top=(below+box.height<innerHeight-16?below:Math.max(16,anchor.top-box.height-8))+'px';
+  requestAnimationFrame(()=>{if(tipTrigger===trigger)tip.classList.add('visible');});
+ }
+ function roleInfo(role){
+  const button=el('button',{type:'button',class:'helper-info','aria-label':'About '+role.name});button.append(el('span',{class:'info-dot','aria-hidden':'true'},'?'));
+  button.addEventListener('pointerenter',()=>showRoleInfo(role,button));button.addEventListener('pointerleave',scheduleHide);
+  button.addEventListener('focus',()=>showRoleInfo(role,button));button.addEventListener('blur',scheduleHide);button.addEventListener('click',event=>{event.stopPropagation();showRoleInfo(role,button);});
+  return button;
+ }
+ tip.addEventListener('pointerenter',()=>clearTimeout(tipTimer));tip.addEventListener('pointerleave',scheduleHide);
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')hideRoleInfo();});
+ document.addEventListener('pointerdown',event=>{if(!tip.contains(event.target)&&!tipTrigger?.contains(event.target))hideRoleInfo();});
+ window.addEventListener('resize',()=>hideRoleInfo(true));window.addEventListener('scroll',()=>hideRoleInfo(true),{passive:true});
+ window.getTeamBuilderMotion=()=>({supported:typeof document.startViewTransition==='function',reduced:reducedMotion.matches,count:motionCount,active:!!activeTransition,ready:motionReady,animations:lastAnimationCount,duration:180});
+
+ function renderPickers(){
+  for(const kind of ['helpers','tools']){
+   const isRole=kind==='helpers',chosen=isRole?helpers:pickedTools,available=isRole?roles:clients.map(id=>({id,name:toolName(id)}));
+   const box=$(isRole?'selected-helpers':'selected-tools'),options=$(isRole?'helper-options':'tool-options');box.replaceChildren();options.replaceChildren();box.hidden=false;
+   if(isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add roles from below'));
+   if(!isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add a coding tool'));
+   if(!isRole&&chosen.length>=2){const all=el('button',{type:'button',class:'tool-scope scope-all','aria-label':'Configure all selected tools','aria-pressed':String(state.active==='all')},'All');all.style.viewTransitionName='tool-all';all.addEventListener('click',()=>{selectedScope='all';render();});box.append(all);}
+   const ordered=isRole?available:[...chosen.map(id=>available.find(item=>item.id===id)).filter(Boolean),...available.filter(item=>!chosen.includes(item.id))];
+   for(const item of ordered){
+    if(!chosen.includes(item.id)){
+     const add=el('button',{type:'button',class:'suggestion','aria-label':'Add '+item.name});add.append(el('span',{class:'plus','aria-hidden':'true'},'+'),document.createTextNode(item.name));
+     add.addEventListener('click',()=>{if(isRole){if(!helpers.includes(item.id))helpers.push(item.id);}else if(!pickedTools.includes(item.id)){pickedTools.push(item.id);}render();});if(isRole){const option=el('span',{class:'helper-option'});option.style.viewTransitionName='helper-'+item.id;option.append(add,roleInfo(item));options.append(option);}else{add.style.viewTransitionName='tool-option-'+item.id;options.append(add);}continue;
     }
-    try { currentCommand = buildCommand(config, RELEASE, {custom: modeFor(state, 'all') === 'custom'}); }
-    catch (error) {
-      currentCommand = ''; $('command').value = ''; $('command-preview').textContent = 'Command unavailable'; $('config-json').textContent = '';
-      $('config-error').textContent = error.message; $('config-error').hidden = false; $('copy').disabled = true; return;
-    }
-    $('command').value = currentCommand;
-    $('command-preview').textContent = currentCommand.includes(' --config ') ? `npx … agent-policy-kit@${RELEASE.version} … --config … --apply` : currentCommand.replace('npx --yes --ignore-scripts --package ', 'npx … ');
-    $('config-json').textContent = JSON.stringify(config, null, 2);
-    $('config-error').hidden = true; $('copy').disabled = false;
+    const tag=el('span',{class:isRole?'tag':'tool-item'+(state.active===item.id?' active':'')});
+    tag.style.viewTransitionName=(isRole?'helper-':'tool-')+item.id;
+    if(isRole)tag.append(el('span',{class:'tag-label'},item.name),roleInfo(item));
+    else{const main=el('button',{type:'button',class:'tool-scope','aria-label':'Configure '+item.name,'aria-pressed':String(state.active===item.id)});main.append(el('span',{},item.name),el('small',{},modeName(A.modeFor(state,item.id))));main.addEventListener('click',()=>{selectedScope=item.id;render();});tag.append(main);}
+    const remove=el('button',{type:'button',class:isRole?'remove':'tool-remove','aria-label':'Remove '+item.name},'×');remove.addEventListener('click',()=>{if(isRole){helpers=helpers.filter(id=>id!==item.id);}else{pickedTools=pickedTools.filter(id=>id!==item.id);}render();});tag.append(remove);box.append(tag);
+   }
   }
-  function renderRows() {
-    const client = state.active;
-    const panel = $('task-rows'); panel.replaceChildren();
-    $('models').hidden = client === 'all'; $('model-actions').hidden = client === 'all';
-    if (client === 'all') return;
-    $('tool-note').textContent = NOTES[client];
-    const config = state.profiles[client].preferences;
-    const catalog = clientCatalog(client, {clients: {[client]: config}});
-    for (const role of ROLES) {
-      const row = element('div', {class: 'task-row'});
-      const id = `model-${client}-${role}`;
-      row.append(element('label', {for: id}, TASKS[role]));
-      const modelField = element('div', {class: 'model-field'});
-      const select = element('select', {id, 'aria-label': `${LABELS[client]} ${TASKS[role]} model`});
-      const known = catalog.models.some(model => model.id === state.jobs[client][role].model);
-      catalog.models.forEach(model => select.append(element('option', {value: model.id}, model.label || model.id)));
-      if (client !== 'agy') select.append(element('option', {value: '__custom__'}, 'Custom model…'));
-      select.value = known ? state.jobs[client][role].model : '__custom__';
-      const custom = element('input', {id: `custom-${client}-${role}`, type: 'text', maxlength: '128', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'Native model ID', 'aria-label': `${LABELS[client]} ${TASKS[role]} custom model`});
-      custom.value = known ? '' : state.jobs[client][role].model;
-      custom.hidden = select.value !== '__custom__'; custom.dataset.model = 'true';
-      const effort = element('div', {id: `effort-${client}-${role}`, class: 'effort-field', role: 'group', 'aria-label': `${LABELS[client]} ${TASKS[role]} effort`});
-      function populateEffort() {
-        effort.replaceChildren();
-        const levels = client === 'agy' ? [] : allowedEfforts(catalog, state.jobs[client][role].model).filter(level => level !== null);
-        effort.setAttribute('aria-disabled', String(!levels.length));
-        if (!levels.length) effort.append(element('span', {class: 'effort-unavailable', title: 'Effort is unavailable for this tool or model.'}, '—'));
-        for (const level of levels) {
-          const label = level === 'xhigh' ? 'XHigh' : level[0].toUpperCase() + level.slice(1);
-          const button = element('button', {type: 'button', 'data-effort': level, 'aria-pressed': String(state.jobs[client][role].effort === level), title: level === 'xhigh' ? 'Extra high' : label}, label);
-          button.addEventListener('click', () => {
-            updateEffort(state, client, role, level);
-            for (const otherRole of ROLES) for (const option of $(`effort-${client}-${otherRole}`).querySelectorAll('button')) {
-              option.setAttribute('aria-pressed', String(option.dataset.effort === (state.jobs[client][otherRole].effort ?? '')));
-            }
-            updateResult();
-          });
-          effort.append(button);
-        }
-      }
-      function chooseModel(model) {
-        state.profiles[client].custom = true;
-        state.jobs[client][role] = preferenceForModel(config, role, model, state.jobs[client], catalog, client === 'kimi');
-        populateEffort(); updateResult();
-      }
-      select.addEventListener('change', () => {
-        custom.hidden = select.value !== '__custom__';
-        chooseModel(custom.hidden ? select.value : custom.value);
-        if (!custom.hidden) custom.focus();
-      });
-      custom.addEventListener('input', () => chooseModel(custom.value));
-      populateEffort(); modelField.append(select, custom); row.append(modelField, effort); panel.append(row);
-    }
+  $('helper-count').textContent=helpers.length+' selected';$('tool-count').textContent=pickedTools.length+' selected';
+ }
+ function apply(preset){
+  const message=state.active==='all'?`Apply ${preset.label} to all selected tools? This replaces their individual modes, models and effort.`:`Apply ${preset.label} to ${toolName(state.active)} only? Other tools keep their choices.`;
+  const next=A.applyPreset(state,preset,()=>window.confirm(message));if(next!==state){state=next;}render();
+ }
+ function renderModes(){
+  const ready=helpers.length>0&&state.selected.length>0;$('mode-empty').hidden=ready;$('mode-panel').hidden=!ready;if(!ready){$('editor').replaceChildren();return;}
+  const all=state.active==='all',mode=A.modeFor(state);$('scope-label').textContent=all?'All selected tools':toolName(state.active);
+  const options=$('mode-options');options.replaceChildren();
+  for(const p of [...presets,{id:'custom',label:'Custom'}]){const label=el('label',{class:'mode-option'}),radio=el('input',{type:'radio',name:'mode',value:p.id,'aria-label':p.label});label.style.viewTransitionName='mode-'+p.id;radio.checked=mode===p.id;radio.addEventListener('change',()=>{if(p.id==='custom'){for(const client of (all?state.selected:[state.active]))state.profiles[client].custom=true;render();}else apply(p);});label.append(radio,el('span',{},p.label));options.append(label);}
+  $('mode-notice').hidden=mode!=='custom';$('mode-notice').textContent=all?'Open a tool to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`;
+  $('advanced').hidden=all;renderEditor();
+ }
+ function renderEditor(){
+  const parent=$('editor');parent.replaceChildren();if(!helpers.length||!state.active||state.active==='all')return;
+  const client=state.active,catalog=RELEASE.catalog.clients[client],profile=state.profiles[client].preferences;
+  const header=el('div',{class:'editor-head','aria-hidden':'true'});for(const label of ['Role','Model','Effort'])header.append(el('span',{},label));parent.append(header);
+  for(const role of roles.filter(role=>helpers.includes(role.id))){
+   const choice=state.jobs[client][role.id],row=el('div',{class:'editor editor-row','data-helper-id':role.id,role:'group','aria-label':`${role.name} settings for ${toolName(client)}`});
+   row.style.viewTransitionName=`config-${client}-${role.id}`;
+   const name=el('div',{class:'editor-name'});name.append(el('span',{},role.name),roleInfo(role));row.append(name);
+   const modelControl=el('div',{class:'model-control'}),modelSelect=el('select',{'aria-label':`${role.name} model`,'data-model-role':role.id});catalog.models.forEach(model=>modelSelect.append(el('option',{value:model.id},model.label)));if(client!=='agy')modelSelect.append(el('option',{value:'__custom__'},'Custom model…'));
+   const known=catalog.models.some(model=>model.id===choice.model);modelSelect.value=known?choice.model:'__custom__';
+   const custom=el('input',{type:'text',class:'custom-model','aria-label':`${role.name} custom model ID`,placeholder:'Native model ID',autocomplete:'off',spellcheck:'false'});custom.hidden=known;custom.value=known?'':choice.model;
+   modelSelect.addEventListener('change',()=>{if(modelSelect.value==='__custom__'){state.jobs[client][role.id]={model:'',effort:choice.effort};state.profiles[client].custom=true;render();const focus=()=>{if(state.active===client)document.querySelector(`[aria-label="${role.name} custom model ID"]`)?.focus();};if(activeTransition)activeTransition.finished.then(focus);else focus();return;}state.jobs[client][role.id]=A.preferenceForModel(profile,role.id,modelSelect.value,state.jobs[client],catalog,client==='kimi');state.profiles[client].custom=true;render();});
+   custom.addEventListener('input',()=>{state.jobs[client][role.id]=A.preferenceForModel(profile,role.id,custom.value.trim(),state.jobs[client],catalog,client==='kimi');state.profiles[client].custom=true;custom.setAttribute('aria-invalid',String(!IDENTIFIER.test(custom.value.trim())||(client==='kimi'&&custom.value.trim()==='primary')));renderEfforts();renderResult();});
+   modelControl.append(modelSelect,custom);row.append(modelControl);
+   const group=el('div',{class:'efforts',role:'group','aria-label':`${role.name} effort`});
+   function renderEfforts(){
+    group.replaceChildren();const current=state.jobs[client][role.id],levels=A.allowedEfforts(catalog,current.model).filter(level=>level!==null);
+    if(!levels.length)group.append(el('span',{class:'unavailable',title:'Native effort setting unavailable for this model'},'—'));
+    for(const level of levels){const button=el('button',{type:'button','data-effort':level,'aria-label':`${role.name} effort ${level}`,'aria-pressed':String(current.effort===level)},level==='xhigh'?'XHigh':level[0].toUpperCase()+level.slice(1));button.addEventListener('click',()=>{A.updateEffort(state,client,role.id,level);render();});group.append(button);}
+   }
+   renderEfforts();
+   row.append(group);parent.append(row);
   }
-  for (const client of ['all', ...state.selected]) {
-    const button = element('button', {type: 'button', 'data-client': client, 'aria-pressed': 'false'});
-    button.append(element('span', {}, client === 'all' ? 'All' : toolLabel(client)));
-    if (client !== 'all') button.append(element('span', {class: 'tool-mode', 'aria-hidden': 'true'}));
-    button.addEventListener('click', () => {state.active = client; renderRows(); updateResult();});
-    $('tool').append(button);
+ }
+ function renderResult(){
+  commandRevision++;currentCommand='';$('copy').disabled=true;$('copy').textContent='Copy command';$('copy-feedback').hidden=true;$('setup-command').value='';$('setup-command').hidden=true;$('copy').closest('.output').dataset.ready='false';
+  const description=$('setup-description');description.replaceChildren();
+  if(helpers.length&&state.selected.length){
+   const {config,errors}=A.buildConfig(state,RELEASE.preferences,RELEASE.catalog);
+   if(errors.length){$('setup-summary').textContent='Check your model settings.';description.textContent=errors[0];return;}
+   try{currentCommand=A.buildCommand(config,RELEASE,{custom:A.modeFor(state,'all')==='custom'});}catch{$('setup-summary').textContent='Command unavailable.';description.textContent='Check the configuration release.';return;}
+   $('setup-summary').textContent=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${state.selected.length} coding tool${state.selected.length===1?'':'s'}`;
+   description.textContent='Run this command in your terminal. Only installed tools are configured.';$('setup-command').value=currentCommand;$('setup-command').hidden=false;$('copy').disabled=false;$('copy').closest('.output').dataset.ready='true';return;
   }
-  for (const preset of [...presets, {id: 'custom', label: 'Custom'}]) {
-    const label = element('label', {class: 'preset-option'});
-    const input = element('input', {type: 'radio', name: 'preset', value: preset.id});
-    input.addEventListener('change', () => {
-      if (!input.checked) return;
-      if (preset.id === 'custom') {if (state.active !== 'all') state.profiles[state.active].custom = true; updateResult();}
-      else restorePreset(preset);
-    });
-    label.append(input, element('span', {}, preset.label)); $('preset').append(label);
-  }
-  function restorePreset(preset = presets.find(preset => preset.id === state.profiles[state.active]?.presetId) ?? initialPreset) {
-    const message = state.active === 'all'
-      ? `Apply ${preset.label} to all tools? This replaces every tool's mode, models and effort, including custom choices.`
-      : `Apply ${preset.label} to ${toolLabel(state.active)} only? This replaces only this tool's models and effort. Other tools keep their settings.`;
-    const next = applyPreset(state, preset, () => window.confirm(message));
-    if (next === state) {updateResult(); return false;}
-    state = next;
-    renderRows(); updateResult();
-    return true;
-  }
-  $('reset').addEventListener('click', () => {if (restorePreset()) $('copy-feedback').textContent = 'Preset restored.';});
-  $('copy').addEventListener('click', async () => {
-    if (!currentCommand) return;
-    const command = currentCommand; const copiedRevision = revision;
-    let copied = false;
-    try {if (navigator.clipboard?.writeText) {await navigator.clipboard.writeText(command); copied = true;}} catch {}
-    if (copiedRevision !== revision) return;
-    if (!copied) {
-      const wasOpen = $('inspection').open; $('inspection').open = true;
-      $('command').focus(); $('command').select();
-      try {copied = document.execCommand('copy');} catch {}
-      if (copied) {$('inspection').open = wasOpen; $('copy').focus();}
-    }
-    $('copy-feedback').textContent = copied ? 'Copied. Run it once in your terminal.' : 'Command selected below. Press ⌘C or Ctrl+C to copy.';
-  });
-  renderRows(); updateResult();
+  $('setup-summary').textContent='Complete the steps above.';
+  description.append('Choose ');
+  if(!helpers.length)description.append(el('a',{href:'#helpers-heading'},'a subagent role in step 1'));
+  if(!helpers.length&&!state.selected.length)description.append(' and ');
+  if(!state.selected.length)description.append(el('a',{href:'#tools-heading'},'a coding tool in step 2'));
+  description.append('.');
+ }
+ function renderNow(){syncTargets();renderPickers();renderModes();renderResult();}
+ function render(){if(!mounted){renderNow();mounted=true;}else animateUpdate(renderNow);}
+ 
+ $('setup-command').addEventListener('focus',()=>$('setup-command').select());
+ $('copy').addEventListener('click',async()=>{
+  if(!currentCommand)return;const copiedCommand=currentCommand,revision=commandRevision;
+  try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(copiedCommand);if(revision!==commandRevision)return;$('copy').textContent='Copied';$('copy-feedback').textContent='Command copied.';}
+  catch{if(revision!==commandRevision)return;$('setup-command').focus();$('setup-command').select();$('copy-feedback').textContent='Command selected. Copy it with your keyboard.';}
+  $('copy-feedback').hidden=false;
+ });
+ window.getTeamBuilderSnapshot=()=>JSON.parse(JSON.stringify({state,helpers,pickedTools,selectedScope,advancedOpen:true}));render();
 })();
-</script>
-</body>
-</html>
+
+})();
+</script></body></html>

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {validatePolicy} from '../src/policy.mjs';
 
 const template = fs.readFileSync(new URL('../site/template.html', import.meta.url), 'utf8');
 const preferences = JSON.parse(fs.readFileSync(new URL('../policies/balanced.json', import.meta.url), 'utf8'));
@@ -11,6 +12,27 @@ const context = vm.createContext({TextEncoder, btoa});
 vm.runInContext(script, context);
 const api = context.APKConfigurator;
 const plain = value => JSON.parse(JSON.stringify(value));
+
+test('selected role and tool choices reach a valid encoded installer policy',()=>{
+ const state=api.initialState(preferences);state.selected=['codex'];state.selectedRoles=['reviewer'];
+ state.jobs.codex.worker={model:'unused invalid model',effort:'invalid'};
+ state.jobs.codex.reviewer={model:'custom/review',effort:'high'};
+ const {config,errors}=plain(api.buildConfig(state,preferences));assert.deepEqual(errors,[]);
+ assert.deepEqual(config.selectedRoles,['reviewer']);assert.deepEqual(Object.keys(config.clients),['codex']);
+ assert.deepEqual(config.clients.codex.roles,{reviewer:{model:'custom/review',effort:'high'}});validatePolicy(config);
+ const command=api.buildCommand(config,release),payload=command.match(/--config ([A-Za-z0-9_-]+) --apply$/)[1];
+ assert.deepEqual(JSON.parse(Buffer.from(payload,'base64url').toString('utf8')),config);
+});
+
+test('incomplete role selections cannot produce an installer configuration',()=>{
+ for(const selectedRoles of [[],['invented'],['worker','worker']]){const state=api.initialState(preferences);state.selectedRoles=selectedRoles;assert.equal(api.buildConfig(state,preferences).config,null);}
+});
+
+test('unselected Kimi jobs do not introduce effort conflicts or required aliases',()=>{
+ const state=api.initialState(preferences);state.selected=['kimi'];state.selectedRoles=['reviewer'];
+ state.jobs.kimi.worker={...state.jobs.kimi.reviewer,effort:'low'};
+ const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);validatePolicy(result.config);
+});
 
 test('All is the initial view without becoming a configuration client', () => {
   const state = api.initialState(preferences);
@@ -70,8 +92,9 @@ test('configuration template has a single release marker and no external assets 
   assert.doesNotMatch(template, /<(?:script|link|img)[^>]+(?:src|href)=/i);
   assert.doesNotMatch(script, /\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/);
   assert.doesNotMatch(template, /type="(?:checkbox|number)"|role="tablist"|id="effort-/);
-  assert.match(template, /id="tool"[^>]*role="group"/);
-  assert.match(template, /<details class="inspection"/);
+  assert.match(template, /id="selected-tools"[^>]*role="group"/);
+  assert.match(template, /id="setup-command" readonly/);
+  assert.doesNotMatch(template,/savedDesign|Design prototype|installer not connected/);
 });
 
 test('recommendations expose four independent jobs and preserve native fallbacks', () => {
@@ -181,12 +204,12 @@ test('command is version pinned, shell safe, and decodes to the chosen UTF-8 JSO
   assert.equal(Buffer.from(api.encodeConfig({note: 'Привіт'}), 'base64url').toString('utf8'), JSON.stringify({note: 'Привіт'}));
 });
 
-test('compact controls show literal purpose, Antigravity, preset, model selection and effort', () => {
-  assert.match(template, /Configure subagent models\./);
-  assert.match(template, /Creates one setup command for your installed coding tools\./);
-  assert.match(template, /<fieldset class="preset-controls">/);
-  assert.match(script, /type: 'radio', name: 'preset'/);
-  assert.match(template, /<span>Effort<\/span>/);
+test('approved four-step builder exposes roles, tools, modes and a copy command action', () => {
+  assert.match(template, /Set up subagents for your coding tools\./);
+  assert.match(template, /Apply your setup locally with one command\./);
+  assert.deepEqual([...template.matchAll(/class="step-number">(\d)<\/span>/g)].map(match=>match[1]),['1','2','3','4']);
+  assert.match(script, /type:'radio',name:'mode'/);
+  assert.match(script, /\['Role','Model','Effort'\]/);
   assert.match(script, /agy: 'Antigravity'/);
   assert.match(script, /Custom model…/);
 });
