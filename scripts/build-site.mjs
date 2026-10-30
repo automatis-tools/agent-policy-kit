@@ -5,6 +5,9 @@ import {bundledReleaseInfo,presetPreferences,modelCatalog} from '../src/release.
 import {validatePolicy} from '../src/policy.mjs';
 import {ROLE_DEFINITIONS} from '../src/roles.mjs';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const releaseVersion=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
+export function renderConfigurationPage({canonicalRoot=false,hostedReleases=[]}={}) {
+if(typeof canonicalRoot!=='boolean'||!Array.isArray(hostedReleases)||hostedReleases.length>1000||new Set(hostedReleases).size!==hostedReleases.length||hostedReleases.some(version=>typeof version!=='string'||version.length>128||!releaseVersion.test(version)))throw new Error('Invalid hosted release list.');
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 function publicUrl(value){
@@ -25,7 +28,7 @@ const relatedProjects=[
 const template=fs.readFileSync(path.join(root,'site/template.html'),'utf8');
 const marker='__APK_RELEASE_DATA__';
 const release=bundledReleaseInfo();
-const canonicalUrl=new URL(`/v/${release.version}/`,homeUrl).href;
+const canonicalUrl=new URL(canonicalRoot?'/':`/v/${release.version}/`,homeUrl).href;
 const authorId=authorUrl+'#person',projectId=repositoryUrl+'#software';
 const title=`Agent Policy Kit — by ${authorName}`;
 const description=`Configure local subagent roles, models and effort with Agent Policy Kit, an open source tool by ${authorName}.`;
@@ -37,7 +40,7 @@ const structuredData={'@context':'https://schema.org','@graph':[
 const attribution=`<span>Created by <a rel="author" href="${escapeHtml(authorUrl)}">${escapeHtml(authorName)}</a></span><nav aria-label="Related projects"><span>More tools:</span>${relatedProjects.map(project=>`<a href="${escapeHtml(project.url)}">${escapeHtml(project.name)}</a>`).join(' ')}</nav>`;
 const metadata={__APK_TITLE__:escapeHtml(title),__APK_DESCRIPTION__:escapeHtml(description),__APK_AUTHOR_NAME__:escapeHtml(authorName),__APK_AUTHOR_URL__:escapeHtml(authorUrl),__APK_CANONICAL_URL__:escapeHtml(canonicalUrl),__APK_STRUCTURED_DATA__:JSON.stringify(structuredData).replaceAll('<','\\u003c'),__APK_ATTRIBUTION__:attribution};
 const preferences=validatePolicy(JSON.parse(fs.readFileSync(path.join(root,'policies/balanced.json'),'utf8')));
-const data={...release,packageSpec:`agent-policy-kit@${release.version}`,preferences,
+const data={...release,packageSpec:`agent-policy-kit@${release.version}`,preferences,hostedReleases,
   presets:release.presets.map(preset=>({...preset,preferences:presetPreferences(preset.id)})),catalog:modelCatalog(),roles:ROLE_DEFINITIONS,
   unreleased:release.notes.includes(`## ${release.version} — Unreleased`)};
 // Embed the font and its license so the release page remains a single offline file.
@@ -54,8 +57,13 @@ for(const key of Object.keys(replacements))if(template.split(key).length!==2)thr
 // Replace original template slots once; inserted text stays data, even if it
 // contains another slot name or String.replace replacement syntax.
 const html=template.replace(new RegExp(Object.keys(replacements).join('|'),'g'),key=>replacements[key]);
+return html;
+}
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
+const html=renderConfigurationPage();
 const destination=path.join(root,'site/index.html');
 if(process.argv.includes('--check')){
   if(!fs.existsSync(destination)||fs.readFileSync(destination,'utf8')!==html)throw new Error('Configuration page is stale; run npm run build:site');
 }else fs.writeFileSync(destination,html);
 console.log(process.argv.includes('--check')?'PASS: configuration page matches release.':'Built self-contained configuration page.');
+}

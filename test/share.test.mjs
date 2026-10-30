@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {ROLE_DEFINITIONS} from '../src/roles.mjs';
 import {PACKAGE_VERSION, PRESETS, presetPreferences, modelCatalog} from '../src/release.mjs';
 import {encodeFormState, decodeFormState} from '../src/share.mjs';
+import * as share from '../src/share.mjs';
+import fs from 'node:fs';
+import vm from 'node:vm';
 
 const release={version:PACKAGE_VERSION,preset:'balanced',preferences:presetPreferences(),presets:PRESETS.map(p=>({...p,preferences:presetPreferences(p.id)})),roles:ROLE_DEFINITIONS,catalog:modelCatalog()};
 const clone=value=>structuredClone(value);
@@ -110,9 +113,52 @@ test('base64url is unpadded/canonical and UTF-8 and decoded length are bounded',
 });
 
 test('valid release mismatches have a distinct error and malformed versions do not redirect',()=>{
- const p=payload();p.release='99.2.3';assert.throws(()=>decodeFormState(raw(p),release),{code:'SHARE_RELEASE_MISMATCH'});
- for(const version of ['', '../x', '0.1.0#x', 'https://example.com', 1]){p.release=version;invalid(()=>decodeFormState(raw(p),release));}
+ const p=payload();p.release='99.2.3';assert.throws(()=>decodeFormState(raw(p),release),{code:'SHARE_RELEASE_MISMATCH',releaseVersion:'99.2.3'});
+ for(const version of ['', '../x', '0.1.0#x', '0.1.0+build.1', 'https://example.com', 1]){p.release=version;invalid(()=>decodeFormState(raw(p),release));}
  const newer=clone(release);newer.version='1.0.0-beta.1';assert.equal(decodeFormState(encodeFormState(snapshot(['reviewer'],['codex']),newer),newer).release,newer.version);
+});
+
+test('only known valid archived release links redirect from the HTTP root and discard queries',()=>{
+ assert.equal(typeof share.archivedReleaseUrl,'function');const old=payload();old.release='0.0.9';old.tools[0].choices.reviewer.model='old-native-default';
+ let mismatch;try{decodeFormState(raw(old),release);}catch(error){mismatch=error;}
+ assert.equal(share.archivedReleaseUrl(mismatch,'https://example.com/?private=query'+raw(old),['0.0.9']),'https://example.com/v/0.0.9/'+raw(old));
+ assert.equal(share.archivedReleaseUrl(mismatch,'http://localhost:8788/'+raw(old),['0.0.9']),'http://localhost:8788/v/0.0.9/'+raw(old));
+ for(const href of ['file:///tmp/index.html'+raw(old),'https://user:secret@example.com/'+raw(old),'https://example.com/v/0.0.9/'+raw(old)])assert.equal(share.archivedReleaseUrl(mismatch,href,['0.0.9']),null);
+ for(const versions of [[],['0.0.8'],['https://other.example/'],['../old']])assert.equal(share.archivedReleaseUrl(mismatch,'https://example.com/'+raw(old),versions),null);
+ for(const error of [{code:'INVALID_SHARE_LINK'},{code:'SHARE_RELEASE_MISMATCH',releaseVersion:'https://other.example/'},{code:'SHARE_RELEASE_MISMATCH',releaseVersion:'../old'}])assert.equal(share.archivedReleaseUrl(error,'https://example.com/'+raw(old),['0.0.9']),null);
+});
+
+test('malformed old-release payloads remain invalid instead of becoming archive navigation',()=>{
+ for(const mutate of [p=>p.maxConcurrent=0,p=>p.tools[0].choices={},p=>p.roles=['reviewer','reviewer'],p=>p.tools[0].choices.reviewer.extra=true]){
+  const p=payload();p.release='0.0.9';mutate(p);invalid(()=>decodeFormState(raw(p),release));
+ }
+});
+
+test('known archived release links can retain a client removed from the current release inventory',()=>{
+ const older=clone(release);older.version='0.0.9';
+ older.preferences.clients.retired=clone(older.preferences.clients.codex);older.catalog.clients.retired=clone(older.catalog.clients.codex);
+ for(const preset of older.presets)preset.preferences.clients.retired=clone(preset.preferences.clients.codex);
+ const input=snapshot(['reviewer'],['codex']);input.pickedTools=['retired'];input.selectedScope='retired';input.state.profiles.retired=clone(input.state.profiles.codex);input.state.jobs.retired=clone(input.state.jobs.codex);
+ const fragment=encodeFormState(input,older);assert.equal(decodeFormState(fragment,older).tools[0].id,'retired');
+ let mismatch;try{decodeFormState(fragment,release);}catch(error){mismatch=error;}
+ assert.equal(mismatch?.code,'SHARE_RELEASE_MISMATCH');assert.equal(mismatch.releaseVersion,'0.0.9');
+ assert.equal(share.archivedReleaseUrl(mismatch,'https://example.com/'+fragment,['0.0.9']),'https://example.com/v/0.0.9/'+fragment);
+ const many=payload();many.release='0.0.9';many.tools=Array.from({length:5},(_,index)=>({...clone(many.tools[0]),id:'retired'+index}));many.scope='all';
+ assert.throws(()=>decodeFormState(raw(many),release),{code:'SHARE_RELEASE_MISMATCH',releaseVersion:'0.0.9'});
+ const excessive=clone(many);excessive.tools=Array.from({length:33},(_,index)=>({...clone(many.tools[0]),id:'retired'+index}));invalid(()=>decodeFormState(raw(excessive),release));
+ for(const id of ['../retired','https://example.com','']){const malformed=clone(many);malformed.tools[0].id=id;invalid(()=>decodeFormState(raw(malformed),release));}
+});
+
+test('page navigation uses trusted archive history and stops rendering while it redirects',()=>{
+ const template=fs.readFileSync(new URL('../site/template.html',import.meta.url),'utf8'),loadAddress=template.slice(template.indexOf(' function loadAddress('),template.indexOf(' function publishAddress('));
+ const old=payload();old.release='0.0.9';const hash=raw(old);
+ for(const hostedReleases of [[],['0.0.9'],['0.0.8']]){
+  let destination=null,resets=0;const context=vm.createContext({decodeFormState,archivedReleaseUrl:share.archivedReleaseUrl,RELEASE:{...release,hostedReleases},location:{href:'https://example.com/?private=query'+hash,hash,replace:value=>{destination=value;}},freshForm:()=>{resets++;}});
+  vm.runInContext(`let linkError='',archiveNavigation=false;${loadAddress};loadAddress();globalThis.result={linkError,archiveNavigation};`,context);
+  if(hostedReleases.includes('0.0.9')){assert.equal(destination,'https://example.com/v/0.0.9/'+hash);assert.equal(context.result.archiveNavigation,true);assert.equal(resets,0);}
+  else{assert.equal(destination,null);assert.equal(context.result.archiveNavigation,false);assert.equal(resets,1);assert.match(context.result.linkError,/matching APK release/);}
+ }
+ assert.match(template,/function render\([^]*?if\(archiveNavigation\)return;/);
 });
 
 test('scope and concurrency limits reject stale/invalid selection combinations',()=>{

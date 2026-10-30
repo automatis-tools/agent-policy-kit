@@ -39,4 +39,4 @@ The introduction includes a collapsed “How it works and why you need it” exp
 
 The footer credits Mykola Maksymenko and links to his supplied LinkedIn profile, Agents Can Communicate and Automatis Skills. Package author metadata is the source for the visible byline, title, author tags and static JSON-LD Person/project/page relationship. The canonical URL follows the homepage origin and bundled release version. These links load only when followed; no social widgets or runtime metadata requests are added.
 
-These attribution changes are prepared for a future release. Keep already published npm versions and versioned HTML snapshots unchanged when publishing them after review and integration into main.
+The latest hosted root can update its interface and author metadata from reviewed main independently of npm publication. Published versioned pages remain exact snapshots. Configuration-sensitive changes must match a published package before the host build accepts them. See [deployment](deployment.md).
