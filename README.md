@@ -1,5 +1,9 @@
 # Agent Policy Kit
 
+Coding agents can delegate specific tasks to temporary subagents. Those tasks vary in complexity and importance. A single model for every task is rarely the best balance of capability, speed and cost.
+
+Agent Policy Kit lets you match subagent roles with models and effort. It configures your coding tools’ native environment, then exits. The main agent still decides when to delegate, and its model stays unchanged.
+
 ```mermaid
 flowchart LR
     Roles("1. Choose subagent roles") --> Tools("2. Choose your coding tools")
@@ -10,12 +14,6 @@ flowchart LR
     classDef action fill:#3158c3,stroke:#3158c3,color:#ffffff
     class Command action
 ```
-
-**Give different jobs different models.** Use capable models for coding and review, and lighter ones for search and routine work, without editing each tool’s config by hand.
-
-APK configures native subagent roles for Codex, Claude Code, Kimi and Antigravity. Choose roles, models and effort. Run one command to configure your installed tools. APK writes native settings, then exits.
-
-**Your main agent stays in charge.** It decides when to delegate; its model stays unchanged. APK runs no background process during your coding sessions.
 
 ## Choose your setup
 

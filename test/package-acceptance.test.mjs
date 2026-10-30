@@ -50,11 +50,12 @@ test('packed configurator produces independent native files that survive npm and
   assert.ok(fs.existsSync(bin));
   const profile = `(version 1)(allow default)(deny file-read* (subpath ${quoteSandbox(source)}))`;
   const mac = process.platform === 'darwin' && fs.existsSync('/usr/bin/sandbox-exec');
-  const linux = process.platform === 'linux' && command('sh', ['-c', 'command -v bwrap']).status === 0;
+  const bwrap = process.platform === 'linux' ? command('sh', ['-c', 'command -v bwrap']).stdout.trim() : '';
+  const linux = path.isAbsolute(bwrap) && fs.existsSync(bwrap);
   assert.ok(mac || linux, 'Source isolation requires sandbox-exec (macOS) or bubblewrap (Linux). No package PASS without isolation.');
   function isolated(exe, args, extra = {}) {
     return mac ? command('/usr/bin/sandbox-exec', ['-p', profile, exe, ...args], { cwd: consumer, env, ...extra })
-      : command('bwrap', ['--ro-bind', '/', '/', '--bind', consumer, consumer, '--tmpfs', source, '--chdir', consumer, exe, ...args], { env, ...extra });
+      : command(bwrap, ['--ro-bind', '/', '/', '--bind', consumer, consumer, '--tmpfs', source, '--chdir', consumer, exe, ...args], { env, ...extra });
   }
   function cli(args, input) { return isolated(bin, args, input === undefined ? {} : { input }); }
   const isolationReady = isolated(process.execPath, ['-e', 'process.exit(0)']);

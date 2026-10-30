@@ -261,9 +261,8 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 <header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><span class="concept" id="release-version"></span><button type="button" class="reset-form" id="reset-form">Reset form</button></header>
 <main>
 <div class="intro"><h1>Set up subagents for your coding tools.</h1><p>Choose roles, models and effort. Apply your setup locally with one command.</p><details class="how-it-works"><summary>How it works and why you need it</summary><div class="explanation">
-<p><strong>Give different jobs different models.</strong> Use capable models for coding and review, and lighter ones for search and routine work, without editing each tool’s config by hand.</p>
-<p><strong>Configure once, use native subagents.</strong> Choose roles, models and effort here. Run the generated command to configure your installed coding tools. APK writes native settings, then exits.</p>
-<p><strong>Your main agent stays in charge.</strong> It decides when to delegate; its model stays unchanged. APK runs no background process during your coding sessions.</p>
+<p>Coding agents can delegate specific tasks to temporary subagents. Those tasks vary in complexity and importance. A single model for every task is rarely the best balance of capability, speed and cost.</p>
+<p>Agent Policy Kit lets you match subagent roles with models and effort. It configures your coding tools’ native environment, then exits. The main agent still decides when to delegate, and its model stays unchanged.</p>
 </div></details><p class="link-error" id="link-error" role="status" hidden></p></div>
 <div class="builder">
 <section aria-labelledby="helpers-heading"><div class="step-heading"><span class="step-number">1</span><h2 id="helpers-heading" tabindex="-1">Subagent roles</h2><span class="step-hint" id="step-hint-1" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="tag-box" id="selected-helpers" role="group" aria-label="Selected subagent roles"></div><div class="suggestions" id="helper-options" role="group" aria-label="Available subagent roles"></div></section>

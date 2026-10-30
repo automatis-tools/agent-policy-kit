@@ -64,11 +64,12 @@ test('two real configuration packages upgrade and downgrade models and templates
   assert.ok(fs.existsSync(bin));
   const profile = `(version 1)(allow default)(deny file-read* (subpath ${quoteSandbox(source)}))`;
   const mac = process.platform === 'darwin' && fs.existsSync('/usr/bin/sandbox-exec');
-  const linux = process.platform === 'linux' && command('sh', ['-c', 'command -v bwrap']).status === 0;
+  const bwrap = process.platform === 'linux' ? command('sh', ['-c', 'command -v bwrap']).stdout.trim() : '';
+  const linux = path.isAbsolute(bwrap) && fs.existsSync(bwrap);
   assert.ok(mac || linux, 'Source isolation requires sandbox-exec (macOS) or bubblewrap (Linux). No package PASS without isolation.');
   function isolated(exe, args, extra = {}) {
     return mac ? command('/usr/bin/sandbox-exec', ['-p', profile, exe, ...args], { cwd: consumer, env, ...extra })
-      : command('bwrap', ['--ro-bind', '/', '/', '--bind', consumer, consumer, '--tmpfs', source, '--chdir', consumer, exe, ...args], { env, ...extra });
+      : command(bwrap, ['--ro-bind', '/', '/', '--bind', consumer, consumer, '--tmpfs', source, '--chdir', consumer, exe, ...args], { env, ...extra });
   }
   function cli(args, input) { return isolated(bin, args, input === undefined ? {} : { input }); }
   const isolationReady = isolated(process.execPath, ['-e', 'process.exit(0)']);
@@ -89,6 +90,13 @@ test('two real configuration packages upgrade and downgrade models and templates
   const original='# user config\nmodel="main"\nmodel_reasoning_effort="ultra"\n[agents]\nenabled=false\nmax_concurrent_threads_per_session=9\n';
   put(codex,original);put(claude,JSON.stringify({model:'opus',theme:'light',env:{USER_SECRET:'PRIVATE_SENTINEL'}}));
   put(path.join(freshHome,'.codex/AGENTS.md'),'Original instructions.\n');put(path.join(freshHome,'.claude/CLAUDE.md'),'Original Claude instructions.\n');
+  // Diagnose executable fixture support separately from identity validation.
+  for(const name of ['codex','claude']){
+    const probe=isolated(path.join(nativeBin,name),['--version']);
+    assert.equal(probe.status,0,`Isolated ${name} launcher: ${probe.stderr}`);
+    const nested=isolated(process.execPath,['-e',`const {spawnSync}=require('node:child_process');const r=spawnSync(${JSON.stringify(path.join(nativeBin,name))},['--version'],{detached:true,stdio:['ignore','pipe','pipe'],encoding:'utf8'});console.log(JSON.stringify({status:r.status,error:r.error?.code,stderr:r.stderr,stdout:r.stdout}));`]);
+    const observed=parse(nested);assert.equal(observed.status,0,`Nested ${name} launcher: ${JSON.stringify(observed)}`);
+  }
   const setupA=parse(run('A',['setup','--release','--apply']));assert.equal(setupA.status,'configured');
   assert.ok(setupA.results.filter(r=>r.status==='configured').every(r=>r.appliedReleaseVersion==='0.1.0'));
   assert.equal(parse(run('A',['setup','--release','--apply'])).results.find(r=>r.client==='codex').status,'unchanged');
