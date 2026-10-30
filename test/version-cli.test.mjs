@@ -4,6 +4,34 @@ function fixture(t){const home=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdi
 function cli(f,args){return spawnSync(process.execPath,[bin,...args],{env:f.env,encoding:'utf8'});}
 const encode=value=>Buffer.from(JSON.stringify(value)).toString('base64url');
 const config=()=>({schemaVersion:1,maxConcurrent:2,clients:{codex:{code:{model:'gpt-6.1-sol',effort:'high'},light:{model:'gpt-6-luna',effort:'high'},avoidModels:[],roles:{reviewer:{model:'review-model',effort:'medium'}}}}});
+const expanded=()=>['--roles','reviewer,explorer','--max-concurrent','3','--codex','reviewer=gpt-6.1-sol:high,explorer=gpt-6-luna:low','--avoid-codex','gpt-6-astra'];
+
+test('fully explicit tool options plan and apply exactly the displayed role models',t=>{
+ const f=fixture(t),args=[...expanded(),'--claude','reviewer=provider:model@2026:native,explorer=haiku:high'];
+ const plan=cli(f,['setup',...args]);assert.equal(plan.status,0,plan.stdout);assert.equal(JSON.parse(plan.stdout).status,'planned');assert.equal(fs.existsSync(path.join(f.home,'.policy')),false);assert.deepEqual(fs.readdirSync(path.join(f.home,'tmp')),[]);
+ const got=cli(f,['setup',...args,'--apply']);assert.equal(got.status,0,got.stdout);const data=JSON.parse(got.stdout);
+ for(const client of ['codex','claude']){const row=data.results.find(value=>value.client===client);assert.equal(row.appliedSource,'custom');assert.equal(row.appliedPreset,null);}
+ assert.match(fs.readFileSync(path.join(f.home,'.codex/agents/apk-explorer.toml'),'utf8'),/model_reasoning_effort = "low"/);
+ assert.match(fs.readFileSync(path.join(f.home,'.claude/agents/apk-reviewer.md'),'utf8'),/model: "provider:model@2026"/);assert.doesNotMatch(fs.readFileSync(path.join(f.home,'.claude/agents/apk-reviewer.md'),'utf8'),/^effort:/m);
+ assert.equal(fs.existsSync(path.join(f.home,'.codex/agents/apk-worker.toml')),false);assert.equal(fs.existsSync(path.join(f.home,'.gemini')),false);
+ assert.deepEqual(fs.readdirSync(path.join(f.home,'tmp')),[]);assert.equal(JSON.parse(cli(f,['doctor','--client','codex']).stdout).clients.codex.configuration.status,'verified');assert.equal(cli(f,['uninstall','--apply']).status,0);
+});
+
+test('explicit tool options reject incomplete inputs and cannot fall back to all clients',t=>{
+ const f=fixture(t);
+ for(const args of [['--roles','reviewer'],['--codex','reviewer=model:high'],['--roles','reviewer','--max-concurrent','3','--codex',''],[...expanded(),'--avoid-kimi','model'],['--roles','reviewer','--max-concurrent','3','--codex','balanced']]){
+  const got=cli(f,['setup',...args,'--apply']);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,'INVALID_EXPLICIT_CONFIG');
+ }
+ assert.equal(fs.existsSync(path.join(f.home,'.policy')),false);assert.equal(fs.existsSync(path.join(f.home,'.codex')),false);assert.deepEqual(fs.readdirSync(path.join(f.home,'tmp')),[]);
+});
+
+test('duplicate explicit flags and mixed input modes fail before any writes',t=>{
+ const f=fixture(t);
+ for(const args of [[...expanded(),'--codex','reviewer=other:high'],[...expanded(),'--roles','reviewer'],[...expanded(),'--max-concurrent','2']]){const got=cli(f,['setup',...args,'--apply']);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,'DUPLICATE_OPTION');}
+ for(const args of [[...expanded(),'--release'],[...expanded(),'--preset','fast'],[...expanded(),'--config',encode(config())],[...expanded(),'--policy','missing'],[...expanded(),'--client','codex']]){const got=cli(f,['setup',...args,'--apply']);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,'CONFLICTING_OPTIONS');}
+ for(const command of ['init','detect','doctor','uninstall','release','instructions']){const got=cli(f,[command,...expanded()]);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,'CONFLICTING_OPTIONS');}
+ assert.equal(fs.existsSync(path.join(f.home,'.policy')),false);assert.deepEqual(fs.readdirSync(path.join(f.home,'tmp')),[]);
+});
 test('release metadata and notes are available independently of configured state',t=>{
  const f=fixture(t);fs.mkdirSync(path.join(f.home,'.policy'));fs.writeFileSync(path.join(f.home,'.policy/policy.json'),'{broken');
  const got=cli(f,['release']);assert.equal(got.status,0);const data=JSON.parse(got.stdout);assert.equal(data.version,'0.1.0');assert.match(data.notes,/Why this release/);assert.match(data.preferencesHash,/^[a-f0-9]{64}$/);

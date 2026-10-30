@@ -11,13 +11,17 @@ Open site/index.html in Google Chrome. The page is one self-contained HTML file.
 
 The page starts empty. Parallelism follows the release recommendation. Effort buttons fill their section and show supported explicit levels. A dash means no native effort setting. Unpinned values remain unpinned until changed. Kimi roles sharing a model alias share its effort. Antigravity offers only native tiers. Other tools also accept custom native model IDs, subject to CLI and account support.
 
-The command is pinned to this page's package version. Exact complete presets use --release --preset. Other selections use --config with validated base64url JSON. selectedRoles contains the selected role subset. Omitted tools are not configured. The page never executes the command or grants model access. The complete command is visible in a read-only field that grows to fit its contents. Soft wrapping adds no newlines to the copied command. [Native field sizing](https://developer.chrome.com/docs/css-ui/css-field-sizing) handles content and window-size changes without a JavaScript resize helper.
+The command is pinned to this page's package version. It always expands every selected tool and role into visible model/effort arguments. Presets fill the form but do not shorten or hide the command. Tools follow their selected order. --roles carries the selected role IDs and --max-concurrent carries the existing cap. Nonempty --avoid-TOOL lists preserve existing model-avoidance guidance. Omitted tools are not configured.
+
+Each tool uses role=model:effort entries. :native means no explicit effort pin. Antigravity uses role=tier without an effort suffix. The parser splits at the last colon, preserving model IDs that contain colons or @. Every selected role must be present exactly once for every selected tool. The generated command reports custom provenance because its values are explicit, even when a preset filled the form.
+
+The complete command is visible in a read-only field that grows to fit its contents. Copy preserves the visible POSIX shell line continuations. Soft wrapping adds no additional newlines. [Native field sizing](https://developer.chrome.com/docs/css-ui/css-field-sizing) handles content and window-size changes without a JavaScript resize helper. The page never executes the command or grants model access.
 
 Role/tool changes use native View Transitions with a reduced-motion setting and a synchronous fallback. Labels retain their size during layout changes. No animation dependency is installed.
 
 ## Build and host
 
-Run npm run build:site after changing the template, shared CSS, role definitions, version, presets, catalog or changelog. npm run check rejects a stale generated page. Source assets are in site/template.html, site/base.css and site/fonts/. The generated HTML needs no server or build step to open.
+Run npm run build:site after changing the template, shared CSS, role definitions, command codec, version, presets, catalog or changelog. npm run check rejects a stale generated page. Source assets are in site/template.html, site/base.css and site/fonts/. src/explicit.mjs supplies the same pure codec to the CLI and page. The generated HTML needs no server or build step to open.
 
 Serve site/index.html from any static host. It can become part of getacc.dev without a service or proxy. Publish immutable pages at versioned release paths. A latest landing URL can point to the current one. Set repository/homepage URLs only after the owner creates them.
 

@@ -2,26 +2,44 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {validatePolicy} from '../src/policy.mjs';
+import {validatePolicy,rolePreference} from '../src/policy.mjs';
+import {ROLE_IDS} from '../src/roles.mjs';
+import {EXPLICIT_FIELDS,parseExplicitOptions} from '../src/explicit.mjs';
 
 const template = fs.readFileSync(new URL('../site/template.html', import.meta.url), 'utf8');
 const preferences = JSON.parse(fs.readFileSync(new URL('../policies/balanced.json', import.meta.url), 'utf8'));
 const release = {version: '0.1.0', preferences, notes: 'A release.', unreleased: true};
-const script = template.match(/<script>([\s\S]*?)<\/script>/)[1].replace('__APK_RELEASE_DATA__', JSON.stringify(release));
+const codec=fs.readFileSync(new URL('../src/explicit.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
+const script = template.match(/<script>([\s\S]*?)<\/script>/)[1].replace('__APK_RELEASE_DATA__',()=>JSON.stringify(release)).replace('__APK_EXPLICIT_CODEC__',()=>codec);
 const context = vm.createContext({TextEncoder, btoa});
 vm.runInContext(script, context);
 const api = context.APKConfigurator;
 const plain = value => JSON.parse(JSON.stringify(value));
+function decodedCommand(command){
+ const pattern=new RegExp('--('+EXPLICIT_FIELDS.join('|')+")\\s+(?:'([^']*)'|([^\\s]+))",'g');
+ const pairs=[...command.matchAll(pattern)].map(match=>[match[1],match[2]??match[3]]);
+ assert.equal(new Set(pairs.map(([name])=>name)).size,pairs.length);
+ return validatePolicy(parseExplicitOptions(Object.fromEntries(pairs),ROLE_IDS));
+}
+function equivalent(decoded,expected){
+ assert.equal(decoded.maxConcurrent,expected.maxConcurrent);
+ assert.deepEqual(decoded.selectedRoles??ROLE_IDS,expected.selectedRoles??ROLE_IDS);
+ assert.deepEqual(Object.keys(decoded.clients),Object.keys(expected.clients));
+ for(const client of Object.keys(expected.clients)){
+  assert.deepEqual(decoded.clients[client].avoidModels,expected.clients[client].avoidModels);
+  for(const role of expected.selectedRoles??ROLE_IDS)assert.deepEqual(rolePreference(decoded.clients[client],role),expected.clients[client].roles?.[role]??expected.clients[client][['worker','reviewer'].includes(role)?'code':'light']);
+ }
+}
 
-test('selected role and tool choices reach a valid encoded installer policy',()=>{
+
+test('selected role and tool choices reach a valid explicit installer policy',()=>{
  const state=api.initialState(preferences);state.selected=['codex'];state.selectedRoles=['reviewer'];
  state.jobs.codex.worker={model:'unused invalid model',effort:'invalid'};
  state.jobs.codex.reviewer={model:'custom/review',effort:'high'};
  const {config,errors}=plain(api.buildConfig(state,preferences));assert.deepEqual(errors,[]);
  assert.deepEqual(config.selectedRoles,['reviewer']);assert.deepEqual(Object.keys(config.clients),['codex']);
  assert.deepEqual(config.clients.codex.roles,{reviewer:{model:'custom/review',effort:'high'}});validatePolicy(config);
- const command=api.buildCommand(config,release),payload=command.match(/--config ([A-Za-z0-9_-]+) --apply$/)[1];
- assert.deepEqual(JSON.parse(Buffer.from(payload,'base64url').toString('utf8')),config);
+ const command=api.buildCommand(config,release);assert.doesNotMatch(command,/--config|--preset|--release/);equivalent(decodedCommand(command),config);
 });
 
 test('incomplete role selections cannot produce an installer configuration',()=>{
@@ -180,8 +198,10 @@ test('bad input cannot leave a usable configuration', () => {
     const state = api.initialState(preferences); state.maxConcurrent = maxConcurrent;
     assert.equal(api.buildConfig(state, preferences).config, null, maxConcurrent);
   }
-  const state = api.initialState(preferences); state.selected = [];
-  assert.equal(api.buildConfig(state, preferences).config, null);
+  for(const selected of [[],null,'codex',{},['codex','codex'],['invented']]){
+    const state=api.initialState(preferences);state.selected=selected;
+    assert.equal(api.buildConfig(state,preferences).config,null);
+  }
 });
 
 test('agy accepts native tiers without invented per-role effort', () => {
@@ -194,12 +214,13 @@ test('agy accepts native tiers without invented per-role effort', () => {
   assert.equal(api.buildConfig(state, preferences).config, null);
 });
 
-test('command is version pinned, shell safe, and decodes to the chosen UTF-8 JSON', () => {
-  const config = api.buildConfig(api.initialState(preferences), preferences).config;
+test('command is version pinned, fully explicit and shell safe', () => {
+  const config = plain(api.buildConfig(api.initialState(preferences), preferences).config);
   const command = api.buildCommand(config, release);
-  assert.match(command, /^npx --yes --ignore-scripts --package agent-policy-kit@0\.1\.0 agent-policy setup --config ([A-Za-z0-9_-]+) --apply$/);
-  const payload = command.match(/--config ([A-Za-z0-9_-]+)/)[1];
-  assert.deepEqual(JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')), plain(config));
+  assert.match(command, /^npx --yes --ignore-scripts --package agent-policy-kit@0\.1\.0 agent-policy setup/);
+  assert.doesNotMatch(command,/--config|--preset|--release/);
+  for(const flag of ['codex','claude','kimi','antigravity'])assert.ok(command.includes('--'+flag+" '"));
+  equivalent(decodedCommand(command),config);
   assert.throws(() => api.buildCommand(config, {...release, version: '0.1.0;echo'}), /Invalid release/);
   assert.equal(Buffer.from(api.encodeConfig({note: 'Привіт'}), 'base64url').toString('utf8'), JSON.stringify({note: 'Привіт'}));
 });
@@ -239,17 +260,21 @@ test('Kimi effort edits synchronize jobs with the same model alias', () => {
   assert.deepEqual(plain(api.buildConfig(state, preferences)).errors, []);
 });
 
-test('exact release presets generate short commands and edits use explicit configuration', () => {
+test('presets and Custom both print every effective role value', () => {
   const config = plain(api.buildConfig(api.initialState(preferences), preferences).config);
   const withPresets = {...release, presets: [{id: 'balanced', label: 'Balanced', preferences}]};
-  assert.equal(api.buildCommand(config, withPresets), 'npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --preset balanced --apply');
-  const customCommand = api.buildCommand(config, withPresets, {custom: true});
-  assert.match(customCommand, /--config [A-Za-z0-9_-]+ --apply$/);
-  assert.deepEqual(JSON.parse(Buffer.from(customCommand.match(/--config ([A-Za-z0-9_-]+)/)[1], 'base64url').toString('utf8')), config);
+  const command=api.buildCommand(config,withPresets);
+  assert.equal(command,api.buildCommand(config,withPresets,{custom:true}));
+  assert.doesNotMatch(command,/--config|--preset|--release/);equivalent(decodedCommand(command),config);
   config.clients.codex.roles = {reviewer: {model: 'custom/reviewer', effort: 'high'}};
-  assert.match(api.buildCommand(config, withPresets), /--config [A-Za-z0-9_-]+ --apply$/);
+  const custom=api.buildCommand(config,withPresets);assert.ok(custom.includes('reviewer=custom/reviewer:high'));equivalent(decodedCommand(custom),config);
 });
 
+test('explicit tool argument order follows the selected tool order',()=>{
+ const state=api.initialState(preferences);state.selected=['kimi','codex'];state.selectedRoles=['reviewer'];
+ const config=plain(api.buildConfig(state,preferences).config),command=api.buildCommand(config,release);
+ assert.ok(command.indexOf('--kimi ')<command.indexOf('--codex '));equivalent(decodedCommand(command),config);
+});
 
 test('catalog validation accepts native default and rejects a model-unsupported level', () => {
   const state = api.initialState(preferences);
@@ -295,6 +320,9 @@ test('Kimi native default can share an alias with one explicit effort pin', () =
 test('the release catalog offers Fable and the page composes an independent Fable task',()=>{
  const catalog=JSON.parse(fs.readFileSync(new URL('../models/catalog.json',import.meta.url),'utf8')),state=api.initialState(preferences),claude=catalog.clients.claude;assert.ok(claude.models.some(model=>model.id==='fable'));state.jobs.claude.reviewer=api.preferenceForModel(preferences.clients.claude,'reviewer','fable',state.jobs.claude,claude);const result=plain(api.buildConfig(state,preferences,catalog));assert.deepEqual(result.errors,[]);assert.equal(result.config.clients.claude.roles.reviewer.model,'fable');assert.ok(!result.config.clients.claude.avoidModels.includes('fable'));
 });
-test('custom Google dated IDs retain native-default effort inside a shell-safe encoded payload',()=>{
- const catalog=JSON.parse(fs.readFileSync(new URL('../models/catalog.json',import.meta.url),'utf8')),state=api.initialState(preferences),model='claude-sonnet-4-5@20250929';state.jobs.claude.worker={model,effort:null};const result=plain(api.buildConfig(state,preferences,catalog));assert.deepEqual(result.errors,[]);assert.deepEqual(result.config.clients.claude.roles.worker,{model,effort:null});const command=api.buildCommand(result.config,release),payload=command.match(/--config ([A-Za-z0-9_-]+) --apply$/)[1];assert.ok(!command.includes(model));assert.deepEqual(JSON.parse(Buffer.from(payload,'base64url').toString('utf8')).clients.claude.roles.worker,{model,effort:null});
+test('custom Google dated IDs and native effort stay visible in the command',()=>{
+ const catalog=JSON.parse(fs.readFileSync(new URL('../models/catalog.json',import.meta.url),'utf8')),state=api.initialState(preferences),model='claude-sonnet-4-5@20250929';
+ state.jobs.claude.worker={model,effort:null};const result=plain(api.buildConfig(state,preferences,catalog));assert.deepEqual(result.errors,[]);
+ const command=api.buildCommand(result.config,release);assert.ok(command.includes('worker='+model+':native'));
+ assert.deepEqual(decodedCommand(command).clients.claude.roles.worker,{model,effort:null});
 });

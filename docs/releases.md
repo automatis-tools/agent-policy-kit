@@ -21,9 +21,9 @@ The package you select supplies both preferences and native templates. --release
 
 ## Your own choices
 
-Open this release's [configuration page](../site/index.html) in Google Chrome. Its generated --config command is pinned to the page's package version. It applies your chosen models through that release's templates. The saved provenance distinguishes release defaults from custom choices.
+Open this release's [configuration page](../site/index.html) in Google Chrome. Its fully expanded per-tool command is pinned to the page's package version. It applies your chosen models through that release's templates. Generated explicit commands record custom provenance, including when the form used a preset. The --release workflow retains named preset provenance.
 
---config is bounded canonical base64url UTF-8 JSON. It is data, not executable shell content. --release, --config and --policy are mutually exclusive. --config and --release explicitly permit replacement of owned configuration. --policy without those options remains conservative for advanced saved-file workflows.
+--config is bounded canonical base64url UTF-8 JSON. It is data, not executable shell content. Explicit tool arguments, --release/--preset, --config and --policy are alternative input modes. Explicit arguments, --config and --release permit replacement of owned configuration. --policy without those options remains conservative for advanced saved-file workflows.
 
 ## What happens during an update
 

@@ -19,11 +19,30 @@ Before publication, replace the registry spec with the verified local .tgz. For 
 
 ## 2. Choose the input
 
+The page always prints explicit arguments, including when a preset filled the form:
+
+```sh
+agent-policy setup \
+  --roles reviewer,explorer \
+  --max-concurrent 3 \
+  --codex 'reviewer=gpt-6.1-sol:high,explorer=gpt-6-luna:high' \
+  --avoid-codex 'gpt-6-astra' \
+  --claude 'reviewer=sonnet:high,explorer=haiku:high' \
+  --avoid-claude 'opus,fable' \
+  --apply
+```
+
+Use --codex, --claude, --kimi and/or --antigravity to select tools. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Antigravity accepts role=tier without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
+
+Explicit arguments are setup/install-only and cannot combine with --client, --release, --preset, --policy or --config. Duplicate flags and incomplete role maps fail before writes. Omit --apply to plan first. Explicit commands allow deliberate owned replacement and record custom source with no named preset provenance. The native files do not retain a dependency on the codec or package.
+
+Other supported inputs remain available:
+
 - setup --release --preset balanced explicitly applies this executable's named preset and templates (fast/quality are alternatives). It is the supported pinned-release upgrade/downgrade path.
-- setup --config BASE64URL explicitly applies custom choices through this version's templates. The configuration page generates this command. Decode/inspect the JSON; it must contain preferences only, never credentials or executable content.
+- setup --config BASE64URL explicitly applies custom choices through this version's templates. This legacy encoded input remains supported. Decode/inspect the JSON; it must contain preferences only, never credentials or executable content.
 - init --policy FILE creates editable defaults without overwriting. setup --policy FILE is a conservative advanced workflow; ordinary mismatching setup refuses replacement. To deliberately replace saved choices from a file, validate it, encode its JSON with Buffer.from(JSON.stringify(preferences)).toString('base64url'), and use --config.
 
---release, --config and --policy are mutually exclusive. The --config JSON is canonical unpadded base64url, at most 64 KiB decoded. APK validates it before target mutation and removes its temporary input file afterward.
+Explicit arguments, --release/--preset, --config and --policy are alternative input modes. The --config JSON is canonical unpadded base64url, at most 64 KiB decoded. APK validates it before target mutation and removes its temporary input file afterward.
 
 Optional top-level selectedRoles selects worker, reviewer, explorer and/or routine. It must be nonempty and contain no duplicates. Omit it to configure all four roles. Optional client roles overrides the selected roles' code/light recommendations. A selected subset creates only those native files and routing instructions. Unselected aliases do not require provisioning or receive effort pins. The first selected role in catalog order supplies the native subagent default.
 
@@ -37,11 +56,11 @@ Already-authorized configuration needs no repeat confirmation. Add --apply to th
 
 Run doctor afterward. It reports each client's actual saved release/source independently of the current executable, bundle, external source or canonical preferences. A verified config is not model execution proof. Native clients may need a fresh session to load changes; do not terminate active user sessions automatically.
 
-Per-client transactions are independent. A missing/blocked client can retain an older applied release while another advances. Read all results; never label a partial outcome fully updated. stateDir/policy.json is the latest requested snapshot, not the applied truth. Receipts are the applied truth. Canonical preferences may therefore differ from an older client's snapshot. Ordinary saved-file setup still detects unsafe mismatch; --release/--config are deliberate replacement operations.
+Per-client transactions are independent. A missing/blocked client can retain an older applied release while another advances. Read all results; never label a partial outcome fully updated. stateDir/policy.json is the latest requested snapshot, not the applied truth. Receipts are the applied truth. Canonical preferences may therefore differ from an older client's snapshot. Ordinary saved-file setup still detects unsafe mismatch. Explicit tool arguments and --release/--config are deliberate replacement operations.
 
 Kimi needs provisioned aliases/provider metadata and supported effort; do not invent them. K3.1 Pro variants require thinking: explicit native thinking.enabled=false returns a prerequisite even if every requested effort is null. Do not change the main thinking setting to force helper installation. If a selected alias also serves the main model, a changed effort default without a valid explicit global override returns kimi-main-effort-conflict. Use a compatible separate native alias or deliberately prepare a native variant while preserving main behavior. Reserved primary cannot be a pool key. Claude force-model conflicts require an explicit native setting decision rather than a false per-role success.
 
-The available role names are apk-worker/apk-reviewer/apk-explorer/apk-routine. APK creates only the selected names. Changing selectedRoles through --config safely replaces the earlier owned role set. APK preserves unowned files and refuses removal of edited owned roles. Only when delegation is chosen do model/effort/routing/parallelism preferences apply. Native files must not execute/import the package or depend on its executable/npm/source/state path. After verification you may remove the npm package. Keep private receipts for future owned undo.
+The available role names are apk-worker/apk-reviewer/apk-explorer/apk-routine. APK creates only the selected names. Changing the selected role set through explicit arguments or --config safely replaces the earlier owned role set. APK preserves unowned files and refuses removal of edited owned roles. Only when delegation is chosen do model/effort/routing/parallelism preferences apply. Native files must not execute/import the package or depend on its executable/npm/source/state path. After verification you may remove the npm package. Keep private receipts for future owned undo.
 
 ## 4. Native limits
 

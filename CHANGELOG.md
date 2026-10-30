@@ -31,6 +31,7 @@ Codex effort choices/defaults now follow CLI 0.166.0 rather than API defaults; A
 
 ### What changed
 
+- Page commands always list every selected role/model/effort under its tool, including presets. Explicit --roles, --max-concurrent and optional --avoid-TOOL preserve the existing selection, cap and guidance. :native represents unpinned effort; Antigravity remains tier-only. The shared codec validates complete role maps and rejects duplicate/mixed input before writes. Legacy release/config/policy inputs remain supported.
 - The four-step page now selects subagent roles and coding tools before mode/model/effort configuration. It generates and copies a real pinned command. Tool additions preserve All or a manually selected view. Role help uses the same prompt definitions as native generation.
 - Optional selectedRoles creates only the requested native roles. Receipt v4 binds that role set to owned files and supports safe expansion, reduction and removal. Earlier v2/v3 native receipts remain supported. Unselected Kimi aliases do not need provisioning or effort pins.
 - Native role files and routing instructions apply only when the main agent chooses delegation. Main models and disabled delegation features are preserved.
@@ -51,7 +52,7 @@ After publication:
 npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --apply
 ```
 
-Without --apply the same command previews the changes. The page-generated --config command applies custom choices using this release's native templates. See [release usage](docs/releases.md).
+Without --apply the same command previews the changes. The page-generated explicit tool arguments apply the visible choices using this release's native templates. See [release usage](docs/releases.md).
 
 ### Migration and limits
 

@@ -19,7 +19,7 @@ APK sets up native subagent roles for Codex, Claude Code, Kimi and Antigravity. 
 
 ## Choose your setup
 
-Open the [configuration page](site/index.html) in **Google Chrome**. Choose roles and coding tools, keep a preset or adjust each role, then copy the setup command. APK creates only the selected roles in installed, selected tools.
+Open the [configuration page](site/index.html) in **Google Chrome**. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. APK creates only the selected roles in installed, selected tools.
 
 The page works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
 

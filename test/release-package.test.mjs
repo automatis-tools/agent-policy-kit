@@ -133,12 +133,16 @@ const body=await fs.readFile(${JSON.stringify(role)},'utf8');if(!body.includes('
   const html=fs.readFileSync(path.join(consumer,'node_modules/agent-policy-kit/site/index.html'),'utf8');
   const context=vm.createContext({TextEncoder,btoa});vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],context);
   const ui=context.APKConfigurator,preferences=JSON.parse(fs.readFileSync(path.join(consumer,'node_modules/agent-policy-kit/policies/balanced.json'))),choices=ui.initialState(preferences);
+  choices.selected=['codex'];
   choices.jobs.codex.reviewer={model:'page-review-model',effort:'high'};
   const pageConfig=ui.buildConfig(choices,preferences);assert.equal(pageConfig.errors.length,0);
   const pageCommand=ui.buildCommand(pageConfig.config,{version:'0.1.0'});assert.ok(pageCommand.startsWith('npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 '));
-  const encoded=pageCommand.match(/--config ([-_A-Za-z0-9]+)/)[1];
+  assert.doesNotMatch(pageCommand,/--config|--preset|--release/);
   const pageHome=path.join(consumer,'page-home');fs.mkdirSync(pageHome);const pageState=path.join(pageHome,'.state');
-  const pageApplied=parse(run('A',['setup','--config',encoded,'--client','codex','--home',pageHome,'--state-dir',pageState,'--apply']));assert.equal(pageApplied.results[0].appliedSource,'custom');
+  const quote=value=>"'"+value.replaceAll("'","'\"'\"'")+"'";
+  const prefix='npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup';
+  const local=pageCommand.replace(prefix,`${quote(bin)} setup --home ${quote(pageHome)} --state-dir ${quote(pageState)}`);
+  const pageApplied=parse(isolated('/bin/sh',['-c',local]));assert.equal(pageApplied.results[0].appliedSource,'custom');
   assert.match(fs.readFileSync(path.join(pageHome,'.codex/agents/apk-reviewer.toml'),'utf8'),/page-review-model/);
   assert.equal(parse(run('B',['doctor','--client','codex','--home',pageHome,'--state-dir',pageState])).clients.codex.configuration.releaseVersion,'0.1.0');
 });

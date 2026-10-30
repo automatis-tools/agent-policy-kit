@@ -5,6 +5,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parseArgs} from 'node:util';
 import {CLIENTS,validatePolicy} from '../src/policy.mjs';
+import {ROLE_IDS} from '../src/roles.mjs';
+import {EXPLICIT_FIELDS,parseExplicitOptions} from '../src/explicit.mjs';
 import {nativeHomeConflict} from '../src/native.mjs';
 import {detectClients,resolveClient,summarizeDetection} from '../src/detect.mjs';
 import {bundledReleaseInfo,presetPreferences} from '../src/release.mjs';
@@ -33,23 +35,33 @@ Usage: agent-policy <command> [options]
 
 Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
          --policy FILE | --release [--preset fast|balanced|quality] | --config BASE64URL
+         --roles worker,reviewer,explorer,routine --max-concurrent 3
+         --codex ROLE=MODEL:EFFORT,... --claude ROLE=MODEL:EFFORT,...
+         --kimi ROLE=ALIAS:EFFORT,... --antigravity ROLE=TIER,...
+         --avoid-codex MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-antigravity MODELS
          --apply --help --version
 
+Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort.
+Include every selected role for each selected tool. Avoid lists are comma-separated.
 State defaults to AGENT_POLICY_HOME or ~/.agent-policy-kit.
 This configurator exits after setup. Native files work without the package.`);}
 async function main(){
-  const {values:opts,positionals}=parseArgs({allowPositionals:true,strict:true,options:{
+  const {values:opts,positionals,tokens}=parseArgs({allowPositionals:true,strict:true,tokens:true,options:{
     client:{type:'string'},home:{type:'string'},'state-dir':{type:'string'},policy:{type:'string'},
     apply:{type:'boolean',default:false},help:{type:'boolean'},version:{type:'boolean'},
     release:{type:'boolean',default:false},config:{type:'string'},preset:{type:'string'},
+    ...Object.fromEntries(EXPLICIT_FIELDS.map(name=>[name,{type:'string'}])),
   }});
   if(opts.version){console.log(version);return;}
   const command=positionals[0];
   if(opts.help||!command||command==='help'){help();return;}
   if(!['instructions','init','detect','release','setup','install','uninstall','doctor'].includes(command)) fail('UNKNOWN_COMMAND');
   if(positionals.length!==1) fail('UNEXPECTED_ARGUMENT');
+  const seen=new Set();for(const token of tokens)if(token.kind==='option'&&EXPLICIT_FIELDS.includes(token.name)){if(seen.has(token.name))fail('DUPLICATE_OPTION');seen.add(token.name);}
+  const explicitValues=Object.fromEntries(EXPLICIT_FIELDS.filter(name=>opts[name]!==undefined).map(name=>[name,opts[name]])),explicit=Object.keys(explicitValues).length>0;
   const bundled=Boolean(opts.release||opts.preset!==undefined);
-  if([opts.policy!==undefined,bundled,opts.config!==undefined].filter(Boolean).length>1)fail('CONFLICTING_OPTIONS');
+  if([opts.policy!==undefined,bundled,opts.config!==undefined,explicit].filter(Boolean).length>1)fail('CONFLICTING_OPTIONS');
+  if(explicit&&(!['setup','install'].includes(command)||opts.client!==undefined))fail('CONFLICTING_OPTIONS');
   if((opts.release||opts.config!==undefined)&&!['setup','install'].includes(command))fail('CONFLICTING_OPTIONS');
   if(opts.preset!==undefined&&!['release','setup','install'].includes(command))fail('CONFLICTING_OPTIONS');
   const preset=opts.preset??'balanced';
@@ -87,9 +99,10 @@ async function main(){
   if(command==='setup'||command==='install'){
     let temporary;
     try{
-      if(opts.config!==undefined){
+      if(opts.config!==undefined||explicit){
         let preferences;
-        try{
+        if(explicit){try{preferences=validatePolicy(parseExplicitOptions(explicitValues,ROLE_IDS));}catch{fail('INVALID_EXPLICIT_CONFIG');}}
+        else try{
           if(opts.config.length>87384||!/^[-_A-Za-z0-9]+$/.test(opts.config))throw new Error();
           const bytes=Buffer.from(opts.config,'base64url');
           if(bytes.length>65536||bytes.toString('base64url')!==opts.config)throw new Error();
@@ -102,9 +115,9 @@ async function main(){
       const preferences=loadPolicy(policyPath);
       const {setupDetected}=await import('../src/setup.mjs');
       const result=await setupDetected({client:client??null,home,stateDir,policyPath,apply:opts.apply,explicitHome:Boolean(opts.home),
-        releaseVersion:version,replace:bundled||opts.config!==undefined,
-        preset:opts.config!==undefined||opts.policy||policyPath!==builtin?null:preset,
-        source:opts.config!==undefined||opts.policy?'custom':policyPath===builtin?'release':'saved',
+        releaseVersion:version,replace:bundled||opts.config!==undefined||explicit,
+        preset:explicit||opts.config!==undefined||opts.policy||policyPath!==builtin?null:preset,
+        source:explicit||opts.config!==undefined||opts.policy?'custom':policyPath===builtin?'release':'saved',
         enabledClients:Object.keys(preferences.clients)});
       print(result);process.exitCode=result.exitCode;return;
     }finally{if(temporary)fs.rmSync(temporary,{recursive:true,force:true});}
