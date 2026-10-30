@@ -11,7 +11,7 @@ Open site/index.html in Google Chrome. The page is one self-contained HTML file.
 
 The page starts empty. Parallelism follows the release recommendation. Effort buttons fill their section and show supported explicit levels. A dash means no native effort setting. Unpinned values remain unpinned until changed. Kimi roles sharing a model alias share its effort. Antigravity offers only native tiers. Other tools also accept custom native model IDs, subject to CLI and account support.
 
-The command is pinned to this page's package version. Exact complete presets use --release --preset. Other selections use --config with validated base64url JSON. selectedRoles contains the selected role subset. Omitted tools are not configured. The page never executes the command or grants model access.
+The command is pinned to this page's package version. Exact complete presets use --release --preset. Other selections use --config with validated base64url JSON. selectedRoles contains the selected role subset. Omitted tools are not configured. The page never executes the command or grants model access. The complete command is visible in a read-only field that grows to fit its contents. Soft wrapping adds no newlines to the copied command. [Native field sizing](https://developer.chrome.com/docs/css-ui/css-field-sizing) handles content and window-size changes without a JavaScript resize helper.
 
 Role/tool changes use native View Transitions with a reduced-motion setting and a synchronous fallback. Labels retain their size during layout changes. No animation dependency is installed.
 
