@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {validatePolicy,rolePreference} from '../src/policy.mjs';
-import {ROLE_IDS} from '../src/roles.mjs';
+import {ROLE_IDS,ROLE_DEFINITIONS} from '../src/roles.mjs';
 import {EXPLICIT_FIELDS,parseExplicitOptions} from '../src/explicit.mjs';
 
 const template = fs.readFileSync(new URL('../site/template.html', import.meta.url), 'utf8');
 const preferences = JSON.parse(fs.readFileSync(new URL('../policies/balanced.json', import.meta.url), 'utf8'));
-const release = {version: '0.1.0', preferences, notes: 'A release.', unreleased: true};
+// Behavior tests use fallback-only preferences; real recommendations have separate coverage.
+for(const [id,client]of Object.entries(preferences.clients)){delete client.roles;if(id!=='agy')client.code.effort='high';}
+const release = {version: '0.1.0', roles:ROLE_DEFINITIONS, preferences, notes: 'A release.', unreleased: true};
 const codec=fs.readFileSync(new URL('../src/explicit.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
 const shareCodec=fs.readFileSync(new URL('../src/share.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
 const script = template.match(/<script>([\s\S]*?)<\/script>/)[1].replace('__APK_RELEASE_DATA__',()=>JSON.stringify(release)).replace('__APK_EXPLICIT_CODEC__',()=>codec).replace('__APK_SHARE_CODEC__',()=>shareCodec);
@@ -63,7 +65,7 @@ function equivalent(decoded,expected){
  assert.deepEqual(Object.keys(decoded.clients),Object.keys(expected.clients));
  for(const client of Object.keys(expected.clients)){
   assert.deepEqual(decoded.clients[client].avoidModels,expected.clients[client].avoidModels);
-  for(const role of expected.selectedRoles??ROLE_IDS)assert.deepEqual(rolePreference(decoded.clients[client],role),expected.clients[client].roles?.[role]??expected.clients[client][['worker','reviewer'].includes(role)?'code':'light']);
+  for(const role of expected.selectedRoles??ROLE_IDS)assert.deepEqual(rolePreference(decoded.clients[client],role),expected.clients[client].roles?.[role]??expected.clients[client][ROLE_DEFINITIONS.find(r=>r.id===role).kind]);
  }
 }
 
@@ -138,7 +140,7 @@ test('manual effort edits mark only their tool Custom while other named modes re
  assert.equal(api.modeFor(state,'codex'),'custom');assert.equal(api.modeFor(state,'all'),'custom');
  for(const client of ['claude','kimi','agy'])assert.equal(api.modeFor(state,client),'balanced');
  const named=api.applyPreset({...state,active:'codex'},{id:'balanced',preferences},()=>true);
- assert.equal(api.modeFor(named,'all'),'balanced');assert.equal(named.jobs.codex.worker.effort,'high');
+ assert.equal(api.modeFor(named,'all'),'balanced');assert.equal(named.jobs.codex.worker.effort,preferences.clients.codex.code.effort);
 });
 
 test('configuration template has a single release marker and no external assets or network calls', () => {
@@ -151,13 +153,13 @@ test('configuration template has a single release marker and no external assets 
   assert.doesNotMatch(template,/savedDesign|Design prototype|installer not connected/);
 });
 
-test('recommendations expose four independent jobs and preserve native fallbacks', () => {
+test('recommendations expose six independent jobs and preserve native fallbacks', () => {
   const state = api.initialState(preferences);
   const {config, errors} = plain(api.buildConfig(state, preferences));
   assert.deepEqual(errors, []);
   assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy']);
   assert.deepEqual(config, preferences);
-  assert.deepEqual(Object.keys(state.jobs.codex), ['worker', 'reviewer', 'explorer', 'routine']);
+  assert.deepEqual(Object.keys(state.jobs.codex), ROLE_IDS);
   assert.equal(config.clients.codex.roles, undefined);
   assert.deepEqual(config.clients.codex.code, preferences.clients.codex.code);
   assert.deepEqual(config.clients.kimi.light, preferences.clients.kimi.light);
@@ -173,7 +175,7 @@ test('all four tools stay configured and only changed roles produce overrides', 
   assert.deepEqual(errors, []);
   assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy']);
   assert.equal(config.maxConcurrent, preferences.maxConcurrent);
-  assert.deepEqual(config.clients.claude.roles, {reviewer: {model: 'opus', effort: 'high'}});
+  assert.deepEqual(config.clients.claude.roles, {reviewer: {model: 'opus', effort: preferences.clients.claude.code.effort}});
   assert.ok(!config.clients.claude.avoidModels.includes('opus'));
   assert.deepEqual(config.clients.claude.code, preferences.clients.claude.code);
   assert.equal(config.clients.codex.roles, undefined);
@@ -193,7 +195,7 @@ test('model changes use known model effort and custom models keep the original t
 test('sequential choices of one custom Kimi alias reuse its existing effort across all tasks', () => {
   const state = api.initialState(preferences);
   const config = preferences.clients.kimi;
-  for (const role of ['worker', 'reviewer', 'explorer', 'routine']) {
+  for (const role of ROLE_IDS) {
     state.jobs.kimi[role] = api.preferenceForModel(config, role, 'custom/shared-alias', state.jobs.kimi);
   }
   assert.equal(new Set(Object.values(state.jobs.kimi).map(choice => choice.effort)).size, 1);
@@ -212,7 +214,7 @@ test('native role recommendations override code/light defaults', () => {
 
 test('Kimi aliases require consistent effective effort but unused base defaults do not constrain them', () => {
   const state = api.initialState(preferences);
-  for (const role of ['worker', 'reviewer', 'explorer', 'routine']) state.jobs.kimi[role] = {model: 'kimi-code/k3', effort: 'low'};
+  for (const role of ROLE_IDS) state.jobs.kimi[role] = {model: 'kimi-code/k3', effort: 'low'};
   assert.deepEqual(plain(api.buildConfig(state, preferences)).errors, []);
   state.jobs.kimi.reviewer.effort = 'high';
   const invalid = plain(api.buildConfig(state, preferences));
@@ -318,8 +320,7 @@ test('catalog validation accepts native default and rejects a model-unsupported 
     {id: preferences.clients.codex.code.model, efforts: ['high', 'xhigh'], defaultEffort: 'high'},
     {id: preferences.clients.codex.light.model, efforts: [], defaultEffort: null}
   ]}}};
-  state.jobs.codex.explorer.effort = null;
-  state.jobs.codex.routine.effort = null;
+  for(const choice of Object.values(state.jobs.codex))choice.effort=null;
   state.jobs.codex.worker.effort = 'xhigh';
   assert.deepEqual(plain(api.buildConfig(state, preferences, catalog)).errors, []);
   state.jobs.codex.worker.effort = 'low';

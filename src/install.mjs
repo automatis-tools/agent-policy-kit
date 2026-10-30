@@ -4,7 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { constants } from 'node:fs';
 import { validatePolicy, rolePreference } from './policy.mjs';
-import {ROLE_IDS,selectedRoleIds} from './roles.mjs';
+import {ROLE_IDS,LEGACY_ROLE_IDS,selectedRoleIds} from './roles.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
 import catalog from '../models/catalog.json' with {type:'json'};
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
@@ -207,7 +207,8 @@ function validateTomlSnapshot(file,client,schemaVersion) {
     for(let i=0;i<count;i++)scalar(file.ops[2+count+i],['models',aliases[i],'overrides','default_effort'],'string');
     return;
   }
-  if(file.ops.length<2||file.ops.length>10)fail('INVALID_RECEIPT');
+  const maxAliases=schemaVersion===4?ROLE_IDS.length:LEGACY_ROLE_IDS.length;
+  if(file.ops.length<2||file.ops.length>2+2*maxAliases)fail('INVALID_RECEIPT');
   let at=0;
   if(file.ops[0].kind==='removed') {
     const removed=file.ops[at++];fields(removed,['kind','path','before']);
@@ -216,7 +217,7 @@ function validateTomlSnapshot(file,client,schemaVersion) {
   const defaultAlias=scalar(file.ops[at++],['secondary_model','default_model'],'string'),aliases=[];
   while(at<file.ops.length&&equal(file.ops[at].path?.slice(0,2),['secondary_model','models'])) {
     const op=file.ops[at++],name=op.path[2];
-    if(!alias(name)||aliases.includes(name)||aliases.length===4)fail('INVALID_RECEIPT');aliases.push(name);scalar(op,['secondary_model','models',name],'string');
+    if(!alias(name)||aliases.includes(name)||aliases.length===maxAliases)fail('INVALID_RECEIPT');aliases.push(name);scalar(op,['secondary_model','models',name],'string');
   }
   if(!aliases.length||!aliases.includes(defaultAlias))fail('INVALID_RECEIPT');
   const pinned=new Set();
@@ -237,7 +238,7 @@ function validateReceipt(r,plan) {
   if(object(r)&&(r.schemaVersion===1||own(r,'packageRoot')||own(r,'nodePath')||own(r,'mode')||(Array.isArray(r.files)&&r.files.some(file=>object(file)&&(['owned','hook'].includes(file.type)||(Array.isArray(file.ops)&&file.ops.some(op=>object(op)&&['hook','entry'].includes(op.kind))))))))fail('LEGACY_RUNTIME_RECEIPT');
   fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source','preset']),...(r?.schemaVersion===4?['selectedRoles']:[])]);
   if(r.schemaVersion===4&&(!Array.isArray(r.selectedRoles)||!r.selectedRoles.length||r.selectedRoles.length>ROLE_IDS.length||new Set(r.selectedRoles).size!==r.selectedRoles.length||r.selectedRoles.some(role=>!ROLE_IDS.includes(role))))fail('INVALID_RECEIPT');
-  const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l,r.schemaVersion===4?r.selectedRoles:ROLE_IDS);
+  const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l,r.schemaVersion===4?r.selectedRoles:LEGACY_ROLE_IDS);
   if(![2,3,4].includes(r.schemaVersion)||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!validHash(r.policyHash)||!Array.isArray(r.warnings)||r.warnings.length>32||!r.warnings.every(w=>typeof w==='string'&&/^[a-z][a-z0-9-]{0,127}$/.test(w))||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(file=>object(file)&&allowed.includes(file.path))||new Set(r.files.map(file=>file.path)).size!==allowed.length)fail('INVALID_RECEIPT');
   if(r.schemaVersion>=3) {if(!version(r.releaseVersion)||!SOURCES.includes(r.source)||(own(r,'preset')&&!validPreset(r.preset)))fail('INVALID_RECEIPT');}
   else if(!object(r.preferences)||!Number.isInteger(r.maxConcurrent)||r.maxConcurrent<1||r.maxConcurrent>32)fail('INVALID_RECEIPT');

@@ -31,7 +31,7 @@ APK verifies old owned files, reconstructs the original user baseline in memory,
 
 Transactions are per client. Missing, unsupported or blocked clients retain their actual previous release; successful independent clients may advance. setup results and doctor report each client's applied version/source. The shared state policy is the latest requested snapshot, not proof every client applied it. Doctor verifies receipts without needing that snapshot or today's templates.
 
-Current native receipt v4 records the selected subset of four bounded role filenames. Native v3 and v2 snapshots remain supported. v2 has unknown release provenance. An older executable can reject v4. Use a receipt-compatible executable before an incompatible downgrade. Unknown future schemas/layouts are refused. An incompatible migration must explain its supported path in that release's notes.
+Current native receipt v4 records the selected subset of six bounded role filenames. Native v3 and v2 snapshots remain bounded to their historical four roles and remain supported. An explicit replacement with selectedRoles omitted can expand an earlier setup to all six roles in the chosen release; implicit setup keeps the existing installation unchanged. v2 has unknown release provenance. An older executable can reject v4. Use a receipt-compatible executable before an incompatible downgrade. Unknown future schemas/layouts are refused. An incompatible migration must explain its supported path in that release's notes.
 
 ## What a release does not freeze
 

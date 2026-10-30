@@ -5,13 +5,19 @@ import path from 'node:path';
 import os from 'node:os';
 import { planInstall, applyInstall, uninstall, summarizePlan, inspectConfiguration } from '../src/install.mjs';
 
+const legacyRoles=['worker','reviewer','explorer','routine'];
+// Installer ownership and recovery fixtures stay independent of public recommendations.
+function behaviorPolicy() {
+  return {schemaVersion:1,maxConcurrent:3,selectedRoles:legacyRoles,clients:Object.fromEntries(Object.entries({codex:['gpt-6.1-sol','gpt-6-luna'],claude:['sonnet','haiku'],kimi:['kimi-code/k3','kimi-code/kimi-for-coding'],agy:['pro','flash']}).map(([client,[code,light]])=>[client,{code:{model:code,effort:client==='agy'?null:'high'},light:{model:light,effort:client==='agy'?null:client==='kimi'?'low':'high'},avoidModels:[]}]))};
+}
+
 async function fixture(t, client = 'codex') {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'policy-install-')));
   t.after(() => fs.rm(root, {recursive:true, force:true}));
   const home = path.join(root, "home with ' quote");
   await fs.mkdir(home);
   const policyPath = path.join(root, 'input.json');
-  await fs.copyFile(new URL('../policies/balanced.json', import.meta.url), policyPath);
+  await fs.writeFile(policyPath,JSON.stringify(behaviorPolicy()));
   return {root, client, home, stateDir:path.join(home, '.local/state/agent-policy'), policyPath, packageRoot:path.resolve('.'), nodePath:process.execPath};
 }
 async function put(p, s) { await fs.mkdir(path.dirname(p), {recursive:true}); await fs.writeFile(p, s); }
@@ -195,7 +201,7 @@ test('missing policy clients and native scalar type mismatches fail during read-
   delete policy.clients.codex;
   await fs.writeFile(f.policyPath,JSON.stringify(policy));
   await assert.rejects(planInstall(f),{code:'INVALID_POLICY'});
-  await fs.copyFile(new URL('../policies/balanced.json',import.meta.url),f.policyPath);
+  await fs.writeFile(f.policyPath,JSON.stringify(behaviorPolicy()));
   await put(path.join(f.home,'.codex/config.toml'),'[agents]\nmax_concurrent_threads_per_session = "eight"\n');
   await assert.rejects(planInstall(f),{code:'UNSUPPORTED_CONFIG'});
 });
@@ -303,7 +309,7 @@ test('shared policies with identical semantics preserve formatting and stay idem
   await applyInstall(await planInstall(f));
   assert.equal(await fs.readFile(path.join(f.stateDir,'policy.json'),'utf8'),source);
   const policy = JSON.parse(source);
-  await fs.writeFile(f.policyPath,JSON.stringify({clients:policy.clients,maxConcurrent:policy.maxConcurrent,schemaVersion:policy.schemaVersion}));
+  await fs.writeFile(f.policyPath,JSON.stringify({clients:policy.clients,selectedRoles:policy.selectedRoles,maxConcurrent:policy.maxConcurrent,schemaVersion:policy.schemaVersion}));
   assert.equal((await planInstall(f)).status,'unchanged');
   await uninstall({...f,apply:true});
 });
@@ -484,12 +490,13 @@ test('K3.1 Pro catalog choices resolve provisioned aliases and preserve native i
  const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');
  const original=modelConfig+['k3.1-pro','k3.1-pro-highspeed'].map((model,i)=>`[models."native-pro-${i}"]\nprovider = "fixture"\nmodel = "${model}"\nmax_context_size = 1048576\nsupport_efforts = ["low", "high", "max"]\ndefault_effort = "high"\ncapabilities = ["thinking", "always_thinking", "tool_use"]\n`).join('');
  await put(target,original);
- await useRoles(f,{worker:{model:'kimi-code/k3.1-pro',effort:'high'},reviewer:{model:'kimi-code/k3.1-pro-highspeed',effort:'max'}});
+ await useRoles(f,{worker:{model:'kimi-code/k3.1-pro',effort:'high'},reviewer:{model:'kimi-code/k3.1-pro-highspeed',effort:'max'},explorer:{model:'kimi-code/kimi-for-coding',effort:'low'},routine:{model:'kimi-code/kimi-for-coding',effort:'low'}});
  const policy=JSON.parse(await fs.readFile(f.policyPath,'utf8'));policy.clients.kimi.avoidModels=policy.clients.kimi.avoidModels.filter(model=>model!=='kimi-code/k3.1-pro-highspeed');await fs.writeFile(f.policyPath,JSON.stringify(policy));
  const plan=await planInstall(f);assert.equal(plan.status,'planned');await applyInstall(plan);
  const native=parseToml(await fs.readFile(target,'utf8'));
  assert.equal(native.default_model,'main');assert.deepEqual(native.providers,parseToml(original).providers);
  assert.equal(native.secondary_model.default_model,'native-pro-0');
+ assert.deepEqual(Object.keys(native.secondary_model.models).sort(),['kimi-code/kimi-for-coding','native-pro-0','native-pro-1']);
  assert.equal(native.models['native-pro-0'].overrides.default_effort,'high');assert.equal(native.models['native-pro-1'].overrides.default_effort,'max');
  assert.deepEqual(native.models['native-pro-0'].capabilities,['thinking','always_thinking','tool_use']);
  assert.equal((await inspectConfiguration(f)).status,'verified');await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),parseToml(original));

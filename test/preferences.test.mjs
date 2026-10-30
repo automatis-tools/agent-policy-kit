@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {validatePolicy,rolePreference} from '../src/policy.mjs';
+import {ROLE_IDS} from '../src/roles.mjs';
 
 const preferences = () => ({schemaVersion:1,maxConcurrent:3,clients:{codex:{
   code:{model:'gpt-6.1-sol',effort:'high'},light:{model:'gpt-6-luna',effort:'high'},avoidModels:['gpt-6-astra'],
@@ -42,7 +43,7 @@ test('individual task choices override recommendations without changing other ro
 });
 test('Kimi effort consistency concerns effective task choices rather than unused recommendations',()=>{
   const client={code:{model:'native/k3',effort:'high'},light:{model:'native/light',effort:'low'},avoidModels:[],
-    roles:Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:'native/k3',effort:'low'}]))};
+    roles:Object.fromEntries(ROLE_IDS.map(role=>[role,{model:'native/k3',effort:'low'}]))};
   const p={schemaVersion:1,maxConcurrent:3,clients:{kimi:client}};
   assert.equal(rolePreference(validatePolicy(p).clients.kimi,'worker').effort,'low');
   client.roles.reviewer.effort='high';assert.throws(()=>validatePolicy(p));
@@ -70,4 +71,15 @@ for(const kind of ['code','light']) test(`Kimi ${kind} selection rejects the res
 
 test('Google dated provider model IDs are bounded identifiers with native-default effort',()=>{
  const model='claude-sonnet-4-5@20250929',p=preferences();p.clients.claude={code:{model,effort:null},light:{model:'haiku',effort:null},avoidModels:[]};assert.equal(validatePolicy(p).clients.claude.code.model,model);const schema=JSON.parse(fs.readFileSync(new URL('../schema/policy.schema.json',import.meta.url))),identifier=new RegExp(schema.$defs.identifier.pattern);assert.ok(identifier.test(model));for(const invalid of ['@model',model+' whitespace',model+';id','a'.repeat(129),'$(id)']){p.clients.claude.code.model=invalid;assert.throws(()=>validatePolicy(p),{code:'INVALID_POLICY'});assert.equal(identifier.test(invalid),false);}
+});
+
+test('published role schema accepts every runtime catalog subset including five and six roles',()=>{
+ const selection=JSON.parse(fs.readFileSync(new URL('../schema/policy.schema.json',import.meta.url))).properties.selectedRoles;
+ assert.deepEqual(selection.items.enum,ROLE_IDS);
+ const base=preferences();
+ for(let mask=1;mask<(1<<ROLE_IDS.length);mask++){
+  const selectedRoles=ROLE_IDS.filter((_,index)=>mask&(1<<index));
+  assert.doesNotThrow(()=>validatePolicy({...base,selectedRoles}));
+  assert.ok(selectedRoles.length>=selection.minItems&&selectedRoles.length<=selection.maxItems);
+ }
 });

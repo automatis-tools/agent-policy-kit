@@ -21,6 +21,23 @@ Open the [configuration page](https://agent-policy-kit.maksymenko-ml.workers.dev
 
 The [bundled page](site/index.html) also works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
 
+## Roles and work modes
+
+Choose only the roles you need:
+
+| Role | Result |
+|---|---|
+| Coder | Implementation and fixes |
+| Reviewer | Read-only correctness, security and regression findings |
+| Code explorer | Read-only code and documentation discovery |
+| Test writer | Tests and targeted execution; product fixes return to Coder |
+| Docs writer | Verified docs, examples and release notes |
+| Task runner | Prescribed commands and mechanical edits; uncertain decisions return to the parent |
+
+Fast & economical favors bounded work and lighter models. Balanced puts more capability into implementation and verification. Quality first uses frontier models for demanding work, with higher usage and latency possible. All choices remain editable. Claude Fable in Quality may use additional usage credits.
+
+See the [exact preset choices and rationale](docs/model-catalog.md#how-the-presets-are-designed). Recommendations contain no personal model bans. They configure the environment; the main agent still chooses whether to delegate.
+
 ## Use a specific release's defaults
 
 ```sh

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {validatePolicy,rolePreference} from '../src/policy.mjs';
-import {ROLE_IDS} from '../src/roles.mjs';
+import {ROLE_IDS,ROLE_DEFINITIONS} from '../src/roles.mjs';
 import {nativeRoles,instructionBlock} from '../src/native.mjs';
 import {explicitOptions,parseExplicitOptions,formatExplicitCommand} from '../src/explicit.mjs';
 
@@ -18,29 +18,29 @@ test('explicit commands preserve effective role settings and guidance for every 
  let count=0;
  for(const name of ['fast','balanced','quality']){
   const preset=JSON.parse(fs.readFileSync(new URL(`../policies/${name}.json`,import.meta.url)));
-  for(let r=1;r<16;r++)for(let c=1;c<16;c++){
+  for(let r=1;r<(1<<ROLE_IDS.length);r++)for(let c=1;c<16;c++){
    const roles=ROLE_IDS.filter((_,i)=>r&(1<<i)),selected=clients.filter((_,i)=>c&(1<<i));
-   const config={...preset,...(roles.length===4?{}:{selectedRoles:roles}),clients:Object.fromEntries(selected.map(client=>[client,preset.clients[client]]))};
-   const options=explicitOptions(config,ROLE_IDS),decoded=validatePolicy(parseExplicitOptions(options,ROLE_IDS));
+   const config={...preset,...(roles.length===ROLE_IDS.length?{}:{selectedRoles:roles}),clients:Object.fromEntries(selected.map(client=>[client,preset.clients[client]]))};
+   const options=explicitOptions(config,ROLE_DEFINITIONS),decoded=validatePolicy(parseExplicitOptions(options,ROLE_IDS));
    assert.deepEqual(Object.keys(decoded.clients),selected);assert.equal(decoded.maxConcurrent,config.maxConcurrent);
    for(const client of selected){
     for(const role of roles)assert.deepEqual(rolePreference(decoded.clients[client],role),rolePreference(config.clients[client],role));
     assert.deepEqual(decoded.clients[client].avoidModels,config.clients[client].avoidModels);
     assert.deepEqual(nativeRoles(client,decoded.clients[client],roles),nativeRoles(client,config.clients[client],roles));
     assert.equal(instructionBlock(client,decoded.clients[client],3,roles),instructionBlock(client,config.clients[client],3,roles));
-    const command=formatExplicitCommand(config,'0.1.0',ROLE_IDS);assert.ok(command.includes(`--${flag[client]} '`));assert.doesNotMatch(command,/--config|--preset|--release/);
+    const command=formatExplicitCommand(config,'0.1.0',ROLE_DEFINITIONS);assert.ok(command.includes(`--${flag[client]} '`));assert.doesNotMatch(command,/--config|--preset|--release/);
    }
    count++;
   }
  }
- assert.equal(count,675);
+ assert.equal(count,3*((1<<ROLE_IDS.length)-1)*15);
 });
 
 test('native effort and provider IDs containing colons and @ round-trip literally',()=>{
  const model='provider:model@20261030[1m]',options={...one(),codex:`reviewer=${model}:native`};
  const policy=validatePolicy(parseExplicitOptions(options,ROLE_IDS));assert.equal(policy.clients.codex.roles.reviewer.model,model);assert.equal(policy.clients.codex.roles.reviewer.effort,null);
- const command=formatExplicitCommand(policy,'0.1.0',ROLE_IDS);assert.ok(command.includes(`reviewer=${model}:native`));assert.ok(command.includes('--max-concurrent 3'));
- assert.throws(()=>formatExplicitCommand(policy,'0.1.0;echo',ROLE_IDS),/Invalid release/);
+ const command=formatExplicitCommand(policy,'0.1.0',ROLE_DEFINITIONS);assert.ok(command.includes(`reviewer=${model}:native`));assert.ok(command.includes('--max-concurrent 3'));
+ assert.throws(()=>formatExplicitCommand(policy,'0.1.0;echo',ROLE_DEFINITIONS),/Invalid release/);
 });
 
 test('explicit input rejects missing, extra, repeated, malformed or opaque choices',()=>{
@@ -62,7 +62,15 @@ test('the visible multiline command passes literal per-tool arguments through a 
  fs.writeFileSync(fake,`#!${process.execPath}\nrequire('node:fs').writeFileSync(process.env.APK_TEST_ARGUMENTS,JSON.stringify(process.argv.slice(2)));\n`,{mode:0o700});
  const policy={...balanced,selectedRoles:['reviewer'],clients:{codex:{code:{model:'provider:model@2026[1m]',effort:null},light:{model:'provider:model@2026[1m]',effort:null},avoidModels:['gpt-6-astra']}}};
  fs.writeFileSync(path.join(root,'reviewer=provider:model@20261:native'),'glob trap');
- const command=formatExplicitCommand(policy,'0.1.0',ROLE_IDS);
+ const command=formatExplicitCommand(policy,'0.1.0',ROLE_DEFINITIONS);
  const run=spawnSync('/bin/sh',['-c',command],{cwd:root,env:{...process.env,PATH:root+path.delimiter+process.env.PATH,APK_TEST_ARGUMENTS:output},encoding:'utf8'});assert.equal(run.status,0,run.stderr);
  const args=JSON.parse(fs.readFileSync(output));assert.equal(args[args.indexOf('--codex')+1],'reviewer=provider:model@2026[1m]:native');assert.equal(args[args.indexOf('--roles')+1],'reviewer');assert.equal(args.at(-1),'--apply');assert.ok(command.includes(' \\\n'));
+});
+
+test('new role fallback kinds agree between explicit commands and native generation',()=>{
+ const config={schemaVersion:1,maxConcurrent:3,clients:{codex:{code:{model:'gpt-6.1-sol',effort:'medium'},light:{model:'gpt-6-luna',effort:'low'},avoidModels:[]}}};
+ const decoded=validatePolicy(parseExplicitOptions(explicitOptions(config,ROLE_DEFINITIONS),ROLE_IDS));
+ assert.deepEqual(rolePreference(decoded.clients.codex,'tester'),config.clients.codex.code);
+ assert.deepEqual(rolePreference(decoded.clients.codex,'writer'),config.clients.codex.light);
+ assert.deepEqual(nativeRoles('codex',decoded.clients.codex),nativeRoles('codex',config.clients.codex));
 });

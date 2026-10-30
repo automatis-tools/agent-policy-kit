@@ -6,19 +6,41 @@ import os from 'node:os';
 import {validatePolicy} from '../src/policy.mjs';
 import {planInstall,applyInstall,uninstall,inspectConfiguration} from '../src/install.mjs';
 import {parseToml} from '../src/toml.mjs';
+import * as roleCatalog from '../src/roles.mjs';
 
-const roles=['worker','reviewer','explorer','routine'];
+const roles=['worker','reviewer','explorer','tester','writer','routine'];
 const dirs={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
 async function fixture(t,client='codex'){
  const root=await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(),'apk-selected-roles-')));t.after(()=>fs.rm(root,{recursive:true,force:true}));
  const home=path.join(root,'home');await fs.mkdir(home);
- const policy=JSON.parse(await fs.readFile(new URL('../policies/balanced.json',import.meta.url)));
+ const policy={schemaVersion:1,maxConcurrent:3,clients:Object.fromEntries(Object.keys(dirs).map(client=>[client,{code:{model:client==='agy'?'pro':'fixture-code',effort:client==='agy'?null:'high'},light:{model:client==='agy'?'flash':'fixture-light',effort:client==='agy'?null:'low'},avoidModels:[]}]))};
  return {client,home,stateDir:path.join(home,'.agent-policy-kit'),policyPath:path.join(root,'preferences.json'),policy};
 }
 async function put(file,text){await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,text);}
 const rolePath=(f,role)=>path.join(f.home,dirs[f.client],f.client==='agy'?'config/agents':'agents',`apk-${role}.${f.client==='codex'?'toml':'md'}`);
 const receipt=f=>path.join(f.stateDir,'installations',f.client+'.json');
 async function install(f,replace=false){await put(f.policyPath,JSON.stringify(f.policy));return applyInstall(await planInstall({...f,replace}));}
+
+test('native role catalog curates six bounded roles and freezes historical receipt ownership',()=>{
+ assert.deepEqual(roleCatalog.ROLE_IDS,roles);
+ assert.deepEqual(roleCatalog.LEGACY_ROLE_IDS,['worker','reviewer','explorer','routine']);
+ assert.ok(Object.isFrozen(roleCatalog.LEGACY_ROLE_IDS));
+ assert.deepEqual(roleCatalog.ROLE_DEFINITIONS.map(({name,kind})=>[name,kind]),[['Coder','code'],['Reviewer','code'],['Code explorer','light'],['Test writer','code'],['Docs writer','light'],['Task runner','light']]);
+ for(const role of roleCatalog.ROLE_DEFINITIONS){assert.ok(Object.isFrozen(role));assert.match(role.prompt,/Do not create child agents/);assert.ok(role.description.length<180);}
+});
+
+for(const selectedRole of ['tester','writer'])test(`every native adapter supports selected-only ${selectedRole} installation and removal`,async t=>{
+ for(const client of Object.keys(dirs)){
+  const f=await fixture(t,client),config=f.policy.clients[client];f.policy.selectedRoles=[selectedRole];
+  config.roles={[selectedRole]:{model:client==='agy'?'flash':'fixture-selected',effort:client==='agy'?null:'high'}};
+  if(client==='kimi')await put(path.join(f.home,dirs[client],'config.toml'),'default_model="user-main"\n[providers.fixture]\ntype="kimi"\n[models.fixture-selected]\nprovider="fixture"\nmodel="fixture-selected"\nmax_context_size=262144\nsupport_efforts=["high"]\n');
+  await install(f);assert.match(await fs.readFile(rolePath(f,selectedRole),'utf8'),/fixture-selected|model: "flash"/);
+  for(const role of roles.filter(role=>role!==selectedRole))await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
+  assert.equal((await inspectConfiguration(f)).status,'verified');
+  assert.deepEqual(JSON.parse(await fs.readFile(receipt(f))).selectedRoles,[selectedRole]);
+  await uninstall({...f,apply:true});await assert.rejects(fs.stat(rolePath(f,selectedRole)),{code:'ENOENT'});
+ }
+});
 
 test('selectedRoles is optional, nonempty, unique and limited to the native role catalog',()=>{
  const base={schemaVersion:1,maxConcurrent:3,clients:{codex:{code:{model:'code',effort:'high'},light:{model:'light',effort:'high'},avoidModels:[]}}};
@@ -70,6 +92,20 @@ test('removing a previously owned role refuses drift before changing any file',a
 test('v4 receipt role sets bind its owned files and old v3 receipts remain removable',async t=>{
  const f=await fixture(t);f.policy.selectedRoles=['reviewer'];await install(f);const original=JSON.parse(await fs.readFile(receipt(f)));
  for(const selectedRoles of [[],['reviewer','worker'],['reviewer','reviewer'],['invented']]){await fs.writeFile(receipt(f),JSON.stringify({...original,selectedRoles}));await assert.rejects(uninstall({...f,apply:true}),{code:'INVALID_RECEIPT'});}
- await fs.writeFile(receipt(f),JSON.stringify(original));await uninstall({...f,apply:true});delete f.policy.selectedRoles;await install(f,true);
+ await fs.writeFile(receipt(f),JSON.stringify(original));await uninstall({...f,apply:true});f.policy.selectedRoles=['worker','reviewer','explorer','routine'];await install(f,true);
  const old=JSON.parse(await fs.readFile(receipt(f)));old.schemaVersion=3;delete old.selectedRoles;await fs.writeFile(receipt(f),JSON.stringify(old));assert.equal((await inspectConfiguration(f)).status,'verified');await uninstall({...f,apply:true});
+});
+
+test('Kimi six distinct aliases plan, inspect and undo fourteen bounded snapshot operations',async t=>{
+ const f=await fixture(t,'kimi'),target=path.join(f.home,dirs.kimi,'config.toml');f.policy.selectedRoles=roles;
+ f.policy.clients.kimi.roles=Object.fromEntries(roles.map(role=>[role,{model:'fixture-'+role,effort:'high'}]));
+ const original='default_model="user-main"\n[secondary_model]\ndefault_effort="low"\n[providers.fixture]\ntype="kimi"\n'+roles.map(role=>`[models.fixture-${role}]\nprovider="fixture"\nmodel="${role}"\nmax_context_size=262144\nsupport_efforts=["high"]\n`).join('');
+ await put(target,original);await put(f.policyPath,JSON.stringify(f.policy));
+ const plan=await planInstall(f);assert.equal(plan.status,'planned');assert.equal(await fs.readFile(target,'utf8'),original);
+ await applyInstall(plan);const record=JSON.parse(await fs.readFile(receipt(f))),snapshot=record.files.find(file=>file.type==='toml');
+ assert.equal(snapshot.ops.length,14);assert.equal((await inspectConfiguration(f)).status,'verified');
+ for(const mutate of [r=>{const ops=r.files.find(file=>file.type==='toml').ops;ops.push(structuredClone(ops.at(-1)));},r=>{r.files.find(file=>file.type==='toml').ops.at(-1).path=['models','unowned','overrides','default_effort'];},r=>{r.schemaVersion=3;delete r.selectedRoles;}]){
+  const invalid=structuredClone(record);mutate(invalid);await put(receipt(f),JSON.stringify(invalid));await assert.rejects(inspectConfiguration(f),{code:'INVALID_RECEIPT'});
+ }
+ await put(receipt(f),JSON.stringify(record));await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),parseToml(original));
 });

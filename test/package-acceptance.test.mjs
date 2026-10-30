@@ -6,6 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import vm from 'node:vm';
+import {ROLE_IDS,ROLE_DEFINITIONS} from '../src/roles.mjs';
 
 // This gate tests the distributable, not imports from a checkout. The isolated
 // build snapshot is removed, and the real checkout is denied to each consumer.
@@ -76,24 +77,25 @@ test('packed configurator produces independent native files that survive npm and
     kimi:['2.4.0','Usage: kimi\nKimi Code CLI\nhttps://moonshotai.github.io/kimi-code/'],
     agy:['1.4.10','Usage of agy:\n--agent --model --effort\nAvailable subcommands: agent models plugin']};
   const dirs={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
-  const models={codex:['gpt-6.1-sol','gpt-6-luna'],claude:['sonnet','haiku'],agy:['pro','flash']};
+  const bundled=JSON.parse(fs.readFileSync(path.join(consumer,'node_modules/agent-policy-kit/policies/balanced.json'),'utf8'));
+  const expected=Object.fromEntries(Object.entries(bundled.clients).map(([client,config])=>[client,Object.fromEntries(ROLE_DEFINITIONS.map(role=>[role.id,config.roles?.[role.id]??config[role.kind]]))]));
   for(const [client,[version,help]]of Object.entries(identities)) {
     const inspect=`const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const client=${JSON.stringify(client)},base=path.join(process.env.HOME,${JSON.stringify(dirs[client])});
-const roles=['worker','reviewer','explorer','routine'];
+const roles=${JSON.stringify(ROLE_IDS)},expected=${JSON.stringify(expected[client])};
 for(const [i,role]of roles.entries()){
 const file=path.join(base,client==='agy'?'config/agents':'agents','apk-'+role+(client==='codex'?'.toml':'.md'));
 const body=fs.readFileSync(file,'utf8');
 assert.ok(body.includes('apk-'+role));
-if(client==='codex')assert.match(body,new RegExp('model = '+JSON.stringify(${JSON.stringify(models.codex)}[i<2?0:1]).replaceAll('.','\\\\.')));
-else if(client==='kimi')assert.ok(body.includes(i<2?'kimi-code/k3':'kimi-code/kimi-for-coding'));
-else assert.equal(JSON.parse(body.match(/^model: (.+)$/m)[1]),${JSON.stringify(models[client]??[])}[i<2?0:1]);
+if(client==='codex')assert.ok(body.includes('model = '+JSON.stringify(expected[role].model)));
+else if(client==='kimi')assert.ok(body.includes(expected[role].model));
+else assert.equal(JSON.parse(body.match(/^model: (.+)$/m)[1]),expected[role].model);
 assert.ok(!body.includes('node_modules')&&!body.includes('agent-policy.mjs'));
 }
 const instructions=fs.readFileSync(path.join(base,client==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');assert.ok(instructions.includes('apk-worker'));
 if(client==='claude'){const config=JSON.parse(fs.readFileSync(path.join(base,'settings.json')));assert.equal(config.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'3');assert.equal(config.model,'opus');}
 if(client==='codex')assert.match(fs.readFileSync(path.join(base,'config.toml'),'utf8'),/max_concurrent_threads_per_session\\s*=\\s*3/);
-console.log(JSON.stringify({client,roles:4,configuration:'readable',evidence:'standalone_consumer_fixture'}));`;
+console.log(JSON.stringify({client,roles:roles.length,configuration:'readable',evidence:'standalone_consumer_fixture'}));`;
     fs.writeFileSync(path.join(nativeBin,client),`#!/usr/bin/env node\nif(process.argv.includes('--inspect-native')){${inspect}}else console.log(process.argv.includes('--version')?${JSON.stringify(version)}:${JSON.stringify(help)});\n`,{mode:0o755});
   }
   env.PATH=[nativeBin,path.dirname(process.execPath),'/usr/bin','/bin'].join(path.delimiter);
@@ -140,6 +142,11 @@ model="k3-256k"
 max_context_size=262144
 support_efforts=["low","high","max"]
 default_effort="high"
+[models."kimi-code/k3-256k"]
+provider="managed:kimi-code"
+model="k3-256k"
+max_context_size=262144
+support_efforts=["low","high","max"]
 [models."kimi-code/kimi-for-coding"]
 provider="managed:kimi-code"
 model="kimi-for-coding"
@@ -156,7 +163,7 @@ command="echo user_hook"
   const nativePaths=[];
   for(const [client,dir]of Object.entries(dirs)) {
     const instructions=path.join(freshHome,dir,client==='claude'?'CLAUDE.md':'AGENTS.md');put(instructions,'User instruction before setup.\n');nativePaths.push(instructions);
-    for(const role of ['worker','reviewer','explorer','routine'])nativePaths.push(path.join(freshHome,dir,client==='agy'?'config/agents':'agents',`apk-${role}.${client==='codex'?'toml':'md'}`));
+    for(const role of ROLE_IDS)nativePaths.push(path.join(freshHome,dir,client==='agy'?'config/agents':'agents',`apk-${role}.${client==='codex'?'toml':'md'}`));
   }
   parse(cli(['init','--policy',path.join(state,'policy.json')]));
   const plan=parse(cli(['setup']));assert.equal(plan.status,'planned');assert.equal(JSON.stringify(plan).includes('PRIVATE_'),false);
@@ -200,7 +207,7 @@ command="echo user_hook"
   const subset=parse(isolated('/bin/sh',['-c',localCommand],{env:{...env,npm_config_offline:'true'}}));
   assert.equal(subset.status,'configured');assert.equal(subset.results.find(result=>result.client==='kimi').status,'not_selected');
   assert.equal(subset.results.find(result=>result.client==='agy').status,'not_selected');
-  for(const client of ['codex','claude'])for(const role of ['worker','reviewer','explorer','routine'])assert.equal(fs.existsSync(path.join(freshHome,dirs[client],'agents',`apk-${role}.${client==='codex'?'toml':'md'}`)),['reviewer','explorer'].includes(role));
+  for(const client of ['codex','claude'])for(const role of ROLE_IDS)assert.equal(fs.existsSync(path.join(freshHome,dirs[client],'agents',`apk-${role}.${client==='codex'?'toml':'md'}`)),['reviewer','explorer'].includes(role));
   assert.match(fs.readFileSync(path.join(freshHome,'.codex/agents/apk-reviewer.toml'),'utf8'),/model_reasoning_effort = "max"/);
   assert.equal(fs.readFileSync(kimiConfig,'utf8'),kimiBeforeSubset);
   const subsetDoctor=parse(cli(['doctor']));for(const client of ['codex','claude'])assert.equal(subsetDoctor.clients[client].configuration.status,'verified');
@@ -235,6 +242,6 @@ await fs.writeFile(${JSON.stringify(reductionMarker)},'removed role observed');t
   for(const [file,text]of saved)assert.equal(fs.readFileSync(file,'utf8'),text);
   for(const client of Object.keys(dirs)) {
     const consumed=parse(isolated(path.join(nativeBin,client),['--inspect-native']));
-    assert.equal(consumed.roles,4);assert.equal(consumed.configuration,'readable');assert.equal(consumed.evidence,'standalone_consumer_fixture');
+    assert.equal(consumed.roles,ROLE_IDS.length);assert.equal(consumed.configuration,'readable');assert.equal(consumed.evidence,'standalone_consumer_fixture');
   }
 });

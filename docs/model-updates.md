@@ -1,6 +1,6 @@
 # Keeping model choices current
 
-The task roles stay stable: worker/reviewer for code, explorer/routine for search and mechanical work. Models and effort values are separate data in policies and models/catalog.json and can evolve without changing those responsibilities.
+The task roles stay stable: worker for implementation, reviewer for findings, explorer for discovery, tester for tests, writer for documentation and routine for prescribed execution. Models and effort values are separate data in policies and models/catalog.json and can evolve without changing those responsibilities.
 
 Named presets and the dated model/effort catalog follow the npm package version. Record model-choice changes and their review date/sources in CHANGELOG.md when releasing a revised preset. Version 0.1.0 is a starting example, not a live ranking or a benchmark of model quality. Native format checks are recorded in [verification](verification.md).
 

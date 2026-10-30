@@ -35,7 +35,7 @@ Usage: agent-policy <command> [options]
 
 Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
          --policy FILE | --release [--preset fast|balanced|quality] | --config BASE64URL
-         --roles worker,reviewer,explorer,routine --max-concurrent 3
+         --roles worker,reviewer,explorer,tester,writer,routine --max-concurrent 3
          --codex ROLE=MODEL:EFFORT,... --claude ROLE=MODEL:EFFORT,...
          --kimi ROLE=ALIAS:EFFORT,... --antigravity ROLE=TIER,...
          --avoid-codex MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-antigravity MODELS

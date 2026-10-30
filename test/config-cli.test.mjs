@@ -52,7 +52,7 @@ test('removed runtime commands reject before reading corrupt preferences or priv
 });
 
 const nativeHomes={codex:['CODEX_HOME','.codex','codex-cli 0.165.0'],claude:['CLAUDE_CONFIG_DIR','.claude','2.1.312 (Claude Code)'],kimi:['KIMI_CODE_HOME','.kimi-code','kimi 2.4.0']};
-const provisionedKimi='[providers.fixture]\ntype = "kimi"\n[models."kimi-code/k3"]\nprovider = "fixture"\nmodel = "k3"\nmax_context_size = 1048576\nsupport_efforts = ["high"]\n[models."kimi-code/kimi-for-coding"]\nprovider = "fixture"\nmodel = "kimi-for-coding"\nmax_context_size = 262144\nsupport_efforts = ["low", "high"]\n';
+const provisionedKimi='[providers.fixture]\ntype = "kimi"\n[models."kimi-code/k3-256k"]\nprovider = "fixture"\nmodel = "k3-256k"\nmax_context_size = 1048576\nsupport_efforts = ["high"]\n[models."kimi-code/kimi-for-coding"]\nprovider = "fixture"\nmodel = "kimi-for-coding"\nmax_context_size = 262144\nsupport_efforts = ["low", "high"]\n';
 function nativeBinary(home,client) {
  const directory=path.join(home,'fixture-bin');fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,client),`#!${process.execPath}\nconsole.log(${JSON.stringify(nativeHomes[client][2])});\n`,{mode:0o700});return directory;
 }

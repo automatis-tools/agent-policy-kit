@@ -17,6 +17,6 @@ fs.writeFileSync(path.join(destination,'_headers'),`/*
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 /v/${version}/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: no-cache
 `);
 console.log(`Built public page and versioned /v/${version}/ snapshot.`);

@@ -12,10 +12,19 @@
     "selectedRoles": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 4,
+      "maxItems": 6,
       "uniqueItems": true,
-      "items": {"enum": ["worker", "reviewer", "explorer", "routine"]},
-      "description": "Native subagent roles to configure. Omit to include all four roles."
+      "items": {
+        "enum": [
+          "worker",
+          "reviewer",
+          "explorer",
+          "tester",
+          "writer",
+          "routine"
+        ]
+      },
+      "description": "Native subagent roles to configure. Omit to include all six roles in this release."
     },
     "schemaVersion": {
       "const": 1
@@ -134,6 +143,12 @@
             },
             "routine": {
               "$ref": "#/$defs/profile"
+            },
+            "tester": {
+              "$ref": "#/$defs/profile"
+            },
+            "writer": {
+              "$ref": "#/$defs/profile"
             }
           }
         }
@@ -176,6 +191,12 @@
               "$ref": "#/$defs/tierProfile"
             },
             "routine": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "tester": {
+              "$ref": "#/$defs/tierProfile"
+            },
+            "writer": {
               "$ref": "#/$defs/tierProfile"
             }
           }
@@ -252,6 +273,12 @@
             },
             "routine": {
               "$ref": "#/$defs/kimiProfile"
+            },
+            "tester": {
+              "$ref": "#/$defs/kimiProfile"
+            },
+            "writer": {
+              "$ref": "#/$defs/kimiProfile"
             }
           }
         }
@@ -317,6 +344,12 @@
               "$ref": "#/$defs/claudeProfile"
             },
             "routine": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "tester": {
+              "$ref": "#/$defs/claudeProfile"
+            },
+            "writer": {
               "$ref": "#/$defs/claudeProfile"
             }
           }

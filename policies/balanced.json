@@ -5,44 +5,71 @@
     "codex": {
       "code": {
         "model": "gpt-6.1-sol",
-        "effort": "high"
+        "effort": "medium"
       },
       "light": {
         "model": "gpt-6-luna",
-        "effort": "high"
+        "effort": "low"
       },
-      "avoidModels": [
-        "gpt-6-astra"
-      ]
+      "roles": {
+        "reviewer": {
+          "model": "gpt-6.1-sol",
+          "effort": "high"
+        },
+        "explorer": {
+          "model": "gpt-6-luna",
+          "effort": "high"
+        },
+        "tester": {
+          "model": "gpt-6.1-sol",
+          "effort": "high"
+        },
+        "writer": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        }
+      },
+      "avoidModels": []
     },
     "claude": {
       "code": {
-        "model": "sonnet",
-        "effort": "high"
+        "model": "claude-sonnet-5-5",
+        "effort": "medium"
       },
       "light": {
-        "model": "haiku",
-        "effort": "high"
+        "model": "claude-haiku-5-5",
+        "effort": "low"
       },
-      "avoidModels": [
-        "opus",
-        "fable"
-      ]
+      "roles": {
+        "reviewer": {
+          "model": "claude-sonnet-5-5",
+          "effort": "high"
+        },
+        "explorer": {
+          "model": "claude-haiku-5-5",
+          "effort": "medium"
+        },
+        "tester": {
+          "model": "claude-sonnet-5-5",
+          "effort": "high"
+        },
+        "writer": {
+          "model": "claude-sonnet-5-5",
+          "effort": "medium"
+        }
+      },
+      "avoidModels": []
     },
     "kimi": {
       "code": {
-        "model": "kimi-code/k3",
+        "model": "kimi-code/k3-256k",
         "effort": "high"
       },
       "light": {
         "model": "kimi-code/kimi-for-coding",
         "effort": "low"
       },
-      "avoidModels": [
-        "primary",
-        "kimi-code/k3.1-pro-highspeed",
-        "kimi-code/kimi-for-coding-highspeed"
-      ]
+      "avoidModels": []
     },
     "agy": {
       "code": {
@@ -50,8 +77,18 @@
         "effort": null
       },
       "light": {
-        "model": "flash",
+        "model": "flash_lite",
         "effort": null
+      },
+      "roles": {
+        "explorer": {
+          "model": "flash",
+          "effort": null
+        },
+        "writer": {
+          "model": "flash",
+          "effort": null
+        }
       },
       "avoidModels": []
     }

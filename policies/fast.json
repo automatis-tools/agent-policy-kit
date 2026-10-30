@@ -5,29 +5,44 @@
     "codex": {
       "code": {
         "model": "gpt-6-luna",
-        "effort": "low"
+        "effort": "medium"
       },
       "light": {
         "model": "gpt-6-luna",
         "effort": "low"
       },
-      "avoidModels": [
-        "gpt-6-astra"
-      ]
+      "roles": {
+        "reviewer": {
+          "model": "gpt-6-luna",
+          "effort": "high"
+        },
+        "tester": {
+          "model": "gpt-6-luna",
+          "effort": "high"
+        }
+      },
+      "avoidModels": []
     },
     "claude": {
       "code": {
-        "model": "haiku",
-        "effort": "low"
+        "model": "claude-haiku-5-5",
+        "effort": "medium"
       },
       "light": {
-        "model": "haiku",
+        "model": "claude-haiku-5-5",
         "effort": "low"
       },
-      "avoidModels": [
-        "opus",
-        "fable"
-      ]
+      "roles": {
+        "reviewer": {
+          "model": "claude-haiku-5-5",
+          "effort": "high"
+        },
+        "tester": {
+          "model": "claude-haiku-5-5",
+          "effort": "high"
+        }
+      },
+      "avoidModels": []
     },
     "kimi": {
       "code": {
@@ -38,15 +53,11 @@
         "model": "kimi-code/kimi-for-coding",
         "effort": "low"
       },
-      "avoidModels": [
-        "primary",
-        "kimi-code/k3.1-pro-highspeed",
-        "kimi-code/kimi-for-coding-highspeed"
-      ]
+      "avoidModels": []
     },
     "agy": {
       "code": {
-        "model": "flash_lite",
+        "model": "flash",
         "effort": null
       },
       "light": {

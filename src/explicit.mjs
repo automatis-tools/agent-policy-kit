@@ -47,7 +47,12 @@ export function parseExplicitOptions(options,roleIds){
  return {schemaVersion:1,maxConcurrent,...(roles.length===roleIds.length?{}:{selectedRoles:roles}),clients};
 }
 
-export function explicitOptions(config,roleIds){
+export function explicitOptions(config,roleCatalog){
+ const legacy={worker:'code',reviewer:'code',explorer:'light',routine:'light'};
+ if(!Array.isArray(roleCatalog)||!roleCatalog.length)invalidExplicit();
+ const definitions=roleCatalog.map(role=>typeof role==='string'?{id:role,kind:legacy[role]}:role);
+ if(definitions.some(role=>!role||typeof role.id!=='string'||!['code','light'].includes(role.kind))||new Set(definitions.map(role=>role.id)).size!==definitions.length)invalidExplicit();
+ const roleIds=definitions.map(role=>role.id),kinds=new Map(definitions.map(role=>[role.id,role.kind]));
  if(!config||config.schemaVersion!==1||!config.clients||typeof config.clients!=='object'||Array.isArray(config.clients))invalidExplicit();
  const selected=config.selectedRoles??roleIds;
  if(!Array.isArray(selected)||!selected.length||new Set(selected).size!==selected.length||selected.some(role=>!roleIds.includes(role)))invalidExplicit();
@@ -56,7 +61,7 @@ export function explicitOptions(config,roleIds){
  for(const [client,preferences]of Object.entries(config.clients)){
   const flag=Object.keys(TOOL_FLAGS).find(flag=>TOOL_FLAGS[flag]===client);if(!flag||!preferences)invalidExplicit();
   options[flag]=roles.map(role=>{
-   const selected=preferences.roles?.[role]??preferences[role==='worker'||role==='reviewer'?'code':'light'];
+   const selected=preferences.roles?.[role]??preferences[kinds.get(role)];
    if(!selected||typeof selected.model!=='string'||!EXPLICIT_MODEL.test(selected.model)||(selected.effort!==null&&!EXPLICIT_EFFORTS.includes(selected.effort)))invalidExplicit();
    if(client==='agy'&&selected.effort!==null)invalidExplicit();
    return `${role}=${selected.model}${client==='agy'?'':':'+(selected.effort??'native')}`;
@@ -68,9 +73,9 @@ export function explicitOptions(config,roleIds){
  return options;
 }
 
-export function formatExplicitCommand(config,version,roleIds){
+export function formatExplicitCommand(config,version,roleCatalog){
  if(typeof version!=='string'||!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version))throw new Error('Invalid release version.');
- const options=explicitOptions(config,roleIds),quote=value=>"'"+value.replaceAll("'","'\"'\"'")+"'";
+ const options=explicitOptions(config,roleCatalog),quote=value=>"'"+value.replaceAll("'","'\"'\"'")+"'";
  const lines=[`npx --yes --ignore-scripts --package agent-policy-kit@${version} agent-policy setup`];
  for(const [name,value]of Object.entries(options))lines.push(`--${name} ${name==='max-concurrent'?value:quote(value)}`);
  lines.push('--apply');return lines.join(' \\\n  ');

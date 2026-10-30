@@ -98,7 +98,7 @@ test('an unverifiable executable makes a detected subset partial while preservin
 
 test('conventional-only Kimi gets native configuration without a launcher',async t=>{
  const f=await fixture(t),kimi=path.join(f.hostHome,'.kimi-code/bin/kimi');await fs.mkdir(path.dirname(kimi),{recursive:true});await fs.writeFile(kimi,`#!${process.execPath}\nconsole.log('kimi 2.4.0');\n`,{mode:0o700});
- const config=path.join(f.home,'.kimi-code/config.toml');await fs.mkdir(path.dirname(config),{recursive:true});await fs.writeFile(config,'[providers.fixture]\ntype = "kimi"\n[models."kimi-code/k3"]\nprovider = "fixture"\nmodel = "k3"\nmax_context_size = 1048576\nsupport_efforts = ["high"]\n[models."kimi-code/kimi-for-coding"]\nprovider = "fixture"\nmodel = "kimi-for-coding"\nmax_context_size = 262144\nsupport_efforts = ["low", "high"]\n');
+ const config=path.join(f.home,'.kimi-code/config.toml');await fs.mkdir(path.dirname(config),{recursive:true});await fs.writeFile(config,'[providers.fixture]\ntype = "kimi"\n[models."kimi-code/k3-256k"]\nprovider = "fixture"\nmodel = "k3-256k"\nmax_context_size = 1048576\nsupport_efforts = ["high"]\n[models."kimi-code/kimi-for-coding"]\nprovider = "fixture"\nmodel = "kimi-for-coding"\nmax_context_size = 262144\nsupport_efforts = ["low", "high"]\n');
  for(const attempt of [1,2]){
   const result=await setupDetected({...f,client:'kimi',apply:true});assert.equal(result.status,'configured');assert.equal(result.results[0].status,attempt===1?'configured':'unchanged');assert.ok(result.results[0].warnings.includes('kimi-concurrency-guidance-only'));assert.ok(result.requiredActions.some(a=>a.code==='kimi-model-pool-routing-guidance'));await assert.rejects(fs.stat(path.join(f.stateDir,'bin')),{code:'ENOENT'});
  }

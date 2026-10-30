@@ -8,7 +8,7 @@ src/share.mjs validates and encodes the visible form state into the URL fragment
 
 src/roles.mjs supplies the shared role descriptions/prompts for the page and native generation. src/policy.mjs validates code/light defaults, optional selectedRoles and per-client role overrides. Native generation uses selected roles only. The first selected role in catalog order supplies the native subagent default. Effort null means no explicit pin. Documented levels depend on model and client. Selected Kimi aliases merge explicit effort and resolve only to provisioned entries. Ambiguity fails without writes.
 
-The fixed native role filenames remain apk-worker/reviewer/explorer/routine. Their presence does not require delegation. The main agent decides whether helpers are useful; main models and disabled features are preserved.
+The fixed native role filenames remain apk-worker/reviewer/explorer/tester/writer/routine. Their presence does not require delegation. The main agent decides whether helpers are useful; main models and disabled features are preserved.
 
 Receipt v4 stores the selected role set, bounded ownership snapshots and actual release/source/preset provenance. It verifies that the owned file set matches selectedRoles. Inspection/removal checks old hashes, blocks and typed operations without current templates or catalog validation. Historical v3 and v2 native snapshots remain supported. v2 has unknown release provenance. Unsupported layouts/runtime receipts are refused.
 

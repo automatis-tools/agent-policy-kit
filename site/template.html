@@ -81,15 +81,16 @@ __APK_EXPLICIT_CODEC__
 __APK_SHARE_CODEC__
 (() => {
   const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
-  const ROLES = ['worker', 'reviewer', 'explorer', 'routine'];
+  const ROLES = RELEASE.roles.map(role=>role.id);
+  const ROLE_KINDS=Object.fromEntries(RELEASE.roles.map(role=>[role.id,role.kind]));
   const TIERS = ['pro', 'flash', 'flash_lite', 'inherit'];
   const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
   const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'Antigravity'};
-  const TASKS = {worker: 'Code', reviewer: 'Review', explorer: 'Search', routine: 'Routine'};
+  const TASKS = Object.fromEntries(RELEASE.roles.map(role=>[role.id,role.name]));
   const NOTES = {codex: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', agy: 'Native tiers only; per-task effort is unavailable.'};
   const clone = value => JSON.parse(JSON.stringify(value));
   function effective(config, role) {
-    return config.roles?.[role] ?? config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
+    return config.roles?.[role] ?? config[ROLE_KINDS[role]];
   }
   function initialState(preferences, presetId = 'balanced', {empty=false}={}) {
     const available = CLIENTS.filter(client => preferences.clients[client]),selected=empty?[]:available;
@@ -186,7 +187,7 @@ __APK_SHARE_CODEC__
         }
         const selected = {model: choice.model, effort: choice.effort};
         choices.push(selected);
-        const fallback = config[role === 'worker' || role === 'reviewer' ? 'code' : 'light'];
+        const fallback = config[ROLE_KINDS[role]];
         if (selected.model !== fallback.model || selected.effort !== fallback.effort) roles[role] = selected;
       }
       if (client === 'kimi') {
@@ -213,7 +214,7 @@ __APK_SHARE_CODEC__
     for (const byte of bytes) binary += String.fromCharCode(byte);
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
-  function buildCommand(config, release) {return formatExplicitCommand(config,release.version,ROLES);}
+  function buildCommand(config, release) {return formatExplicitCommand(config,release.version,RELEASE.roles);}
   globalThis.APKConfigurator = Object.freeze({initialState, modeFor, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
 
@@ -320,8 +321,17 @@ __APK_SHARE_CODEC__
   const all=state.active==='all',mode=A.modeFor(state),scope=all?'All selected tools':toolName(state.active);if($('scope-label').textContent!==scope){$('scope-label').textContent=scope;flashLabel($('scope-label'));}
   const options=$('mode-options');options.replaceChildren();
   for(const p of [...presets,{id:'custom',label:'Custom'}]){const label=el('label',{class:'mode-option'}),radio=el('input',{type:'radio',name:'mode',value:p.id,'aria-label':p.label});label.style.viewTransitionName='mode-'+p.id;radio.checked=mode===p.id;radio.addEventListener('change',()=>{if(p.id==='custom'){for(const client of (all?state.selected:[state.active])){state.profiles[client].custom=true;state.profiles[client].modeSelected=true;}render();}else apply(p);});label.append(radio,el('span',{},p.label));options.append(label);}
-  const notice=$('mode-notice');notice.hidden=mode!=='custom';notice.replaceChildren();if(all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.textContent=`Custom models and effort for ${toolName(state.active)}.`;
+  renderModeNotice();
   $('advanced').hidden=all||mode===null;renderEditor();
+ }
+ function renderModeNotice(){
+  const all=state.active==='all',mode=A.modeFor(state),notice=$('mode-notice');
+  const message=mode==='custom'?(all?'Open a coding tool to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`):(presets.find(p=>p.id===mode)?.description??'');
+  const fable=state.selected.includes('claude')&&state.profiles.claude.modeSelected!==false&&helpers.some(role=>/^(?:claude-)?fable(?:-|$)/.test(state.jobs.claude?.[role]?.model??''));
+  const credit=fable?'Claude Fable may use usage credits and requires Claude Code 2.1.257+.':'';
+  const text=[message,credit].filter(Boolean).join(' ');
+  if(notice.textContent!==text){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.append(message);if(credit)notice.append((message?' ':'')+credit);}
+  notice.hidden=!text;
  }
  function renderEditor(){
   const parent=$('editor');parent.replaceChildren();if(!helpers.length||!state.active||state.active==='all'||state.profiles[state.active].modeSelected===false)return;
@@ -415,6 +425,7 @@ __APK_SHARE_CODEC__
   const link=el('a',{href:'#'+id},text);link.addEventListener('click',event=>{event.preventDefault();const target=$(id);target.scrollIntoView({behavior:reducedMotion.matches?'instant':'smooth',block:'center'});target.focus({preventScroll:true});});return link;
  }
  function renderResult(){
+  renderModeNotice();
   let next='',summary='Complete the steps above.',detail='',missing=[];
   if(!helpers.length)missing.push(['helpers-heading','a subagent role in step 1']);
   if(!pickedTools.length)missing.push(['tools-heading','a coding tool in step 2']);

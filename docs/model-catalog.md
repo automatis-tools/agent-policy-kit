@@ -15,11 +15,11 @@ Hidden security/utility models, session modes and private deployments are separa
 
 | Upstream ID | Native effort levels | Default | Role in this release |
 |---|---|---|---|
-| k3.1-pro | low / high / max | high | Quality first |
+| k3.1-pro | low / high / max | high | Optional flagship; Quality uses explicit max for code/review/tests |
 | k3.1-pro-highspeed | low / high / max | high | Optional faster-output variant |
-| k3 | low / high / max | high | Balanced code/review |
-| k3-256k | low / high / max | high | Optional 256K context variant |
-| kimi-for-coding | low / high / max | max | K2.8 Preview; Fast and Balanced light work |
+| k3 | low / high / max | high | Quality exploration/documentation |
+| k3-256k | low / high / max | high | Balanced implementation/review/tests |
+| kimi-for-coding | low / high / max | max | K2.8 Preview; Fast and lighter Balanced work |
 | kimi-for-coding-highspeed | Fixed thinking; no effort override | Unpinned | Optional K2.7 Code Highspeed |
 
 Both K3.1 Pro variants require thinking. Kimi documents approximately twice the quota usage for Pro Highspeed versus regular Pro; account tier controls access and context limits. The old kimi.ai/help page still lists only four IDs, so it is not the current inventory source. Native aliases use the kimi-code/ prefix; setup still requires an existing provisioned alias or a unique matching upstream model. It never creates provider credentials.
@@ -36,13 +36,58 @@ Antigravity's shared documentation has a narrower App table, but the installed C
 
 Account/provider access varies. Custom model IDs remain available for supported native fields. Antigravity accepts only inherit/flash_lite/flash/pro for the native role model field; its broader session model inventory cannot be pinned through this field. Per-role effort is unavailable there. Claude aliases may resolve differently per provider. Unknown defaults are kept as null rather than invented.
 
-| Preset | Starting choices | Priority |
-|---|---|---|
-| Fast & economical | Light models/tiers and lower supported effort | Shorter routine delegated work and resource restraint |
-| Balanced | Capable code/review, light search/routine | Mix of capability and resource use |
-| Quality first | Capable models/tiers across the roles, high supported effort | More demanding delegated work |
+## How the presets are designed
 
-These are editable recommendations, not measured price/quality guarantees. Balanced keeps Sol/Sonnet/K3/Pro for code and Luna/Haiku/K2.8 Preview/Flash for light work. Quality first now uses regular K3.1 Pro at high effort for Kimi, based on the provider's current flagship recommendation; no comparative model benchmark was run. Each preset is shipped with the package version.
+These are starting recommendations for different priorities, reviewed on 2026-10-30. No comparative task benchmark was run. The four vendors' effort labels and subscription usage are not directly comparable.
+
+- **Fast & economical:** bounded tasks on lighter models. Reviews and test creation receive extra reasoning because checking edge cases differs from executing known steps. Kimi uses one efficient alias at one coherent effort; Antigravity uses Flash for code and Flash Lite for lighter work.
+- **Balanced:** stronger implementation, review and test creation, with lighter fact gathering and mechanical work. Kimi uses K3 256K for code to keep its quota footprint below the full-context K3 variant; larger-context choices remain editable.
+- **Quality first:** demanding implementation, review and tests get frontier models and deeper supported reasoning. Exploration, documentation and mechanical steps use choices suited to those roles rather than automatically selecting the largest model everywhere. Kimi keeps one effort per shared alias; Pro max is reserved for code/review/tests, while K3 handles exploration and docs at high effort.
+
+No preset bans any model. An unselected model remains available in Custom. Explicit personal avoid lists are still supported in user policy/CLI input. The shared concurrency ceiling of three is a modest operational default, not a claim that a particular parallelism level improves quality; native enforcement varies by client.
+
+### Fast & economical
+
+| Role | Codex | Claude Code | Kimi Code | Antigravity |
+|---|---|---|---|---|
+| Coder | Luna · medium | Haiku 5.5 · medium | K2.8 Preview · low | Flash |
+| Reviewer | Luna · high | Haiku 5.5 · high | K2.8 Preview · low | Flash |
+| Code explorer | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite |
+| Test writer | Luna · high | Haiku 5.5 · high | K2.8 Preview · low | Flash |
+| Docs writer | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite |
+| Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite |
+
+### Balanced
+
+| Role | Codex | Claude Code | Kimi Code | Antigravity |
+|---|---|---|---|---|
+| Coder | Sol · medium | Sonnet 5.5 · medium | K3 256K · high | Pro |
+| Reviewer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro |
+| Code explorer | Luna · high | Haiku 5.5 · medium | K2.8 Preview · low | Flash |
+| Test writer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro |
+| Docs writer | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · low | Flash |
+| Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite |
+
+### Quality first
+
+| Role | Codex | Claude Code | Kimi Code | Antigravity |
+|---|---|---|---|---|
+| Coder | Astra · xhigh | Fable 5.1 · xhigh | K3.1 Pro · max | Pro |
+| Reviewer | Astra · xhigh | Fable 5.1 · xhigh | K3.1 Pro · max | Pro |
+| Code explorer | Sol · high | Opus 5.5 · high | K3 · high | Pro |
+| Test writer | Astra · xhigh | Fable 5.1 · xhigh | K3.1 Pro · max | Pro |
+| Docs writer | Sol · high | Opus 5.5 · high | K3 · high | Pro |
+| Task runner | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · high | Flash |
+
+## Reasons and access requirements
+
+OpenAI positions Astra for demanding work, Sol for a capability/usage balance and Luna for focused efficient work. Its [selection guidance](https://developers.openai.com/api/docs/guides/model-selection) treats these as starting points to evaluate on representative tasks. APK's Codex effort values still follow the native CLI catalog, not API-only options.
+
+Anthropic's [model comparison](https://platform.claude.com/docs/en/models/overview) distinguishes Fable, Opus, Sonnet and Haiku by workload and latency. Versioned IDs freeze the recommendation more precisely than moving family aliases. [Claude Code](https://code.claude.com/docs/en/model-config) supports the selected levels and warns of diminishing returns at max. Fable 5.1 requires CLI 2.1.257+ and may consume usage credits depending on the plan. Some non-interactive native paths bill those credits without a consent prompt; APK does not change billing settings or promise a later confirmation. Use Custom to choose another available model.
+
+[Kimi's model table](https://www.kimi.com/code/docs/en/kimi-code/models.html) describes K2.8 Preview's efficient thinking and the smaller quota footprint of K3 256K. Pro Highspeed has the same capabilities as regular Pro at a quota premium, so it is optional rather than a default for either economical or quality priorities. Selected aliases must be provisioned and Pro must have thinking enabled. Roles sharing one alias share its native effort setting.
+
+Antigravity recommendations use only its native role tiers. The CLI's Pro/Flash/Flash Lite selectors do not freeze the underlying provider model, and there is no per-role effort field. Account access and native precedence still apply; see [support](compatibility.md).
 
 Native default effort means no explicit override. Unsupported effort fields are omitted. Explicit levels are filtered by model and native client; Kimi additionally checks provisioned support_efforts. It never silently changes the main agent's effort to satisfy a helper's setting.
 

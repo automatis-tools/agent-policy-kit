@@ -4,9 +4,9 @@ Start with policies/balanced.json or another preset in the selected release. The
 
 - schemaVersion1; maxConcurrent is a shared target1..32.
 - clients contains codex, claude, kimi and/or agy (the technical key for Antigravity).
-- Optional top-level selectedRoles is a nonempty unique array of worker, reviewer, explorer and routine IDs. Omit it for all four. Only selected roles receive native files and routing instructions.
+- Optional top-level selectedRoles is a nonempty unique array of worker, reviewer, explorer, tester, writer and routine IDs. Omit it for all six roles in the executing release. Only selected roles receive native files and routing instructions.
 - code/light hold default model+effort pairs.
-- Optional roles inside each client overrides worker, reviewer, explorer and routine independently. Worker/reviewer otherwise use code; explorer/routine use light.
+- Optional roles inside each client overrides each selected role independently. Worker/reviewer/tester otherwise use code; explorer/writer/routine use light. Public presets also contain role-specific overrides.
 - avoidModels is delegation guidance. An explicit page choice removes itself from that avoid list.
 
 Effort null means native behavior without an explicit effort override. Codex effort depends on the native model selector. Claude supports low through max as documented per model. Kimi actual aliases must declare the requested non-null effort. Antigravity's role field supports model tiers, with no per-role effort pin.

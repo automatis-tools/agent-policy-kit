@@ -6,7 +6,7 @@ Choose Reviewer and Researcher in the page, then select your coding tools. APK c
 
 ## One role scheme across coding tools
 
-Use a code model for apk-worker/apk-reviewer and a light model for apk-explorer/apk-routine. Each tool receives native definitions and delegation instructions; no central dispatcher runs between it and its provider.
+Choose models for the six focused roles: implementation, review, discovery, tests, documentation and prescribed execution. Presets provide role-specific starting choices. Each tool receives native definitions and delegation instructions; no central dispatcher runs between it and its provider.
 
 ## Keep your main model
 

@@ -22,7 +22,7 @@ test('current Kimi inventory includes both K3.1 Pro routes with native thinking 
   assert.equal(model.source,'https://www.kimi.com/code/docs/en/kimi-code/models');
  }
  const quality=presetPreferences('quality').clients.kimi;
- assert.deepEqual(quality.code,{model:'kimi-code/k3.1-pro',effort:'high'});assert.deepEqual(quality.light,quality.code);
+ assert.deepEqual(quality.code,{model:'kimi-code/k3.1-pro',effort:'max'});assert.deepEqual(rolePreference(quality,'explorer'),{model:'kimi-code/k3',effort:'high'});
 });
 
 test('native effort choices stay separate from API-only capabilities and delegation modes',()=>{
@@ -44,9 +44,22 @@ test('three named presets are valid editable recommendations from the same packa
  const fingerprints=new Set();
  for(const preset of PRESETS){const preferences=presetPreferences(preset.id);validatePolicy(preferences);fingerprints.add(bundledReleaseInfo(preset.id).preferencesHash);for(const client of Object.values(preferences.clients))for(const role of Object.keys(ROLES))assert.ok(rolePreference(client,role));}
  assert.equal(fingerprints.size,3);assert.throws(()=>presetPreferences('../outside'),e=>e.code==='UNKNOWN_PRESET');
- assert.equal(presetPreferences('fast').clients.codex.code.effort,'low');assert.equal(presetPreferences('quality').clients.claude.code.model,'opus');
+ assert.equal(presetPreferences('fast').clients.codex.code.model,'gpt-6-luna');assert.equal(presetPreferences('quality').clients.claude.code.model,'claude-fable-5-1');
 });
 
 test('Fable is a documented Claude subagent alias with current native effort choices',()=>{
  const data=modelCatalog().clients.claude,row=data.models.find(model=>model.id==='fable');assert.ok(row);assert.equal(row.kind,'alias');assert.deepEqual(row.efforts,['low','medium','high','xhigh','max']);assert.equal(row.defaultEffort,'high');assert.match(row.source,/^https:\/\/code\.claude\.com\/docs\/en\/(?:sub-agents|model-config)/);assert.ok(!data.excluded.some(model=>model.id==='fable'));assert.deepEqual(data.excluded.map(model=>model.id),['best','default','opus[1m]','opusplan','sonnet[1m]']);
+});
+
+test('public recommendations never carry personal model bans',()=>{
+ for(const preset of PRESETS)for(const [client,config]of Object.entries(presetPreferences(preset.id).clients))assert.deepEqual(config.avoidModels,[],`${preset.id}/${client} must leave model choice open`);
+});
+test('Quality prioritizes frontier models for demanding implementation and review',()=>{
+ const quality=presetPreferences('quality');
+ for(const role of ['worker','reviewer']){
+  assert.equal(rolePreference(quality.clients.codex,role).model,'gpt-6-astra');
+  assert.equal(rolePreference(quality.clients.claude,role).model,'claude-fable-5-1');
+ }
+ assert.notEqual(rolePreference(quality.clients.codex,'routine').model,'gpt-6-astra');
+ assert.notEqual(rolePreference(quality.clients.claude,'routine').model,'claude-fable-5-1');
 });
