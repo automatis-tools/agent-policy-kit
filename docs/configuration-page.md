@@ -36,3 +36,7 @@ Serve site/index.html from any static host. It can become part of getacc.dev wit
 The current version is unreleased. Its page labels that status. Before npm publication, use the verified local tarball as described in the [AI operator guide](../AGENT_INSTALL.md). The checks do not publish or deploy anything.
 
 The introduction includes a collapsed “How it works and why you need it” explanation aligned with the README. Native details/summary supports keyboard toggling; opening/closing takes 200 ms and honors reduced motion. The hosted versioned URL preserves release-specific shared links.
+
+The footer credits Mykola Maksymenko and links to his supplied LinkedIn profile, Agents Can Communicate and Automatis Skills. Package author metadata is the source for the visible byline, title, author tags and static JSON-LD Person/project/page relationship. The canonical URL follows the homepage origin and bundled release version. These links load only when followed; no social widgets or runtime metadata requests are added.
+
+These attribution changes are prepared for a future release. Keep already published npm versions and versioned HTML snapshots unchanged when publishing them after review and integration into main.

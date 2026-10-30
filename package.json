@@ -4,7 +4,10 @@
   "description": "Configure native subagent settings across coding tools, then exit",
   "type": "module",
   "license": "MIT",
-  "author": "Agent Policy Kit contributors",
+  "author": {
+    "name": "Mykola Maksymenko",
+    "url": "https://www.linkedin.com/in/nick-maximenko/"
+  },
   "keywords": [
     "codex",
     "claude-code",
@@ -57,5 +60,5 @@
   "bugs": {
     "url": "https://github.com/automatis-tools/agent-policy-kit/issues"
   },
-  "homepage": "https://agent-policy-kit.maksymenko-ml.workers.dev/v/0.1.0/"
+  "homepage": "https://agent-policy-kit.trymenow.io/v/0.1.0/"
 }
