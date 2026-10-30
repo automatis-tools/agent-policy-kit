@@ -19,7 +19,7 @@ flowchart LR
 
 ## Choose your setup
 
-Open the [configuration page](https://agent-policy-kit.maksymenko-ml.workers.dev/v/0.1.0/) in your browser. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. The page address saves your visible choices for sharing. APK creates only the selected roles in installed, selected tools.
+Open the [configuration page](https://agent-policy-kit.trymenow.io/v/0.1.0/) in your browser. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. The page address saves your visible choices for sharing. APK creates only the selected roles in installed, selected tools.
 
 The [bundled page](site/index.html) also works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
 

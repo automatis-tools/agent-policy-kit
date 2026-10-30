@@ -18,8 +18,10 @@ Patch releases can correct documentation/configuration bugs; intentional recomme
 
 The package includes CHANGELOG.md and its matching page. Its CLI requires no compilation; only the page data is regenerated. No lifecycle install script mutates native settings.
 
-After explicit publication authorization, create the corresponding git version tag/release with the reviewed changelog text and publish that exact tarball through npm's normal authenticated process. Releases may target a verified feature-branch commit before its draft PR is merged. Never merge, mark a draft ready or enable auto-merge. Recheck registry contents and public page links after an authorized release.
+After explicit publication authorization, create the corresponding git version tag/release with the reviewed changelog text and publish that exact tarball through npm's normal authenticated process. Publish application and npm releases only from reviewed commits already present in main. Before publication, fetch origin and require git merge-base --is-ancestor HEAD origin/main to succeed. Never merge, mark a draft ready or enable auto-merge. Recheck registry contents and public page links after an authorized release.
 
 ## Static page
 
 Host each release's generated site/index.html at an immutable versioned path. A latest landing URL may link the current one. The public configurator uses an assets-only Cloudflare Worker: no Worker JavaScript, API, database or paid bindings. Run npm run build:host and wrangler deploy with the pinned Wrangler version in wrangler.jsonc. The root redirects to /v/VERSION/ so shared links retain their release. Before deploying a later version, retain earlier release pages under dist/v/ using their tagged package artifacts; never overwrite an already published versioned page. The deploy directory is allowlisted by scripts/build-host.mjs and excludes repository files and private evidence. Local preview uses Google Chrome.
+
+The public domain is https://agent-policy-kit.trymenow.io/ and is bound to the existing agent-policy-kit Worker. The workers.dev address remains available for links in earlier published packages. Domain-only changes use wrangler triggers deploy; compare deployment/version IDs before and after to confirm no code upload. Application releases and content deployments must come from reviewed changes already in main.
