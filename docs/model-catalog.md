@@ -1,8 +1,8 @@
 # Model catalog and presets
 
-models/catalog.json is the release-time snapshot (reviewed2026-10-29), with native selector IDs, labels, compatible effort levels, documented defaults and primary source URLs. The same data drives page choices and configuration validation. It is not fetched or refreshed during normal agent work.
+models/catalog.json is the release-time snapshot (reviewed 2026-10-29), with native selector IDs, labels, compatible effort levels, documented defaults and primary source URLs. The same data drives page choices and configuration validation. It is not fetched or refreshed during normal agent work.
 
-The snapshot covers Codex's nine visible selectors observed in0.166.0, documented Claude Code aliases/full IDs, Kimi's four documented upstream models through provisioned native aliases, and Antigravity's four native subagent tiers. Hidden Codex security/utility selectors and session-only modes are recorded as exclusions where appropriate. This is a native subagent catalog, not every image/audio/API/session model or every private deployment.
+The snapshot covers Codex's nine visible selectors observed in 0.166.0, documented Claude Code aliases/full IDs, Kimi's four documented upstream models through provisioned native aliases, and Antigravity's four native subagent tiers. Hidden Codex security/utility selectors and session-only modes are recorded as exclusions where appropriate. This is a native subagent catalog, not every image/audio/API/session model or every private deployment.
 
 Account/provider access varies. Custom model IDs remain available for supported native fields. Antigravity accepts only inherit/flash_lite/flash/pro for the native role model field; its broader session model inventory cannot be pinned through this field. Per-role effort is unavailable there. Claude aliases may resolve differently per provider. Unknown defaults are kept as null rather than invented.
 

@@ -1,6 +1,6 @@
 # Prepare a configuration release
 
-One version: package.json version identifies presets, model catalog, native templates, instructions and page. No second preset-version system. Current0.1.0 is unreleased. The owner creates GitHub and authorizes publication separately; nothing publishes automatically.
+One version: package.json version identifies presets, model catalog, native templates, instructions and page. No second preset-version system. Current 0.1.0 is unreleased. The owner creates GitHub and authorizes publication separately; nothing publishes automatically.
 
 ## Record what and why
 
@@ -13,7 +13,7 @@ Patch releases can correct documentation/configuration bugs; intentional recomme
 1. Confirm npm name ownership and set actual repository/bugs/homepage URLs once they exist. Do not invent them.
 2. Update package version and lockfile, preset JSON, model catalog/source date and this version's changelog entry. Fill the actual release date when cutting it.
 3. Run npm run build:site. The generated single HTML file embeds that version's exact data and command.
-4. Run npm run check and npm test. Required tarball gates deny source access, remove package/state, and prove two synthetic versions can upgrade/downgrade changed models AND templates safely. Synthetic0.2.0 is not a real release.
+4. Run npm run check and npm test. Required tarball gates deny source access, remove package/state, and prove two synthetic versions can upgrade/downgrade changed models AND templates safely. Synthetic 0.2.0 is not a real release.
 5. Review npm pack --dry-run --json --ignore-scripts, npm publish --dry-run --ignore-scripts, and the final npm pack tarball/integrity. Private evidence/configs must stay out.
 
 The package includes CHANGELOG.md and its matching page. Its CLI requires no compilation; only the page data is regenerated. No lifecycle install script mutates native settings.
