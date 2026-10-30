@@ -6,7 +6,7 @@ The page uses the Public Sans font and visual palette from getacc.dev. The build
 
 The page opens in All. This view offers the bundled presets without individual model fields. Choose a tool to edit its models and effort for code, review, search and routine work. All supported tools remain selected for the command; All is a view, not another native client. Native autodetection skips absent tools. Parallelism keeps the release recommendation. Antigravity exposes native tiers; Kimi needs compatible provisioned aliases. The CLI checks native prerequisites when the command runs.
 
-Each tool keeps its own mode and choices. Selecting a preset for an individual tool first warns that only this tool will change; the other tools retain their selected settings. Manual model or effort edits mark only that tool Custom. Its Reset preset restores only its last named preset, with the same scope warning.
+Each tool keeps its own mode and choices. Its current mode is always shown beneath its name; All has no caption. Selecting a preset for an individual tool first warns that only this tool will change; the other tools retain their selected settings. Manual model or effort edits mark only that tool Custom. Its Reset preset restores only its last named preset, with the same scope warning.
 
 All displays the common named mode when every tool shares it, otherwise Custom. Switching to All preserves every tool's choices. Choosing a preset from mixed or custom All settings asks before replacing every tool's mode, models and effort. Cancel keeps all choices intact. Custom is an indicator in All; individual tools remain editable.
 

@@ -122,7 +122,9 @@ h1{font:650 clamp(30px,5vw,40px)/1.13 'Public Sans',sans-serif;letter-spacing:-.
 .toolbar{display:grid;gap:20px;margin-bottom:20px}
 .control-label,.preset-controls legend{display:block;font-size:13px;font-weight:600;margin-bottom:10px;padding:0}
 .tool-buttons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}
-.tool-buttons button{min-width:0;min-height:40px;border:0;border-radius:5px;padding:9px 10px;background:transparent;color:var(--muted);font-size:13px;font-weight:500}
+.tool-buttons button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:52px;border:0;border-radius:5px;padding:9px 10px;background:transparent;color:var(--muted);font-size:13px;font-weight:500}
+.tool-mode{font-size:10px;font-weight:400;line-height:1.3}
+.tool-buttons button[data-client=all]{min-height:40px}
 .tool-buttons button:hover{background:#eaf0ff;color:var(--accent)}
 .tool-buttons button[aria-pressed=true]{background:var(--brand-blue);color:#fff}
 .preset-controls{min-width:0;margin:0;padding:0;border:0}
@@ -392,7 +394,16 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
   }
   function updateResult() {
     revision++;
-    document.querySelectorAll('#tool button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.client === state.active)));
+    document.querySelectorAll('#tool button').forEach(button => {
+      const client = button.dataset.client;
+      button.setAttribute('aria-pressed', String(client === state.active));
+      const caption = button.querySelector('.tool-mode');
+      if (caption) {
+        const mode = modeFor(state, client), label = presets.find(preset => preset.id === mode)?.label ?? 'Custom';
+        caption.textContent = label;
+        button.setAttribute('aria-description', `Mode: ${label}`);
+      }
+    });
     document.querySelectorAll('input[name=preset]').forEach(input => {
       input.checked = input.value === modeFor(state);
       input.disabled = input.value === 'custom' && state.active === 'all';
@@ -478,7 +489,9 @@ const RELEASE = {"schemaVersion":1,"version":"0.1.0","preset":"balanced","preset
     }
   }
   for (const client of ['all', ...state.selected]) {
-    const button = element('button', {type: 'button', 'data-client': client, 'aria-pressed': 'false'}, client === 'all' ? 'All' : RELEASE.catalog?.clients?.[client]?.label || LABELS[client]);
+    const button = element('button', {type: 'button', 'data-client': client, 'aria-pressed': 'false'});
+    button.append(element('span', {}, client === 'all' ? 'All' : toolLabel(client)));
+    if (client !== 'all') button.append(element('span', {class: 'tool-mode', 'aria-hidden': 'true'}));
     button.addEventListener('click', () => {state.active = client; renderRows(); updateResult();});
     $('tool').append(button);
   }
