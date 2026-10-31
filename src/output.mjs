@@ -66,11 +66,32 @@ function uninstall(result,{apply}){
  for(const r of results){const bad=r.status==='error';lines.push(row(r.client,bad?reason(r.error):r.status==='unchanged'||r.files?.length===0?'Nothing to remove':apply?'Configuration removed':'Would remove',bad?'!':apply?'✓':'·'));}
  return lines;
 }
+const setting=value=>typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9 _.:@/\[\]-]{0,127}$/.test(value)?value:'native default';
+function show(result){
+ const lines=['User configuration · subagents',''];
+ for(const[id,c]of Object.entries(result.clients??{})){
+  lines.push(`${label(id)}${c.status==='attention'?' · incomplete read':c.status==='not_configured'?' · no explicit subagent settings':''}`);
+  if(c.status!=='not_configured'){
+   if(c.defaults.enabled===false)lines.push('  Subagents explicitly disabled.');
+   lines.push(`  Default model: ${setting(c.defaults.model)} · effort: ${setting(c.defaults.effort)}`);
+   lines.push(`  Max concurrent: ${Number.isSafeInteger(c.concurrency.value)?c.concurrency.value:'not explicitly set'}${c.concurrency.kind==='guidance'?' (guidance)':' (native setting)'}`);
+   for(const role of c.roles)lines.push(`  ${setting(role.name).padEnd(22)} ${setting(role.model)} · ${setting(role.effort)}${role.modelSelection==='guidance'?' (routing guidance)':role.modelSelection==='parent'?' (parent selects model)':''}`);
+   for(const entry of c.pool)lines.push(`  Pool: ${setting(entry.alias)} · ${setting(entry.effort)}${entry.configured?'':' · alias not provisioned'}`);
+   for(const[field,value]of Object.entries(c.overrides??{}))lines.push(`  Override ${field}: ${typeof value==='boolean'?String(value):typeof value==='number'?value:setting(value)}`);
+  }
+  if(c.apk.status==='modified')lines.push('  APK-managed files have local edits; the values above come from current files.');
+  for(const warning of c.warnings)lines.push(`  ! ${code(warning)}`);
+  lines.push('');
+ }
+ lines.push('User-level files only; project, managed and session settings may override them.','Native configuration only; model execution was not checked.');
+ return lines;
+}
 export function formatResult(command,result,{version='',apply=false}={}){
  let lines;
  if(result.error)lines=[`Operation failed (${code(result.error)})`];
  else if(command==='setup'||command==='install')lines=setup(result,{apply});
  else if(command==='uninstall')lines=uninstall(result,{apply});
+ else if(command==='show')lines=show(result);
  else if(command==='init')lines=['Preferences created.'];
  else if(command==='detect')lines=result.map(r=>row(r.client,r.status==='detected'?`Detected${typeof r.version==='string'&&/^[0-9A-Za-z.+-]{1,128}$/.test(r.version)?' · '+r.version:''}`:r.status==='not_found'?'Not installed':r.status==='timeout'?'Detection timed out':'Identity unverified',r.status==='detected'?'✓':r.status==='not_found'?'·':'!'));
  else if(command==='doctor'){

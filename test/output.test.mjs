@@ -36,3 +36,7 @@ test('uninstall preview and completed removal are distinct',()=>{
  assert.match(formatResult('uninstall',plan,{...context,apply:false}),/Would remove/);
  assert.match(formatResult('uninstall',{client:'codex',status:'applied'},context),/Configuration removed/);
 });
+test('show distinguishes user configuration, inherited effort and guidance from execution',()=>{
+ const text=formatResult('show',{scope:'user',clients:{codex:{status:'configured',defaults:{model:null,effort:null,enabled:false},concurrency:{value:5,kind:'native_setting'},roles:[{name:'reviewer',model:'custom/model',effort:null}],pool:[],warnings:[],apk:{status:'not_configured'}},kimi:{status:'configured',defaults:{model:null,effort:null},concurrency:{value:4,kind:'guidance'},roles:[],pool:[],warnings:[],apk:{status:'not_configured'}}}},context);
+ assert.match(text,/User configuration/);assert.match(text,/reviewer.*custom\/model.*native default/);assert.match(text,/disabled/);assert.match(text,/4.*guidance/);assert.match(text,/execution.*not checked/);
+});

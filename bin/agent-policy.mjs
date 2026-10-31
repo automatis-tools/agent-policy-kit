@@ -34,6 +34,7 @@ Usage: agent-policy <command> [options]
   install       Plan one --client or all detected clients
   uninstall     Plan owned removals; add --apply to remove
   doctor        Check owned native configuration without model calls
+  show          Read current user-level native subagent configuration
 
 Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
          --policy FILE | --release [--preset fast|balanced|quality] | --config BASE64URL
@@ -46,6 +47,7 @@ Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
 Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort.
 Include every selected role for each selected tool. Avoid lists are comma-separated.
 State defaults to AGENT_POLICY_HOME or ~/.agent-policy-kit.
+Terminal output is readable text; captured output is JSON. --json always prints JSON.
 This configurator exits after setup. Native files work without the package.`);}
 async function main(){
   const {values:opts,positionals,tokens}=parseArgs({allowPositionals:true,strict:true,tokens:true,options:{
@@ -58,7 +60,7 @@ async function main(){
   const command=positionals[0];
   outputContext={command,apply:opts.apply,json:opts.json};
   if(opts.help||!command||command==='help'){help();return;}
-  if(!['instructions','init','detect','release','setup','install','uninstall','doctor'].includes(command)) fail('UNKNOWN_COMMAND');
+  if(!['instructions','init','detect','release','setup','install','uninstall','doctor','show'].includes(command)) fail('UNKNOWN_COMMAND');
   if(positionals.length!==1) fail('UNEXPECTED_ARGUMENT');
   const seen=new Set();for(const token of tokens)if(token.kind==='option'&&EXPLICIT_FIELDS.includes(token.name)){if(seen.has(token.name))fail('DUPLICATE_OPTION');seen.add(token.name);}
   const explicitValues=Object.fromEntries(EXPLICIT_FIELDS.filter(name=>opts[name]!==undefined).map(name=>[name,opts[name]])),explicit=Object.keys(explicitValues).length>0;
@@ -77,6 +79,13 @@ async function main(){
   const selectedState=opts['state-dir']??process.env.AGENT_POLICY_HOME??path.join(home,'.agent-policy-kit');
   if(!path.isAbsolute(selectedState)) fail('STATE_PATH_MUST_BE_ABSOLUTE');
   const stateDir=path.resolve(selectedState);
+  if(command==='show'){
+    if(opts.apply||opts.policy!==undefined||opts.preset!==undefined)fail('CONFLICTING_OPTIONS');
+    const {readConfiguration}=await import('../src/inspect.mjs');
+    const report=await readConfiguration({client:client??null,home,stateDir,explicitHome:Boolean(opts.home)});
+    print(report);if(Object.values(report.clients).some(c=>c.status==='attention'))process.exitCode=3;
+    return;
+  }
   const builtin=path.join(root,`policies/${preset}.json`);
   let policyPath=bundled?builtin:opts.policy?path.resolve(opts.policy):fs.existsSync(path.join(stateDir,'policy.json'))?path.join(stateDir,'policy.json'):builtin;
   if(command==='detect'){print(summarizeDetection(client?[await resolveClient(client)]:await detectClients()));return;}

@@ -84,3 +84,11 @@ test('external preference updates coordinate the retained canonical file after o
  assert.equal(cli(home,['setup','--client','codex','--policy',policy,'--apply'],undefined,env).status,0);
  const report=JSON.parse(cli(home,['doctor','--client','codex','--policy',policy],undefined,env).stdout);assert.equal(report.clients.codex.configuration.status,'verified');assert.match(fs.readFileSync(path.join(home,'.codex/config.toml'),'utf8'),/max_concurrent_threads_per_session = 2/);
 });
+
+test('show reads native subagents without an APK installation and --json preserves machine output',t=>{
+ const home=fixture(t);fs.mkdirSync(path.join(home,'.codex/agents'),{recursive:true});fs.writeFileSync(path.join(home,'.codex/config.toml'),'[agents]\nmax_concurrent_threads_per_session=5\n');fs.writeFileSync(path.join(home,'.codex/agents/manual.toml'),'name="manual"\nmodel="custom/existing"\n');
+ const got=cli(home,['show','--client','codex','--json']);assert.equal(got.status,0);const report=JSON.parse(got.stdout);assert.equal(report.clients.codex.concurrency.value,5);assert.equal(report.clients.codex.roles[0].model,'custom/existing');assert.equal(fs.existsSync(path.join(home,'.agent-policy-kit')),false);
+});
+test('show reports an incomplete read with a nonzero exit while preserving readable clients',t=>{
+ const home=fixture(t);fs.mkdirSync(path.join(home,'.claude'),{recursive:true});fs.writeFileSync(path.join(home,'.claude/settings.json'),'{bad');const got=cli(home,['show','--json']);assert.equal(got.status,3);assert.equal(JSON.parse(got.stdout).clients.claude.status,'attention');assert.equal(JSON.parse(got.stdout).clients.codex.status,'not_configured');
+});
