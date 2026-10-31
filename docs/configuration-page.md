@@ -21,6 +21,8 @@ Role/tool changes use native View Transitions with a reduced-motion setting and 
 
 ## Share a setup
 
+The Maximum concurrent subagents field accepts whole numbers from 1 to 32 and starts at 3. It applies across selected roles, per session in each tool. Model presets preserve this independent choice. Invalid input disables the setup command and copy action. Kimi and Antigravity use the limit as guidance rather than a native hard cap.
+
 Each form edit replaces the current URL fragment with its visible state. Copy the page address to share it. The fragment contains roles, tool order, mode/base, selected model/effort pairs, cap and editing scope. It excludes clipboard completion and unselected cached choices. Opening a link restores the form, including unfinished choices and model drafts. Command validation still blocks incomplete or invalid settings.
 
 src/share.mjs is the pure browser/Node codec. It uses versioned base64url JSON with strict IDs, fields, duplicate-key, size, UTF-8 and release checks. The fragment stays in the browser and needs no database or config lookup service. Invalid or mismatched-release links show an error and cannot produce an applicable command. Missing-step links scroll/focus without overwriting the setup fragment.

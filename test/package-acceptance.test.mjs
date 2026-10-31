@@ -100,6 +100,13 @@ console.log(JSON.stringify({client,roles:roles.length,configuration:'readable',e
   }
   env.PATH=[nativeBin,path.dirname(process.execPath),'/usr/bin','/bin'].join(path.delimiter);
   function put(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
+  const inspectHome=path.join(consumer,'existing native profile');fs.mkdirSync(inspectHome);
+  put(path.join(inspectHome,'.codex/config.toml'),'[agents]\nmax_concurrent_threads_per_session=5\n');
+  put(path.join(inspectHome,'.codex/agents/existing.toml'),'name="existing"\nmodel="fixture/manual"\n');
+  const inspected=parse(cli(['show','--client','codex','--home',inspectHome,'--json']));
+  assert.equal(inspected.clients.codex.concurrency.value,5);
+  assert.equal(inspected.clients.codex.roles[0].model,'fixture/manual');
+  assert.equal(fs.existsSync(path.join(inspectHome,'.agent-policy-kit')),false);
   const prerequisiteHome=path.join(consumer,'unprovisioned');fs.mkdirSync(prerequisiteHome);
   const missing=cli(['install','--client','kimi','--home',prerequisiteHome,'--state-dir',path.join(prerequisiteHome,'.policy'),'--apply']);
   assert.equal(missing.status,3);assert.equal(JSON.parse(missing.stdout).results[0].status,'prerequisite');

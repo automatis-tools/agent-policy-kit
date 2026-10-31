@@ -50,6 +50,14 @@ Omit --apply to preview. Each version includes its own presets, instructions and
 
 Prefer your AI agent to handle installation or removal? Give it the [AI operator guide](AGENT_INSTALL.md).
 
+## Read your current setup
+
+Run `agent-policy show` to read existing user-level subagent settings, including settings created before APK. Use `--client codex` to inspect one tool. The command shows roles, models, effort and concurrency without changing files or starting model tasks. Project and session settings can override these user-level values.
+
+Configuration commands show a short summary in an interactive terminal. Captured output remains JSON. Add `--json` to request JSON explicitly.
+
+The configuration page also lets you set maximum concurrent subagents from 1 to 32. The value applies per session in each selected tool. Model presets preserve your chosen limit. Kimi and Antigravity treat it as guidance.
+
 [Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
 
 Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.1.0. MIT licensed.

@@ -46,9 +46,9 @@ test('switching All to Custom alone does not create a destructive preset change'
  assert.equal(api.modeFor(next),'quality');
 });
 
-test('All still protects real edits, mixed bases and changed parallelism',()=>{
+test('All still protects real model edits and mixed bases',()=>{
  const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
- for(const change of [state=>{state.jobs.codex.worker.effort='low';},state=>{state.profiles.claude.presetId='quality';},state=>{state.maxConcurrent=7;}]){
+ for(const change of [state=>{state.jobs.codex.worker.effort='low';},state=>{state.profiles.claude.presetId='quality';}]){
   const state=api.initialState(preferences);for(const client of state.selected)state.profiles[client].custom=true;change(state);
   assert.equal(api.applyPreset(state,{id:'quality',preferences:quality}),state);
  }
@@ -148,7 +148,7 @@ test('configuration template has a single release marker and no external assets 
   assert.doesNotMatch(template, /<(?:script|img)[^>]+src=/i);
   assert.doesNotMatch(template, /<link[^>]+rel="(?:stylesheet|preload|modulepreload)"/i);
   assert.doesNotMatch(script, /\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/);
-  assert.doesNotMatch(template, /type="(?:checkbox|number)"|role="tablist"|id="effort-/);
+  assert.doesNotMatch(template, /type="checkbox"|role="tablist"|id="effort-/);
   assert.match(template, /id="selected-tools"[^>]*role="group"/);
   assert.match(template, /id="setup-command" readonly/);
   assert.doesNotMatch(template,/savedDesign|Design prototype|installer not connected/);
@@ -363,4 +363,16 @@ test('custom Google dated IDs and native effort stay visible in the command',()=
  state.jobs.claude.worker={model,effort:null};const result=plain(api.buildConfig(state,preferences,catalog));assert.deepEqual(result.errors,[]);
  const command=api.buildCommand(result.config,release);assert.ok(command.includes('worker='+model+':native'));
  assert.deepEqual(decodedCommand(command).clients.claude.roles.worker,{model,effort:null});
+});
+
+test('the shared concurrency choice survives all-tool and individual model preset changes',()=>{
+ const state=api.initialState(preferences);state.maxConcurrent=5;
+ const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
+ const next=api.applyPreset(state,{id:'quality',preferences:quality},()=>{throw new Error('An independent cap is not a model edit');});
+ assert.equal(next.maxConcurrent,5);assert.equal(decodedCommand(api.buildCommand(plain(api.buildConfig(next,preferences).config),release)).maxConcurrent,5);
+ next.active='codex';assert.equal(api.applyPreset(next,{id:'balanced',preferences},()=>true).maxConcurrent,5);
+});
+test('concurrency edits propagate boundary values to applicable commands and block invalid drafts',()=>{
+ for(const value of [1,5,32]){const state=api.initialState(preferences);api.updateConcurrency(state,String(value));const built=plain(api.buildConfig(state,preferences));assert.deepEqual(built.errors,[]);assert.equal(decodedCommand(api.buildCommand(built.config,release)).maxConcurrent,value);}
+ for(const value of ['', '0','33','1.5']){const state=api.initialState(preferences);api.updateConcurrency(state,value);const built=plain(api.buildConfig(state,preferences));assert.equal(built.config,null);assert.match(built.errors[0],/whole number.*1.*32/);}
 });

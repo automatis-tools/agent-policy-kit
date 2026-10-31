@@ -4,6 +4,8 @@ APK is configuration-only. Native files remain independent after npm package/sou
 
 Perform authorized technical setup/removal yourself; do not hand the owner a shell checklist. Use JSON plans/results, preserve main models, credentials, permissions, unrelated settings and later edits. Never log in, collect credentials, accept terms, start model tasks, publish, weaken sandboxes or bypass trust to force installation success. Private backups can contain existing secrets; keep state private.
 
+Captured output stays JSON. Use --json explicitly when a terminal is attached. Interactive users receive a readable summary. Run show to inspect existing user-level native subagent settings without APK receipts or client executables. Show reads current supported fields, including manual edits, but does not resolve project, managed or session precedence. An incomplete read exits with code 3 while retaining independent client results. Doctor remains the owned-configuration integrity check.
+
 ## 1. Select the requested release
 
 Package version is configuration-release version. Read that version's CHANGELOG.md or release output for what changed, why and migration limits. Check the installed tool versions, actual provisioned model aliases and current official model/effort documentation before applying. Preserve explicit user choices; a newer package/model is not an instruction to switch silently. See [model maintenance](docs/model-updates.md) and the dated [model catalog/presets](docs/model-catalog.md).
