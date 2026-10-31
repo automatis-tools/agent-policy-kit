@@ -40,3 +40,6 @@ test('show distinguishes user configuration, inherited effort and guidance from 
  const text=formatResult('show',{scope:'user',clients:{codex:{status:'configured',defaults:{model:null,effort:null,enabled:false},concurrency:{value:5,kind:'native_setting'},roles:[{name:'reviewer',model:'custom/model',effort:null}],pool:[],warnings:[],apk:{status:'not_configured'}},kimi:{status:'configured',defaults:{model:null,effort:null},concurrency:{value:4,kind:'guidance'},roles:[],pool:[],warnings:[],apk:{status:'not_configured'}}}},context);
  assert.match(text,/User configuration/);assert.match(text,/reviewer.*custom\/model.*native default/);assert.match(text,/disabled/);assert.match(text,/4.*guidance/);assert.match(text,/execution.*not checked/);
 });
+test('show labels delegation-disabled Antigravity roles explicitly',()=>{
+ const text=formatResult('show',{clients:{agy:{status:'configured',defaults:{model:null,effort:null},concurrency:{value:null,kind:'guidance'},roles:[{name:'primary-only',model:'pro',effort:null,enabled:false}],pool:[],warnings:[],apk:{status:'not_configured'}}}},context);assert.match(text,/primary-only.*delegation disabled/);
+});

@@ -13,7 +13,7 @@ const namePattern=/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,79}$/;
 const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const failure=code=>Object.assign(new Error(code),{code});
 function safeString(value,pattern=identifier){
- if(typeof value!=='string'||!pattern.test(value)||/^(?:sk-|ghp_|github_pat_)/.test(value)||value.includes('/Users/')||value.includes('/home/'))throw failure('UNSUPPORTED_NATIVE_SETTING');
+ if(typeof value!=='string'||!pattern.test(value)||/^(?:sk-|ghp_|github_pat_)/.test(value)||/\/(?:Users|home)\//.test(value))throw failure('UNSUPPORTED_NATIVE_SETTING');
  return value;
 }
 async function safePath(target){
@@ -43,7 +43,7 @@ async function readFile(file,budget){
  finally{await handle?.close();}
 }
 function warning(client,error){
- const allowed=['UNSAFE_FILE','INSPECTION_LIMIT','CONFIG_CHANGED_DURING_READ','UNSUPPORTED_NATIVE_SETTING','UNSUPPORTED_ROLE_FORMAT','INVALID_TOML','INVALID_JSON','EACCES','EPERM','NATIVE_CAP_CONFLICT','EXTERNAL_ROLE_REFERENCES_NOT_READ'];
+ const allowed=['UNSAFE_FILE','INSPECTION_LIMIT','CONFIG_CHANGED_DURING_READ','UNSUPPORTED_NATIVE_SETTING','UNSUPPORTED_ROLE_FORMAT','UNSUPPORTED_ROLE_EFFORT','INVALID_TOML','INVALID_JSON','EACCES','EPERM','NATIVE_CAP_CONFLICT','EXTERNAL_ROLE_REFERENCES_NOT_READ'];
  const code=allowed.includes(error?.code)?error.code:'NATIVE_READ_FAILED';
  if(!client.warnings.includes(code))client.warnings.push(code);
  client.status='attention';
@@ -61,10 +61,17 @@ function frontmatter(text){
  if(!match)throw failure('UNSUPPORTED_ROLE_FORMAT');
  const fields={};
  for(const line of match[1].split(/\r?\n/)){
-  const field=line.match(/^(name|model|effort):\s*(.*)$/);
+  // YAML merges, quoted keys and flow mappings can supply model fields that
+  // this deliberately small scalar reader cannot resolve safely.
+  if(/^(?:<<\s*:|["'{\[])/.test(line))throw failure('UNSUPPORTED_ROLE_FORMAT');
+  const field=line.match(/^(name|model|effort|subagent)[ \t]*:\s*(.*)$/);
   if(!field)continue;
   if(Object.hasOwn(fields,field[1]))throw failure('UNSUPPORTED_ROLE_FORMAT');
-  fields[field[1]]=scalar(field[2]);
+  if(field[1]==='subagent'){
+   const boolean=field[2].trim().match(/^(true|false)(?:\s+#.*)?$/);
+   if(!boolean)throw failure('UNSUPPORTED_ROLE_FORMAT');
+   fields.subagent=boolean[1]==='true';
+  }else fields[field[1]]=scalar(field[2]);
  }
  if(!fields.name)throw failure('UNSUPPORTED_ROLE_FORMAT');
  return fields;
@@ -134,7 +141,11 @@ async function rolesIn(directory,client,id,budget,depth=0){
      if(routing){role.model=safeString(routing[1]);role.effort=routing[2]==='native default'?null:safeString(routing[2]);role.modelSelection='guidance';}
     }
    }
-   if(id==='agy'&&role.model!==null&&!['pro','flash','flash_lite','inherit'].includes(role.model))throw failure('UNSUPPORTED_NATIVE_SETTING');
+   if(id==='agy'){
+    if(role.model!==null&&!['pro','flash','flash_lite','inherit'].includes(role.model))throw failure('UNSUPPORTED_NATIVE_SETTING');
+    role.enabled=fields.subagent??null;
+    if(fields.effort!==undefined){role.effort=null;warning(client,failure('UNSUPPORTED_ROLE_EFFORT'));}
+   }
    if(client.roles.some(r=>r.name===role.name))throw failure('UNSUPPORTED_ROLE_FORMAT');
    client.roles.push(role);
   }catch(error){warning(client,error);}

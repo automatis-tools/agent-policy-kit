@@ -51,3 +51,18 @@ test('conflicting native caps are reported rather than silently choosing one',as
 test('APK instruction caps are displayed as guidance rather than native hard caps',async t=>{
  const home=await fixture(t);await put(home,'.gemini/AGENTS.md','<!-- BEGIN agent-policy-kit -->\nWhen delegating, run at most 6 subagents concurrently in this session. Give each agent one concrete result and explicit file ownership.\n<!-- END agent-policy-kit -->\n');const c=(await read(home,'agy')).clients.agy;assert.equal(c.concurrency.value,6);assert.equal(c.concurrency.kind,'guidance');
 });
+test('unsupported YAML merge keys and quoted configuration keys cannot silently become inherited defaults',async t=>{
+ const home=await fixture(t);await put(home,'.claude/agents/merged.md','---\nname: merged\n<<: *defaults\n---\n');await put(home,'.claude/agents/quoted.md','---\nname: quoted\n"model": sonnet\n---\n');const c=(await read(home,'claude')).clients.claude;assert.equal(c.status,'attention');assert.equal(c.roles.length,0);
+});
+test('large role directories stop at the inspection budget',async t=>{
+ const home=await fixture(t);await fs.mkdir(path.join(home,'.codex/agents'),{recursive:true});await Promise.all(Array.from({length:257},(_,i)=>put(home,`.codex/agents/role-${i}.toml`,`name="role-${i}"\nmodel="safe/model"\n`)));const c=(await read(home,'codex')).clients.codex;assert.equal(c.status,'attention');assert.ok(c.warnings.includes('INSPECTION_LIMIT'));
+});
+test('valid spaces before YAML colons preserve explicit model and effort values',async t=>{
+ const home=await fixture(t);await put(home,'.claude/agents/spaced.md','---\nname: spaced\ndescription: Review code\nmodel : sonnet\neffort : high\n---\n');const c=(await read(home,'claude')).clients.claude;assert.equal(c.roles[0].model,'sonnet');assert.equal(c.roles[0].effort,'high');
+});
+test('Antigravity does not report unsupported effort as a native pin',async t=>{
+ const home=await fixture(t);await put(home,'.gemini/config/agents/custom.md','---\nname: custom\ndescription: Review code\nmodel: pro\nsubagent: true\neffort: high\n---\n');const c=(await read(home,'agy')).clients.agy;assert.equal(c.status,'attention');assert.equal(c.roles[0].effort,null);assert.ok(c.warnings.includes('UNSUPPORTED_ROLE_EFFORT'));
+});
+test('Antigravity delegation-disabled roles retain their disabled state',async t=>{
+ const home=await fixture(t);await put(home,'.gemini/config/agents/primary.md','---\nname: primary-only\ndescription: Primary agent\nmodel: pro\nsubagent: false\n---\n');const c=(await read(home,'agy')).clients.agy;assert.equal(c.roles[0].enabled,false);
+});
