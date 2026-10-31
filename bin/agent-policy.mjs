@@ -10,9 +10,11 @@ import {EXPLICIT_FIELDS,parseExplicitOptions} from '../src/explicit.mjs';
 import {nativeHomeConflict} from '../src/native.mjs';
 import {detectClients,resolveClient,summarizeDetection} from '../src/detect.mjs';
 import {bundledReleaseInfo,presetPreferences} from '../src/release.mjs';
+import {formatResult,useJsonOutput} from '../src/output.mjs';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'))).version;
-const print=value=>process.stdout.write(JSON.stringify(value,null,2)+'\n');
+let outputContext={command:'',apply:false,json:process.argv.includes('--json')};
+const print=value=>process.stdout.write(useJsonOutput({isTTY:process.stdout.isTTY,json:outputContext.json})?JSON.stringify(value,null,2)+'\n':formatResult(outputContext.command,value,{version,apply:outputContext.apply}));
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const safeCode=code=>typeof code==='string'&&/^[A-Z_]{1,64}$/.test(code)?code:'OPERATION_FAILED';
 function loadPolicy(file) {
@@ -39,7 +41,7 @@ Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
          --codex ROLE=MODEL:EFFORT,... --claude ROLE=MODEL:EFFORT,...
          --kimi ROLE=ALIAS:EFFORT,... --antigravity ROLE=TIER,...
          --avoid-codex MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-antigravity MODELS
-         --apply --help --version
+         --apply --json --help --version
 
 Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort.
 Include every selected role for each selected tool. Avoid lists are comma-separated.
@@ -48,12 +50,13 @@ This configurator exits after setup. Native files work without the package.`);}
 async function main(){
   const {values:opts,positionals,tokens}=parseArgs({allowPositionals:true,strict:true,tokens:true,options:{
     client:{type:'string'},home:{type:'string'},'state-dir':{type:'string'},policy:{type:'string'},
-    apply:{type:'boolean',default:false},help:{type:'boolean'},version:{type:'boolean'},
+    apply:{type:'boolean',default:false},json:{type:'boolean',default:false},help:{type:'boolean'},version:{type:'boolean'},
     release:{type:'boolean',default:false},config:{type:'string'},preset:{type:'string'},
     ...Object.fromEntries(EXPLICIT_FIELDS.map(name=>[name,{type:'string'}])),
   }});
   if(opts.version){console.log(version);return;}
   const command=positionals[0];
+  outputContext={command,apply:opts.apply,json:opts.json};
   if(opts.help||!command||command==='help'){help();return;}
   if(!['instructions','init','detect','release','setup','install','uninstall','doctor'].includes(command)) fail('UNKNOWN_COMMAND');
   if(positionals.length!==1) fail('UNEXPECTED_ARGUMENT');
