@@ -91,3 +91,11 @@ test('explicit per-tool concurrency overrides round-trip without changing the sh
  const encoded=explicitOptions(policy,ROLE_DEFINITIONS);assert.equal(encoded['codex-max-concurrent'],'5');assert.equal(encoded['claude-max-concurrent'],'2');assert.deepEqual(validatePolicy(parseExplicitOptions(encoded,ROLE_IDS)),policy);
  for(const bad of [{...one(),'kimi-max-concurrent':'2'},{...one(),'codex-max-concurrent':'0'},{...one(),'codex-max-concurrent':'33'},{...one(),'codex-max-concurrent':'1.5'},{...one(),'codex-max-concurrent':'02'}])assert.throws(()=>parseExplicitOptions(bad,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
+
+test('Grok custom model ids may contain colons, while effort-like suffixes stay rejected',()=>{
+ const config=model=>({schemaVersion:1,maxConcurrent:3,selectedRoles:['worker'],clients:{grok:{code:{model,effort:null},light:{model,effort:null},avoidModels:[]}}});
+ const command=formatExplicitCommand(config('org:grok-custom'),'0.1.0',ROLE_DEFINITIONS);assert.match(command,/--grok 'worker=org:grok-custom'/);
+ const parsed=parseExplicitOptions({roles:'worker','max-concurrent':'3',grok:'worker=org:grok-custom'},ROLE_IDS);
+ assert.deepEqual(rolePreference(parsed.clients.grok,'worker'),{model:'org:grok-custom',effort:null});
+ for(const model of ['grok-4.7:high','grok-4.7:native','org:model:xhigh'])assert.throws(()=>formatExplicitCommand(config(model),'0.1.0',ROLE_DEFINITIONS),{code:'INVALID_EXPLICIT_CONFIG'},model);
+});
