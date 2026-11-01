@@ -6,7 +6,7 @@ import {spawnSync} from 'node:child_process';
 const shaPattern=/^[a-f0-9]{40}$/;
 const releaseTag=/^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const deny=reason=>({deploy:false,reason});
-export function deploymentDecision({eventName,ref,repository,event,headSha,mainSha,verificationRuns=[],tagSha,tagOnMain=false}){
+export function deploymentDecision({eventName,ref,repository,event,headSha,mainSha,verificationRuns=[],tagSha,tagOnMain=false,version,releaseTagged=false}){
  if(ref!=='refs/heads/main')return deny('not-main-context');
  if(typeof repository!=='string'||!/^[-\w.]+\/[-\w.]+$/.test(repository))return deny('invalid-repository');
  if(!shaPattern.test(headSha??'')||!shaPattern.test(mainSha??''))return deny('invalid-commit');
@@ -19,7 +19,21 @@ export function deploymentDecision({eventName,ref,repository,event,headSha,mainS
  }else if(eventName!=='workflow_dispatch')return deny('unsupported-event');
  if(headSha!==mainSha)return deny('stale-main-checkout');
  if(!Array.isArray(verificationRuns)||!verificationRuns.some(run=>run?.head_sha===headSha&&run.head_branch==='main'&&run.event==='push'&&run.status==='completed'&&run.conclusion==='success'&&run.head_repository?.full_name===repository))return deny('main-ci-not-passed');
+ // A merged version bump waits for its release tag; the tag push after publication starts the deployment.
+ if(releaseTagged!==true)return {...deny('release-not-tagged'),version};
  return {deploy:true,reason:'verified-current-main',sha:headSha};
+}
+// Mirror the host build: the current version needs a v-prefixed or bare tag reachable from HEAD.
+export function releaseTagState(root){
+ const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
+ if(typeof version!=='string'||version.length>128||!releaseTag.test(`v${version}`))throw new Error('Deployment requires a valid package version.');
+ const result=spawnSync('git',['tag','--merged','HEAD','--list',`v${version}`,version],{cwd:root,encoding:'utf8',timeout:30000});
+ if(result.error||result.status!==0)throw new Error('Unable to verify deployment Git history.');
+ return {version,releaseTagged:result.stdout.trim()!==''};
+}
+export function decisionNotice(result){
+ if(result?.reason!=='release-not-tagged')return null;
+ return `Package version ${result.version} is not tagged and published yet. The release tag push deploys it after publication.`;
 }
 
 async function main(){
@@ -48,8 +62,13 @@ async function main(){
   if(!response.ok)throw new Error(`Unable to verify main CI (HTTP ${response.status}).`);
   verificationRuns=(await response.json()).workflow_runs;
  }
- const result=deploymentDecision({eventName,ref,repository,event,headSha,mainSha,verificationRuns,tagSha,tagOnMain});
+ const {version,releaseTagged}=releaseTagState(root);
+ const result=deploymentDecision({eventName,ref,repository,event,headSha,mainSha,verificationRuns,tagSha,tagOnMain,version,releaseTagged});
  fs.appendFileSync(env.GITHUB_OUTPUT,`deploy=${result.deploy}\nreason=${result.reason}\nsha=${result.deploy?result.sha:''}\n`);
- console.log(result.deploy?`Deployment authorized for main ${result.sha}.`:`Deployment skipped: ${result.reason}.`);
+ const notice=decisionNotice(result);
+ if(notice){
+  console.log(`::notice title=Deployment skipped::${notice}`);
+  if(env.GITHUB_STEP_SUMMARY)fs.appendFileSync(env.GITHUB_STEP_SUMMARY,`Deployment skipped: ${notice}\n`);
+ }else console.log(result.deploy?`Deployment authorized for main ${result.sha}.`:`Deployment skipped: ${result.reason}.`);
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(error=>{console.error(error.message);process.exitCode=1;});
