@@ -14,9 +14,9 @@ const hours = h => (Math.abs(h - Math.round(h)) < 0.05 ? `${Math.round(h)} h` : 
 
 // darkMode adds a prefers-color-scheme palette; the configuration page has no dark theme.
 // Every rule is scoped to .apk-limits so the styles stay inside the chart when it is inlined.
-export function limitsChartSvg({darkMode = true, idPrefix = 'apk-limits'} = {}) {
+export function limitsChartSvg({darkMode = true} = {}) {
   const b = LIMITS_EVIDENCE.withoutHours, a = LIMITS_EVIDENCE.withHours;
-  const hatch = `${idPrefix}-hatch`, title = `${idPrefix}-title`;
+  const hatch = 'apk-limits-hatch', title = 'apk-limits-title';
   const seps = y => DAYS.slice(1).map((_, i) =>
     `<line class="sep" x1="${f1(L + DAY_W * (i + 1))}" x2="${f1(L + DAY_W * (i + 1))}" y1="${y}" y2="${y + 48}"/>`).join('');
   const row = (y, cls, h, label, note) => `
