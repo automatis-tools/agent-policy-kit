@@ -4,7 +4,7 @@ import {validatePolicy} from './policy.mjs';
 
 export const PACKAGE_VERSION=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;
-export const PRESETS=Object.freeze([{id:'fast',label:'Light',description:'Light models for every role. Limits last longest.'},{id:'balanced',label:'Standard',description:'Stronger models for code, review and tests. Fits most plans.'},{id:'quality',label:'Top-tier',description:'Strongest models at high effort. Uses limits fastest.',topModels:Object.freeze({codex:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'})}].map(Object.freeze));
+export const PRESETS=Object.freeze([{id:'fast',label:'Light',description:'Light models for every role. Limits last longest.'},{id:'balanced',label:'Standard',description:'Stronger models for code, review and tests. Fits most plans.'},{id:'quality',label:'Top-tier',description:'Strongest models for most roles. Uses limits fastest.',topModels:Object.freeze({codex:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'})}].map(Object.freeze));
 export function presetPreferences(id='balanced'){
   if(!PRESETS.some(preset=>preset.id===id))throw Object.assign(new Error('Unknown preset.'),{code:'UNKNOWN_PRESET'});
   return validatePolicy(JSON.parse(fs.readFileSync(new URL(`../policies/${id}.json`,import.meta.url),'utf8')));
