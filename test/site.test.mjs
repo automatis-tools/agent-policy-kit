@@ -376,3 +376,15 @@ test('concurrency edits propagate boundary values to applicable commands and blo
  for(const value of [1,5,32]){const state=api.initialState(preferences);api.updateConcurrency(state,String(value));const built=plain(api.buildConfig(state,preferences));assert.deepEqual(built.errors,[]);assert.equal(decodedCommand(api.buildCommand(built.config,release)).maxConcurrent,value);}
  for(const value of ['', '0','33','1.5']){const state=api.initialState(preferences);api.updateConcurrency(state,value);const built=plain(api.buildConfig(state,preferences));assert.equal(built.config,null);assert.match(built.errors[0],/whole number.*1.*32/);}
 });
+
+test('Add all fills missing roles and tools while preserving existing selection order',()=>{
+ assert.deepEqual(plain(api.addAll(['reviewer'],ROLE_IDS)),['reviewer','worker','explorer','tester','writer','routine']);
+ assert.deepEqual(plain(api.addAll(['claude'],['codex','claude','kimi','agy'])),['claude','codex','kimi','agy']);
+ const selected=['claude','codex'];assert.deepEqual(plain(api.addAll(selected,['codex','claude','kimi','agy'])),['claude','codex','kimi','agy']);assert.deepEqual(selected,['claude','codex']);
+ assert.deepEqual(plain(api.addAll(['codex','claude','kimi','agy'],['codex','claude','kimi','agy'])),['codex','claude','kimi','agy']);
+});
+test('adding all selections keeps model edits and the chosen concurrency in the generated configuration',()=>{
+ const state=api.initialState(preferences);state.selected=['codex'];state.selectedRoles=['reviewer'];state.maxConcurrent=7;state.jobs.codex.reviewer={model:'custom/reviewer',effort:'high'};
+ state.selected=api.addAll(state.selected,['codex','claude','kimi','agy']);state.selectedRoles=api.addAll(state.selectedRoles,ROLE_IDS);
+ const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);assert.equal(result.config.maxConcurrent,7);assert.equal(result.config.clients.codex.roles.reviewer.model,'custom/reviewer');assert.deepEqual(Object.keys(result.config.clients),['codex','claude','kimi','agy']);equivalent(decodedCommand(api.buildCommand(result.config,release)),result.config);
+});
