@@ -86,12 +86,11 @@ test('every step explains itself briefly and the page does not repeat vendor doc
  assert.doesNotMatch(template,/usage credits|requires Claude Code/);
 });
 
-test('secondary explanations stay behind ? buttons instead of on-screen text',()=>{
+test('on-screen text stays minimal and only tool-specific facts are shown',()=>{
  for(const id of ['top-models-note','concurrency-hint','step-hint-1','step-hint-2','step-hint-3'])assert.doesNotMatch(template,new RegExp(`id="${id}"`),id);
- assert.doesNotMatch(template,/Writes native config, then exits|Only installed tools are configured|Click a mode to select it|You can add more|All available roles added|Click a coding tool to configure/);
- assert.match(template,/\$\('top-models'\)\.append\(infoButton\(/);
- assert.match(template,/\$\('concurrency-title'\)\.after\(infoButton\(/);
- assert.match(template,/<label for="max-concurrent">Max per session<\/label>/);
+ assert.doesNotMatch(template,/Writes native config, then exits|Only installed tools are configured|Click a mode to select it|You can add more|All available roles added|Click a coding tool to configure|They use limits much faster|How many subagents one session/);
+ assert.doesNotMatch(template,/\$\('top-models'\)\.append\(|concurrency-title/);
+ assert.match(template,/\$\('concurrency-label'\)\.textContent=\['kimi','agy'\]\.includes\(client\)\?'Max per session \(advisory\)':'Max per session';/);
 });
 
 test('empty role and tool fields share one empty-field appearance',()=>{
