@@ -747,8 +747,7 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
    const isRole=kind==='helpers',chosen=isRole?helpers:pickedTools,available=isRole?roles:clients.map(id=>({id,name:toolName(id)}));
    const box=$(isRole?'selected-helpers':'selected-tools'),options=$(isRole?'helper-options':'tool-options');box.replaceChildren();options.replaceChildren();box.hidden=false;
    if(available.some(item=>!chosen.includes(item.id))){
-    const all=el('button',{type:'button',class:'suggestion add-all','aria-label':isRole?'Add all subagent roles':'Add all coding tools'});
-    all.append(el('span',{class:'plus','aria-hidden':'true'},'+'),document.createTextNode('Add all'));
+    const all=el('button',{type:'button',class:'suggestion add-all','aria-label':isRole?'Add all subagent roles':'Add all coding tools'},'Add all');
     all.addEventListener('click',()=>{const next=A.addAll(chosen,available.map(item=>item.id));if(isRole)helpers=next;else pickedTools=next;render();});
     options.append(all);
    }
