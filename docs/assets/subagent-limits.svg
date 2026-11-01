@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 362" width="880" height="362" role="img" aria-labelledby="t">
+<title id="t">One weekly Codex limit lasted 5.3 h of my work without APK and 25 h with APK</title>
+<defs>
+  <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="8" height="8" class="hb"/><line x1="0" y1="0" x2="0" y2="8" class="hl"/>
+  </pattern>
+</defs>
+<style>
+  svg { --bg:#ffffff; --ink:#0b0b0b; --ink2:#52514e; --ink3:#8a8984; --hb:#f4f3ef; --hl:#e2e0d9; --before:#eb6834; --after:#2a78d6; }
+  @media (prefers-color-scheme: dark) {
+    svg { --bg:#0d1117; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#8b8a82; --hb:#141920; --hl:#262c35; --before:#d95926; --after:#3987e5; }
+  }
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: var(--ink); }
+  .bg { fill: var(--bg); }
+  .h1 { font-size: 24px; font-weight: 700; }
+  .sub { font-size: 14px; fill: var(--ink2); }
+  .day { font-size: 12px; font-weight: 600; fill: var(--ink3); }
+  .gone { fill: url(#hatch); }
+  .hb { fill: var(--hb); } .hl { stroke: var(--hl); stroke-width: 3; }
+  .before { fill: var(--before); } .after { fill: var(--after); }
+  .sep { stroke: var(--bg); stroke-width: 2; }
+  .rl { font-size: 15px; font-weight: 650; }
+  .val { font-size: 18px; font-weight: 700; }
+  .chip { fill: var(--bg); }
+  .why { font-size: 14px; fill: var(--ink2); }
+  .whyb { font-weight: 700; fill: var(--ink); }
+</style>
+<rect class="bg" width="880" height="362" rx="12"/>
+<text class="h1" x="32" y="48">One weekly limit: 5.3 h vs 25 h of work</text>
+<text class="sub" x="32" y="74">My own Codex work on the same plan, in 8-hour workdays. Hatched: limit used up.</text>
+<text class="day" x="113.6" y="114" text-anchor="middle">Mon</text><text class="day" x="276.8" y="114" text-anchor="middle">Tue</text><text class="day" x="440.0" y="114" text-anchor="middle">Wed</text><text class="day" x="603.2" y="114" text-anchor="middle">Thu</text><text class="day" x="766.4" y="114" text-anchor="middle">Fri</text>
+
+  <text class="rl" x="32" y="140">Without APK</text>
+  <rect class="gone" x="32" y="152" width="816" height="48" rx="8"/>
+  <rect class="before" x="32" y="152" width="108.8" height="48" rx="8"/>
+  <line class="sep" x1="195.2" x2="195.2" y1="152" y2="200"/><line class="sep" x1="358.4" x2="358.4" y1="152" y2="200"/><line class="sep" x1="521.6" x2="521.6" y1="152" y2="200"/><line class="sep" x1="684.8" x2="684.8" y1="152" y2="200"/>
+  <rect class="chip" x="150.8" y="161" width="71" height="30" rx="6"/>
+  <text class="val" x="158.8" y="183">5.3 h</text>
+
+  <text class="rl" x="32" y="228">With APK</text>
+  <rect class="gone" x="32" y="240" width="816" height="48" rx="8"/>
+  <rect class="after" x="32" y="240" width="510.0" height="48" rx="8"/>
+  <line class="sep" x1="195.2" x2="195.2" y1="240" y2="288"/><line class="sep" x1="358.4" x2="358.4" y1="240" y2="288"/><line class="sep" x1="521.6" x2="521.6" y1="240" y2="288"/><line class="sep" x1="684.8" x2="684.8" y1="240" y2="288"/>
+  <rect class="chip" x="552.0" y="249" width="60" height="30" rx="6"/>
+  <text class="val" x="560.0" y="271">25 h</text>
+<text class="why" x="32" y="334"><tspan class="whyb">Why:</tspan> APK gives each subagent role a model that fits the task and the plan, not the top model.</text>
+</svg>
