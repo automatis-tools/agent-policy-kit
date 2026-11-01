@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {bundledReleaseInfo,presetPreferences,modelCatalog} from '../src/release.mjs';
 import {validatePolicy} from '../src/policy.mjs';
 import {ROLE_DEFINITIONS} from '../src/roles.mjs';
+import {limitsChartSvg} from './build-limits-chart.mjs';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const releaseVersion=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
 export function renderConfigurationPage({canonicalRoot=false,hostedReleases=[]}={}) {
@@ -37,7 +38,7 @@ const structuredData={'@context':'https://schema.org','@graph':[
   {'@type':'SoftwareSourceCode','@id':projectId,name:'Agent Policy Kit',description:pkg.description,url:new URL('/',homeUrl).href,codeRepository:repositoryUrl,author:{'@id':authorId}},
   {'@type':'WebPage','@id':canonicalUrl+'#webpage',name:title,url:canonicalUrl,author:{'@id':authorId},mainEntity:{'@id':projectId},mentions:relatedProjects.map(project=>({'@type':'SoftwareSourceCode',name:project.name,codeRepository:project.url}))}
 ]};
-const attribution=`<span>Created by <a rel="author" href="${escapeHtml(authorUrl)}">${escapeHtml(authorName)}</a></span><nav aria-label="Related projects"><span>More tools:</span>${relatedProjects.map(project=>`<a href="${escapeHtml(project.url)}">${escapeHtml(project.name)}</a>`).join(' ')}</nav>`;
+const attribution=`<span>by <a rel="author" href="${escapeHtml(authorUrl)}">${escapeHtml(authorName)}</a></span><nav aria-label="Related projects"><span>More tools:</span>${relatedProjects.map(project=>`<a href="${escapeHtml(project.url)}">${escapeHtml(project.name)}</a>`).join(' ')}</nav>`;
 const metadata={__APK_TITLE__:escapeHtml(title),__APK_REPOSITORY_URL__:escapeHtml(repositoryUrl),__APK_DESCRIPTION__:escapeHtml(description),__APK_AUTHOR_NAME__:escapeHtml(authorName),__APK_AUTHOR_URL__:escapeHtml(authorUrl),__APK_CANONICAL_URL__:escapeHtml(canonicalUrl),__APK_STRUCTURED_DATA__:JSON.stringify(structuredData).replaceAll('<','\\u003c'),__APK_ATTRIBUTION__:attribution};
 const preferences=validatePolicy(JSON.parse(fs.readFileSync(path.join(root,'policies/balanced.json'),'utf8')));
 const data={...release,packageSpec:`agent-policy-kit@${release.version}`,preferences,hostedReleases,
@@ -51,6 +52,7 @@ const replacements={...metadata,
   __APK_SHARE_CODEC__:fs.readFileSync(path.join(root,'src/share.mjs'),'utf8').replace(/^export /gm,''),
   __APK_BASE_CSS__:fs.readFileSync(path.join(root,'site/base.css'),'utf8'),
   __APK_FONT_DATA__:font,__APK_FONT_LICENSE__:fontLicense,
+  __APK_LIMITS_CHART__:limitsChartSvg({darkMode:false}),__APK_LIMITS_EVIDENCE_URL__:escapeHtml(repositoryUrl+'/blob/main/docs/limits-evidence.md'),
   [marker]:JSON.stringify(data).replaceAll('<','\\u003c')
 };
 for(const key of Object.keys(replacements))if(template.split(key).length!==2)throw new Error(`Configuration page must have one ${key} marker`);

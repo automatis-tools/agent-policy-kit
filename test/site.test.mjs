@@ -402,8 +402,9 @@ test('command is version pinned, fully explicit and shell safe', () => {
 });
 
 test('four-step builder keeps parallelism with roles and the copy action last', () => {
-  assert.match(template, /Set up subagents for your coding tools\./);
-  assert.match(template, /Apply your setup locally with one command\./);
+  assert.match(template, /Stop subagents from burning your plan limits\./);
+  assert.match(template, /Four steps, one command\./);
+  assert.match(template, /<div class="limits-chart">__APK_LIMITS_CHART__<\/div>/);
   assert.deepEqual([...template.matchAll(/class="step-number">(\d)<\/span>/g)].map(match=>match[1]),['1','2','3','4']);
   assert.match(script, /type:'radio',name:'mode'/);
   assert.match(script, /\['Role','Model','Effort'\]/);

@@ -2,69 +2,28 @@
 
 Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-maximenko/).
 
-Coding agents can delegate specific tasks to temporary subagents. Those tasks vary in complexity and importance. A single model for every task is rarely the best balance of capability, speed and cost.
+**Stop subagents from burning your plan limits.** APK gives each subagent role a model that fits the task and your plan in Codex, Claude Code, Kimi, Antigravity and Grok Build. One command, then it exits.
 
-Agent Policy Kit lets you match subagent roles with models and effort. It configures your coding tools’ native environment, then exits. The main agent still decides when to delegate, and its model stays unchanged.
+![One weekly limit: 5.3 h vs 25 h of work](docs/assets/subagent-limits.svg)
 
-```mermaid
-flowchart LR
-    Roles("1. Choose subagent roles") --> Tools("2. Choose your coding tools")
-    Tools --> Models("3. Choose models and effort")
-    Models --> Command("4. Run one setup command")
-    Command --> Done("Native configs saved<br/>APK exits")
-    classDef default fill:#f5f7fb,stroke:#e0e5ed,color:#19283e
-    classDef action fill:#3158c3,stroke:#3158c3,color:#ffffff
-    class Command action
-```
+<sub>My own Codex logs; tasks differed between the runs. [How it was measured](docs/limits-evidence.md).</sub>
 
-## Choose your setup
+## Set it up
 
-Open the [configuration page](https://agent-policy-kit.trymenow.io/v/0.2.0/) in your browser. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. The page address saves your visible choices for sharing. APK creates only the selected roles in installed, selected tools.
+1. Open the [configurator](https://agent-policy-kit.trymenow.io/v/0.2.0/). Pick roles, your coding tools and a mode: **Light**, **Standard** or **Top-tier**, by how much of your plan subagents may use.
+2. Copy the command and run it. Remove the last `--apply` line to preview first; nothing is written without it.
 
-The [bundled page](site/index.html) also works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
+![Configurator: models and effort for each subagent role, and the setup command](docs/assets/configurator.png)
 
-## Roles and work modes
+## Good to know
 
-Choose only the roles you need:
+- Your main agent and its model stay unchanged. It still decides when to delegate.
+- No proxy and no background process. Delete the npm package after setup.
+- `npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove APK's settings and keep yours.
 
-| Role | Result |
-|---|---|
-| Coder | Implementation and fixes |
-| Reviewer | Read-only correctness, security and regression findings |
-| Code explorer | Read-only code and documentation discovery |
-| Test writer | Tests and targeted execution; product fixes return to Coder |
-| Docs writer | Verified docs, examples and release notes |
-| Task runner | Prescribed commands and mechanical edits; uncertain decisions return to the parent |
-
-Subagents draw on the same plan limits as your main session, and every parallel session adds to that usage. Choose the mode by how much of your plan subagents may use. Light uses light models for every role, so limits last longest; it suits entry plans and many parallel sessions. Standard gives code, review, tests and docs stronger models and keeps search and routine work on light models; it fits most plans. Top-tier uses high-end models for most roles; it uses limits fastest and suits top plans with few parallel sessions. A switch under Top-tier opts each tool into its top model (Fable, Astra or K3.1 Pro) for those roles; it is off by default. All choices remain editable. Claude Fable may use additional usage credits on plans that do not include it.
-
-See the [exact preset choices and rationale](docs/model-catalog.md#how-the-presets-are-designed). Recommendations contain no personal model bans. They configure the environment; the main agent still chooses whether to delegate.
-
-## Use a specific release's defaults
-
-```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy setup --release --apply
-```
-
-Omit --apply to preview. Each version includes its own presets, instructions and configuration page. [Release notes](CHANGELOG.md) explain what changed and why; [release usage](docs/releases.md) covers upgrade and downgrade.
-
-Prefer your AI agent to handle installation or removal? Give it the [AI operator guide](AGENT_INSTALL.md).
-
-## Read your current setup
-
-Run `agent-policy show` to read existing user-level subagent settings, including settings created before APK. Use `--client codex` to inspect one tool. The command shows roles, models, effort and concurrency without changing files or starting model tasks. Project and session settings can override these user-level values.
-
-Configuration commands show a short summary in an interactive terminal. Captured output remains JSON. Add `--json` to request JSON explicitly.
-
-Open an individual coding tool's details to set its maximum concurrent subagents from 1 to 32. Each tool has its own limit per session. Presets start at Light 2, Standard 3 and Top-tier 2; a manual limit makes that tool Custom. Kimi and Antigravity treat it as guidance; Grok Build applies it as a native cap.
-
-[Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
-
-Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.2.0. MIT licensed.
+[Model catalog](docs/model-catalog.md) · [Release notes](CHANGELOG.md) · [AI operator guide](AGENT_INSTALL.md) · [Support](docs/compatibility.md) · [Privacy](docs/privacy.md)
 
 ## Related projects
 
-Other open-source projects by [Mykola Maksymenko](https://www.linkedin.com/in/nick-maximenko/):
-
-- [Agents Can Communicate (ACC)](https://github.com/automatis-tools/agents-can-communicate) connects independent AI coding sessions across clients for local questions, code reviews, and handoffs. [Website](https://getacc.dev/).
-- [Automatis Skills](https://github.com/automatis-tools/automatis-skills) provides reusable engineering skills for GitHub workflows, Git cleanup, port conflicts, and technical writing.
+- [Agents Can Communicate (ACC)](https://github.com/automatis-tools/agents-can-communicate): connect independent AI coding sessions for questions, reviews and handoffs.
+- [Automatis Skills](https://github.com/automatis-tools/automatis-skills): reusable engineering skills for GitHub workflows, Git cleanup and technical writing.
