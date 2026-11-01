@@ -69,6 +69,12 @@
         "model": "kimi-code/kimi-for-coding",
         "effort": "low"
       },
+      "roles": {
+        "writer": {
+          "model": "kimi-code/k3-256k",
+          "effort": "high"
+        }
+      },
       "avoidModels": []
     },
     "agy": {
