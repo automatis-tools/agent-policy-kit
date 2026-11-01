@@ -10,7 +10,7 @@ import catalog from '../models/catalog.json' with {type:'json'};
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
 import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
 
-const CLIENTS = ['codex', 'claude', 'kimi', 'agy', 'grok'];
+const CLIENTS = ['chatgpt', 'claude', 'kimi', 'gemini', 'grok'];
 const LIMIT = 1024 * 1024;
 const digest = value => value === null ? null : createHash('sha256').update(value).digest('hex');
 const json = value => JSON.stringify(value, null, 2) + '\n';
@@ -155,7 +155,7 @@ function selectedAliases(preferences,selectedRoles=ROLE_IDS) {
 }
 function tomlSettings(client,preferences,maxConcurrent,selectedRoles=ROLE_IDS) {
   const worker=rolePreference(preferences,selectedRoles[0]);
-  if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],worker.model],...(worker.effort===null?[]:[[['agents','default_subagent_reasoning_effort'],worker.effort]])];
+  if(client==='chatgpt')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],worker.model],...(worker.effort===null?[]:[[['agents','default_subagent_reasoning_effort'],worker.effort]])];
   if(client==='grok')return [[['subagents','max_concurrent'],maxConcurrent],...selectedRoles.map(role=>[['subagents','models','apk-'+role],rolePreference(preferences,role).model]),[['subagents','models','general-purpose'],worker.model]];
   if(client!=='kimi')return [];
   const selected=selectedAliases(preferences,selectedRoles),roles=effectiveRoles(preferences,selectedRoles);
@@ -185,7 +185,7 @@ function scalar(op,target,type) {
 }
 function validateTomlSnapshot(file,client,schemaVersion,selectedRoles=ROLE_IDS) {
   if(!Array.isArray(file.ops)||!file.ops.every(op=>object(op)&&Array.isArray(op.path)&&op.path.every(key=>typeof key==='string')&&op.path.length<=4))fail('INVALID_RECEIPT');
-  if(client==='codex') {
+  if(client==='chatgpt') {
     if(!(schemaVersion===2?[3]:[2,3]).includes(file.ops.length))fail('INVALID_RECEIPT');
     const cap=scalar(file.ops[0],['agents','max_concurrent_threads_per_session'],'number');
     if(cap<1||cap>32)fail('INVALID_RECEIPT');
@@ -389,8 +389,8 @@ export async function planInstall(options) {
       const cap=subagents?.max_concurrent;
       if(cap!==undefined&&(!Number.isSafeInteger(cap)||cap<1))fail('UNSUPPORTED_CONFIG');
     }
-    if(plan.client==='codex') {
-      if(native.agents&&own(native.agents,'max_threads'))fail('CODEX_CAP_ALIAS_CONFLICT');
+    if(plan.client==='chatgpt') {
+      if(native.agents&&own(native.agents,'max_threads'))fail('CHATGPT_CAP_ALIAS_CONFLICT');
       const cap=native.agents?.max_concurrent_threads_per_session;
       if(cap!==undefined&&(!Number.isSafeInteger(cap)||cap<1))fail('UNSUPPORTED_CONFIG');
     }

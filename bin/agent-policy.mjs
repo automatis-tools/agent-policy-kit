@@ -28,7 +28,7 @@ Usage: agent-policy <command> [options]
 
   instructions  Print the AI setup and removal guide
   init          Copy default preferences to --policy (never overwrite)
-  detect        Detect installed coding tools from executable identity
+  detect        Detect installed AI assistants from executable identity
   release       Show this package's configuration version and release notes
   setup         Plan native configuration; add --apply to write
   install       Plan one --client or all detected clients
@@ -36,17 +36,17 @@ Usage: agent-policy <command> [options]
   doctor        Check owned native configuration without model calls
   show          Read current user-level native subagent configuration
 
-Options: --client codex|claude|kimi|agy|grok --home PATH --state-dir PATH
+Options: --client chatgpt|claude|kimi|gemini|grok --home PATH --state-dir PATH
          --policy FILE | --release [--preset fast|balanced|quality] | --config BASE64URL
          --roles worker,reviewer,explorer,tester,writer,routine --max-concurrent 3
-         --codex ROLE=MODEL:EFFORT,... --claude ROLE=MODEL:EFFORT,...
-         --kimi ROLE=ALIAS:EFFORT,... --antigravity ROLE=TIER,... --grok ROLE=MODEL,...
-         --codex-max-concurrent N --claude-max-concurrent N
-         --kimi-max-concurrent N --antigravity-max-concurrent N --grok-max-concurrent N
-         --avoid-codex MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-antigravity MODELS --avoid-grok MODELS
+         --chatgpt ROLE=MODEL:EFFORT,... --claude ROLE=MODEL:EFFORT,...
+         --kimi ROLE=ALIAS:EFFORT,... --gemini ROLE=TIER,... --grok ROLE=MODEL,...
+         --chatgpt-max-concurrent N --claude-max-concurrent N
+         --kimi-max-concurrent N --gemini-max-concurrent N --grok-max-concurrent N
+         --avoid-chatgpt MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-gemini MODELS --avoid-grok MODELS
          --apply --json --help --version
 
-Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort. Antigravity and Grok Build take ROLE=TIER and ROLE=MODEL with no effort.
+Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort. Gemini and Grok take ROLE=TIER and ROLE=MODEL with no effort.
 Include every selected role for each selected tool. Per-tool concurrency overrides the shared fallback.
 Avoid lists are comma-separated.
 State defaults to AGENT_POLICY_HOME or ~/.agent-policy-kit.
@@ -149,8 +149,8 @@ async function main(){
       catch(error){configuration={status:'attention',reason:safeCode(error.code)};}
     }
     report.clients[selected]={detection,configuration,modelExecution:'not_checked',
-      concurrency:['codex','claude','grok'].includes(selected)?'native_setting_with_client_exceptions':'instructions_only',
-      models:selected==='agy'?'native_tiers':selected==='kimi'?'native_pool_with_routing_guidance':'native_role_settings'};
+      concurrency:['chatgpt','claude','grok'].includes(selected)?'native_setting_with_client_exceptions':'instructions_only',
+      models:selected==='gemini'?'native_tiers':selected==='kimi'?'native_pool_with_routing_guidance':'native_role_settings'};
   }
   print(report);
 }

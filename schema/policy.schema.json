@@ -39,7 +39,7 @@
       "minProperties": 1,
       "additionalProperties": false,
       "properties": {
-        "codex": {
+        "chatgpt": {
           "$ref": "#/$defs/client"
         },
         "claude": {
@@ -48,7 +48,7 @@
         "kimi": {
           "$ref": "#/$defs/kimiClient"
         },
-        "agy": {
+        "gemini": {
           "$ref": "#/$defs/tierClient"
         },
         "grok": {

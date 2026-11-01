@@ -9,15 +9,15 @@ import {parseToml} from '../src/toml.mjs';
 import * as roleCatalog from '../src/roles.mjs';
 
 const roles=['worker','reviewer','explorer','tester','writer','routine'];
-const dirs={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
-async function fixture(t,client='codex'){
+const dirs={chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini'};
+async function fixture(t,client='chatgpt'){
  const root=await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(),'apk-selected-roles-')));t.after(()=>fs.rm(root,{recursive:true,force:true}));
  const home=path.join(root,'home');await fs.mkdir(home);
- const policy={schemaVersion:1,maxConcurrent:3,clients:Object.fromEntries(Object.keys(dirs).map(client=>[client,{code:{model:client==='agy'?'pro':'fixture-code',effort:client==='agy'?null:'high'},light:{model:client==='agy'?'flash':'fixture-light',effort:client==='agy'?null:'low'},avoidModels:[]}]))};
+ const policy={schemaVersion:1,maxConcurrent:3,clients:Object.fromEntries(Object.keys(dirs).map(client=>[client,{code:{model:client==='gemini'?'pro':'fixture-code',effort:client==='gemini'?null:'high'},light:{model:client==='gemini'?'flash':'fixture-light',effort:client==='gemini'?null:'low'},avoidModels:[]}]))};
  return {client,home,stateDir:path.join(home,'.agent-policy-kit'),policyPath:path.join(root,'preferences.json'),policy};
 }
 async function put(file,text){await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,text);}
-const rolePath=(f,role)=>path.join(f.home,dirs[f.client],f.client==='agy'?'config/agents':'agents',`apk-${role}.${f.client==='codex'?'toml':'md'}`);
+const rolePath=(f,role)=>path.join(f.home,dirs[f.client],f.client==='gemini'?'config/agents':'agents',`apk-${role}.${f.client==='chatgpt'?'toml':'md'}`);
 const receipt=f=>path.join(f.stateDir,'installations',f.client+'.json');
 async function install(f,replace=false){await put(f.policyPath,JSON.stringify(f.policy));return applyInstall(await planInstall({...f,replace}));}
 
@@ -32,7 +32,7 @@ test('native role catalog curates six bounded roles and freezes historical recei
 for(const selectedRole of ['tester','writer'])test(`every native adapter supports selected-only ${selectedRole} installation and removal`,async t=>{
  for(const client of Object.keys(dirs)){
   const f=await fixture(t,client),config=f.policy.clients[client];f.policy.selectedRoles=[selectedRole];
-  config.roles={[selectedRole]:{model:client==='agy'?'flash':'fixture-selected',effort:client==='agy'?null:'high'}};
+  config.roles={[selectedRole]:{model:client==='gemini'?'flash':'fixture-selected',effort:client==='gemini'?null:'high'}};
   if(client==='kimi')await put(path.join(f.home,dirs[client],'config.toml'),'default_model="user-main"\n[providers.fixture]\ntype="kimi"\n[models.fixture-selected]\nprovider="fixture"\nmodel="fixture-selected"\nmax_context_size=262144\nsupport_efforts=["high"]\n');
   await install(f);assert.match(await fs.readFile(rolePath(f,selectedRole),'utf8'),/fixture-selected|model: "flash"/);
   for(const role of roles.filter(role=>role!==selectedRole))await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
@@ -43,7 +43,7 @@ for(const selectedRole of ['tester','writer'])test(`every native adapter support
 });
 
 test('selectedRoles is optional, nonempty, unique and limited to the native role catalog',()=>{
- const base={schemaVersion:1,maxConcurrent:3,clients:{codex:{code:{model:'code',effort:'high'},light:{model:'light',effort:'high'},avoidModels:[]}}};
+ const base={schemaVersion:1,maxConcurrent:3,clients:{chatgpt:{code:{model:'code',effort:'high'},light:{model:'light',effort:'high'},avoidModels:[]}}};
  assert.doesNotThrow(()=>validatePolicy(base));
  assert.deepEqual(validatePolicy({...base,selectedRoles:['reviewer']}).selectedRoles,['reviewer']);
  for(const selectedRoles of [[],['reviewer','reviewer'],['invented'],'reviewer',null,[null]])assert.throws(()=>validatePolicy({...base,selectedRoles}),{code:'INVALID_POLICY'});
@@ -54,14 +54,14 @@ test('selectedRoles is optional, nonempty, unique and limited to the native role
 test('every native adapter creates only the selected role and uses its model as the subagent default',async t=>{
  for(const client of Object.keys(dirs)){
   const f=await fixture(t,client),config=f.policy.clients[client];f.policy.selectedRoles=['reviewer'];
-  config.roles={reviewer:{model:client==='agy'?'flash':'fixture-review',effort:client==='agy'?null:'high'}};
+  config.roles={reviewer:{model:client==='gemini'?'flash':'fixture-review',effort:client==='gemini'?null:'high'}};
   if(client==='kimi')await put(path.join(f.home,dirs[client],'config.toml'),'default_model="user-main"\n[providers.fixture]\ntype="kimi"\n[models.fixture-review]\nprovider="fixture"\nmodel="fixture-review"\nmax_context_size=262144\nsupport_efforts=["high"]\n');
   await install(f);
   assert.match(await fs.readFile(rolePath(f,'reviewer'),'utf8'),/fixture-review|model: "flash"/);
   for(const role of roles.filter(role=>role!=='reviewer'))await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
   const instructions=await fs.readFile(path.join(f.home,dirs[client],client==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');
   assert.match(instructions,/apk-reviewer/);assert.doesNotMatch(instructions,/apk-worker|apk-explorer|apk-routine/);
-  if(client==='codex')assert.equal(parseToml(await fs.readFile(path.join(f.home,dirs[client],'config.toml'),'utf8')).agents.default_subagent_model,'fixture-review');
+  if(client==='chatgpt')assert.equal(parseToml(await fs.readFile(path.join(f.home,dirs[client],'config.toml'),'utf8')).agents.default_subagent_model,'fixture-review');
   if(client==='claude')assert.equal(JSON.parse(await fs.readFile(path.join(f.home,dirs[client],'settings.json'))).env.CLAUDE_CODE_SUBAGENT_MODEL,'fixture-review');
   if(client==='kimi'){const native=parseToml(await fs.readFile(path.join(f.home,dirs[client],'config.toml'),'utf8'));assert.equal(native.default_model,'user-main');assert.equal(native.secondary_model.default_model,'fixture-review');assert.deepEqual(Object.keys(native.secondary_model.models),['fixture-review']);}
   assert.equal((await inspectConfiguration(f)).status,'verified');

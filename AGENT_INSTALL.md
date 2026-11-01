@@ -13,8 +13,8 @@ Package version is configuration-release version. Read that version's CHANGELOG.
 After publication, pinned invocation is supported:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy release
-npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy setup --release
+npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy release
+npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy setup --release
 ```
 
 Before publication, replace the registry spec with the verified local .tgz. For several commands, install to a temporary or user-owned prefix with npm install --prefix PREFIX TARBALL --ignore-scripts --no-audit --no-fund, then invoke PREFIX/node_modules/.bin/agent-policy. No stable runtime prefix, sudo or shell-profile changes are needed.
@@ -27,16 +27,16 @@ The page always prints explicit arguments, including when a preset filled the fo
 agent-policy setup \
   --roles reviewer,explorer \
   --max-concurrent 3 \
-  --codex 'reviewer=gpt-6.1-sol:high,explorer=gpt-6-luna:high' \
-  --avoid-codex 'gpt-6-astra' \
+  --chatgpt 'reviewer=gpt-6.1-sol:high,explorer=gpt-6-luna:high' \
+  --avoid-chatgpt 'gpt-6-astra' \
   --claude 'reviewer=sonnet:high,explorer=haiku:high' \
   --avoid-claude 'opus,fable' \
   --apply
 ```
 
-Use --codex, --claude, --kimi, --antigravity and/or --grok to select tools. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Antigravity accepts role=tier and Grok Build accepts role=model, both without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
+Use --chatgpt, --claude, --kimi, --gemini and/or --grok to select AI assistants. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Gemini accepts role=tier and Grok accepts role=model, both without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
 
-Optional --codex-max-concurrent, --claude-max-concurrent, --kimi-max-concurrent, --antigravity-max-concurrent and --grok-max-concurrent override --max-concurrent for their selected tool. They accept whole numbers from 1 to 32 and require the corresponding tool argument. JSON preferences can instead set clients[tool].maxConcurrent. Omitted overrides use the top-level fallback.
+Optional --chatgpt-max-concurrent, --claude-max-concurrent, --kimi-max-concurrent, --gemini-max-concurrent and --grok-max-concurrent override --max-concurrent for their selected tool. They accept whole numbers from 1 to 32 and require the corresponding tool argument. JSON preferences can instead set clients[tool].maxConcurrent. Omitted overrides use the top-level fallback.
 
 Explicit arguments are setup/install-only and cannot combine with --client, --release, --preset, --policy or --config. Duplicate flags and incomplete role maps fail before writes. Omit --apply to plan first. Explicit commands allow deliberate owned replacement and record custom source with no named preset provenance. The native files do not retain a dependency on the codec or package.
 
@@ -68,7 +68,7 @@ The available role names are apk-worker/apk-reviewer/apk-explorer/apk-tester/apk
 
 ## 4. Native limits
 
-Codex/Claude have native defaults/caps with higher-priority setting and execution-path exceptions. Kimi role-to-pool selection and concurrency are guidance. Antigravity uses native Pro/Flash/Flash Lite/inherit tiers, with no documented per-role effort or universal hard cap. Grok Build writes agents/apk-ROLE.md, per-role models and a general-purpose fallback in config.toml [subagents.models], and a native [subagents] max_concurrent cap; it has no per-role effort, so subagents use the main session effort. avoidModels is guidance. A pinned configuration does not prove provider identity, entitlement, task quality or unchanged alias resolution. Never add a runtime gate to strengthen a missing native feature.
+ChatGPT (Codex) and Claude (Claude Code) have native defaults/caps with higher-priority setting and execution-path exceptions. Kimi role-to-pool selection and concurrency are guidance. Gemini (Antigravity) uses native Pro/Flash/Flash Lite/inherit tiers, with no documented per-role effort or universal hard cap. Grok Build writes agents/apk-ROLE.md, per-role models and a general-purpose fallback in config.toml [subagents.models], and a native [subagents] max_concurrent cap; it has no per-role effort, so subagents use the main session effort. avoidModels is guidance. A pinned configuration does not prove provider identity, entitlement, task quality or unchanged alias resolution. Never add a runtime gate to strengthen a missing native feature.
 
 ## 5. Removal and incompatible formats
 

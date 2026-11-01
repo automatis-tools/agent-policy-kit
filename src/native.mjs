@@ -4,25 +4,25 @@ import {ROLE_DEFINITIONS,ROLE_IDS} from './roles.mjs';
 
 export const BEGIN = '<!-- BEGIN agent-policy-kit -->';
 export const END = '<!-- END agent-policy-kit -->';
-const directory = {codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini',grok:'.grok'};
+const directory = {chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
 export function nativeHomeConflict(client,home,env) {
-  const variable={codex:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'}[client];
+  const variable={chatgpt:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'}[client];
   const active=variable&&env[variable];
   return typeof active==='string'&&active.length>0&&path.resolve(active)!==path.resolve(home,directory[client]);
 }
 export function nativeLocations(client,home) {
   const root=path.join(home,directory[client]);
   return {
-    config:client==='agy'?null:path.join(root,client==='claude'?'settings.json':'config.toml'),
+    config:client==='gemini'?null:path.join(root,client==='claude'?'settings.json':'config.toml'),
     instructions:path.join(root,client==='claude'?'CLAUDE.md':'AGENTS.md'),
-    roles:Object.keys(ROLES).map(role=>path.join(root,client==='agy'?'config/agents':'agents',`apk-${role}.${client==='codex'?'toml':'md'}`))
+    roles:Object.keys(ROLES).map(role=>path.join(root,client==='gemini'?'config/agents':'agents',`apk-${role}.${client==='chatgpt'?'toml':'md'}`))
   };
 }
 export function nativeRoles(client,config,selectedRoles=ROLE_IDS) {
   return selectedRoles.map(role=>{
     const selected=rolePreference(config,role),name='apk-'+role;
     const {description,prompt}=ROLE_DEFINITIONS.find(value=>value.id===role);
-    if(client==='codex') return Object.entries({name,description,model:selected.model,...(selected.effort===null?{}:{model_reasoning_effort:selected.effort}),developer_instructions:prompt}).map(([k,v])=>`${k} = ${JSON.stringify(v)}\n`).join('');
+    if(client==='chatgpt') return Object.entries({name,description,model:selected.model,...(selected.effort===null?{}:{model_reasoning_effort:selected.effort}),developer_instructions:prompt}).map(([k,v])=>`${k} = ${JSON.stringify(v)}\n`).join('');
     const fields=[`name: ${name}`,`description: ${JSON.stringify(description)}`];
     // Grok selects the model from config.toml [subagents.models]; read-only roles use the bundled plan permission mode.
     if(client==='grok') {
@@ -47,18 +47,18 @@ export function instructionBlock(client,config,maxConcurrent,selectedRoles=ROLE_
     for(const role of selectedRoles) {const selected=rolePreference(config,role);text.push(`For apk-${role}, select pool alias ${selected.model} (effort ${selected.effort??'native default'}).`);}
     text.push('Roles sharing an alias share its native effort default; an explicit effort pin for that alias also affects its native-default roles.');
     text.push("Use the Agent tool's model selection when spawning; the role file alone does not select a model. The concurrency limit is guidance; no native Agent cap is configured.");
-  } else if(client==='agy') {
+  } else if(client==='gemini') {
     for(const role of selectedRoles)text.push(`When delegating to apk-${role}, use model tier ${rolePreference(config,role).model}.`);
     text.push('Per-role effort and a hard concurrency cap are not supported by the documented native agent settings.');
   }
   else if(client==='grok')text.push('Use the named role definitions for model selection. Per-role effort is not supported by the documented native agent settings; subagents use the main session effort. Explicit spawn settings and higher-priority instructions can supersede user defaults.');
   else if(client==='claude')text.push('Use the named role definitions for model and effort selection. Session, project, managed settings, environment overrides and some spawn paths can supersede these user defaults; the native cap applies to ordinary Agent-tool spawns with documented exceptions.');
   else text.push('Use the named role definitions for model and effort selection. Explicit spawn settings and higher-priority instructions can supersede user defaults.');
-  if(client==='codex'||client==='claude')text.push('An omitted role effort uses the native client default; it does not pin a level.');
+  if(client==='chatgpt'||client==='claude')text.push('An omitted role effort uses the native client default; it does not pin a level.');
   if(config.avoidModels.length)text.push(`Avoid these models when delegating: ${config.avoidModels.join(', ')}. This is routing guidance.`);
   text.push(END);
   return text.join('\n')+'\n';
 }
 export function nativeWarnings(client) {
-  return client==='kimi'?['kimi-concurrency-guidance-only','kimi-model-pool-routing-guidance']:client==='agy'?['agy-concurrency-guidance-only','agy-per-role-effort-unsupported']:client==='grok'?['grok-per-role-effort-unsupported','grok-native-precedence-limits']:client==='claude'?['claude-native-precedence-limits']:['codex-native-precedence-limits'];
+  return client==='kimi'?['kimi-concurrency-guidance-only','kimi-model-pool-routing-guidance']:client==='gemini'?['gemini-concurrency-guidance-only','gemini-per-role-effort-unsupported']:client==='grok'?['grok-per-role-effort-unsupported','grok-native-precedence-limits']:client==='claude'?['claude-native-precedence-limits']:['chatgpt-native-precedence-limits'];
 }

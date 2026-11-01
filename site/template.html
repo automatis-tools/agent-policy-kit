@@ -70,14 +70,14 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 <main>
 <div class="intro"><h1>Stop subagents from burning your plan limits.</h1><p>Give each subagent role a model that fits the task and your plan. Four steps, one command.</p><details class="how-it-works"><summary>Why: one weekly limit lasted 5.3 h of work without APK and 25 h with it</summary><div class="explanation">
 <div class="limits-chart">__APK_LIMITS_CHART__</div>
-<p>From my own Codex logs; tasks differed between the runs. <a href="__APK_LIMITS_EVIDENCE_URL__" target="_blank" rel="noopener noreferrer">How it was measured</a>. APK writes your coding tools’ native settings, then exits. Your main agent and its model stay unchanged.</p>
+<p>From my own Codex logs; tasks differed between the runs. <a href="__APK_LIMITS_EVIDENCE_URL__" target="_blank" rel="noopener noreferrer">How it was measured</a>. APK writes your AI assistants’ native settings, then exits. Your main agent and its model stay unchanged.</p>
 </div></details><p class="link-error" id="link-error" role="status" hidden></p></div>
 <div class="builder">
 <section aria-labelledby="helpers-heading"><div class="step-heading"><span class="step-number">1</span><h2 id="helpers-heading" tabindex="-1">Subagent roles</h2></div><div class="tag-box" id="selected-helpers" role="group" aria-label="Selected subagent roles"></div><div class="suggestions" id="helper-options" role="group" aria-label="Available subagent roles"></div></section>
-<section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">Coding tools</h2></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected coding tools"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available coding tools"></div></section>
-<section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading" tabindex="-1">Work mode</h2></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and coding tools above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected tools</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><div class="top-models" id="top-models" hidden><button type="button" role="switch" id="top-models-toggle" aria-checked="false"><span class="switch-track" aria-hidden="true"></span><span id="top-models-label">Use top models for code, review and tests</span></button></div><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div><div class="concurrency" id="concurrency-panel" hidden><h3>Parallel subagents</h3><div class="concurrency-row"><label for="max-concurrent" id="concurrency-label">Max per session</label><div class="concurrency-stepper" role="group" aria-label="Maximum concurrent subagents"><button id="decrease-concurrency" type="button" aria-label="Decrease maximum concurrent subagents">−</button><input id="max-concurrent" type="number" min="1" max="32" step="1" value="3" inputmode="numeric" aria-describedby="concurrency-error"><button id="increase-concurrency" type="button" aria-label="Increase maximum concurrent subagents">+</button></div></div><p class="field-error" id="concurrency-error" role="status" hidden>Enter a whole number from 1 to 32.</p></div></section></div></section>
+<section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">AI assistants</h2></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected AI assistants"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available AI assistants"></div></section>
+<section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading" tabindex="-1">Work mode</h2></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and AI assistants above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected AI assistants</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><div class="top-models" id="top-models" hidden><button type="button" role="switch" id="top-models-toggle" aria-checked="false"><span class="switch-track" aria-hidden="true"></span><span id="top-models-label">Use top models for code, review and tests</span></button></div><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div><div class="concurrency" id="concurrency-panel" hidden><h3>Parallel subagents</h3><div class="concurrency-row"><label for="max-concurrent" id="concurrency-label">Max per session</label><div class="concurrency-stepper" role="group" aria-label="Maximum concurrent subagents"><button id="decrease-concurrency" type="button" aria-label="Decrease maximum concurrent subagents">−</button><input id="max-concurrent" type="number" min="1" max="32" step="1" value="3" inputmode="numeric" aria-describedby="concurrency-error"><button id="increase-concurrency" type="button" aria-label="Increase maximum concurrent subagents">+</button></div></div><p class="field-error" id="concurrency-error" role="status" hidden>Enter a whole number from 1 to 32.</p></div></section></div></section>
 
-<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2><span class="step-hint" id="step-hint-4" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and a coding tool in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><div class="setup-footer"><p class="release-status" id="release-status"></p><button type="button" class="reset-form" id="reset-form">Reset form</button></div></section>
+<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2><span class="step-hint" id="step-hint-4" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and an AI assistant in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><div class="setup-footer"><p class="release-status" id="release-status"></p><button type="button" class="reset-form" id="reset-form">Reset form</button></div></section>
 </div>
 </main>
 <div id="role-tooltip" class="role-tooltip" role="tooltip" hidden></div>
@@ -88,14 +88,14 @@ const RELEASE = __APK_RELEASE_DATA__;
 __APK_EXPLICIT_CODEC__
 __APK_SHARE_CODEC__
 (() => {
-  const CLIENTS = ['codex', 'claude', 'kimi', 'agy', 'grok'];
+  const CLIENTS = ['chatgpt', 'claude', 'kimi', 'gemini', 'grok'];
   const ROLES = RELEASE.roles.map(role=>role.id);
   const ROLE_KINDS=Object.fromEntries(RELEASE.roles.map(role=>[role.id,role.kind]));
   const TIERS = ['pro', 'flash', 'flash_lite', 'inherit'];
   const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
-  const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'Antigravity', grok: 'Grok Build'};
+  const LABELS = {chatgpt: 'ChatGPT', claude: 'Claude', kimi: 'Kimi', gemini: 'Gemini', grok: 'Grok'};
   const TASKS = Object.fromEntries(RELEASE.roles.map(role=>[role.id,role.name]));
-  const NOTES = {codex: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', agy: 'Native tiers only; per-task effort is unavailable.', grok: 'Per-task effort is unavailable; subagents use the main session effort.'};
+  const NOTES = {chatgpt: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', gemini: 'Native tiers only; per-task effort is unavailable.', grok: 'Per-task effort is unavailable; subagents use the main session effort.'};
   const clone = value => JSON.parse(JSON.stringify(value));
   const addAll = (selected, available) => [...selected, ...available.filter(id => !selected.includes(id))];
   function effective(config, role) {
@@ -167,7 +167,7 @@ __APK_SHARE_CODEC__
   }
   function updateConcurrency(state, client, value) {
     const profile=state.profiles[client];
-    if(!profile)throw new Error('Choose one coding tool.');
+    if(!profile)throw new Error('Choose one AI assistant.');
     const count=Number(value),next=value===''?'':Number.isFinite(count)?count:String(value);
     if(next!==concurrencyFor(state,client)){profile.custom=true;profile.modeSelected=true;}
     profile.maxConcurrent=next;
@@ -200,7 +200,7 @@ __APK_SHARE_CODEC__
     const config = preferences.clients[client];
     const recommendations = [config.code, config.light, ...Object.values(config.roles ?? {})];
     const efforts = [...new Set(recommendations.map(choice => choice.effort).filter(effort => effort !== null))];
-    const ids = client === 'agy' ? TIERS : [...new Set(recommendations.map(choice => choice.model))];
+    const ids = client === 'gemini' ? TIERS : [...new Set(recommendations.map(choice => choice.model))];
     return {label: LABELS[client], efforts, models: ids.map(id => ({id, label: id, efforts, defaultEffort: recommendations.find(choice => choice.model === id)?.effort ?? null}))};
   }
   function preferenceForModel(config, role, model, jobs = {}, catalog, syncAliases = false) {
@@ -227,8 +227,8 @@ __APK_SHARE_CODEC__
     const selectedTools=(Array.isArray(state.selected)?state.selected:[]).filter(client=>CLIENTS.includes(client));
     const limits=selectedTools.map(client=>concurrencyFor(state,client));
     const maxConcurrent=limits.length&&limits.every(limit=>limit===limits[0])&&Number.isInteger(limits[0])&&limits[0]>=1&&limits[0]<=32?limits[0]:preferences.maxConcurrent;
-    if (!Array.isArray(state.selected) || !state.selected.length) errors.push('Choose at least one coding tool.');
-    else if(new Set(state.selected).size!==state.selected.length||state.selected.some(client=>!CLIENTS.includes(client)))errors.push('Choose supported coding tools.');
+    if (!Array.isArray(state.selected) || !state.selected.length) errors.push('Choose at least one AI assistant.');
+    else if(new Set(state.selected).size!==state.selected.length||state.selected.some(client=>!CLIENTS.includes(client)))errors.push('Choose supported AI assistants.');
     const selection=state.selectedRoles===undefined?ROLES:Array.isArray(state.selectedRoles)?state.selectedRoles:[];
     if(!selection.length||new Set(selection).size!==selection.length||selection.some(role=>!ROLES.includes(role)))errors.push('Choose valid subagent roles.');
     const selectedRoles=ROLES.filter(role=>selection.includes(role));
@@ -247,10 +247,10 @@ __APK_SHARE_CODEC__
         if (!choice || typeof choice.model !== 'string' || !IDENTIFIER.test(choice.model)) {
           errors.push(`${LABELS[client]} ${TASKS[role]}: enter a valid model ID (1–128 ASCII characters, no spaces).`); continue;
         }
-        if (client === 'agy' && (!TIERS.includes(choice.model) || choice.effort !== null)) {
-          errors.push(`Antigravity ${TASKS[role]}: choose a supported native tier.`); continue;
+        if (client === 'gemini' && (!TIERS.includes(choice.model) || choice.effort !== null)) {
+          errors.push(`Gemini ${TASKS[role]}: choose a supported native tier.`); continue;
         }
-        if (client !== 'agy' && !allowedEfforts(clientCatalog(client, {clients: {[client]: defaults}}, catalog), choice.model).includes(choice.effort)) {
+        if (client !== 'gemini' && !allowedEfforts(clientCatalog(client, {clients: {[client]: defaults}}, catalog), choice.model).includes(choice.effort)) {
           errors.push(`${LABELS[client]} ${TASKS[role]}: choose a supported effort.`); continue;
         }
         if (client === 'kimi' && choice.model === 'primary') {
@@ -350,11 +350,11 @@ __APK_SHARE_CODEC__
  function roleInfo(role){return infoButton(role.name,button=>showRoleInfo(role,button));}
  const stepInfo={
   'helpers-heading':'Helpers your main agent can hand work to. Each role gets its own model and effort, so routine work does not run on your most expensive model.',
-  'tools-heading':'The coding tools you use. Only installed ones are configured; nothing else changes. With several tools, click one to adjust it separately.',
+  'tools-heading':'The AI assistants you use. Only their coding agents, such as Codex in ChatGPT, get settings, and only when installed. With several, click one to adjust it separately.',
   'mode-heading':'How much of your plan’s limits subagents may use. Light suits entry plans or many parallel sessions; Top-tier suits top plans with few.',
-  'setup-heading':'Run it in a terminal. It writes native settings for installed tools once and exits. Your main model stays unchanged.'
+  'setup-heading':'Run it in a terminal. It writes native settings for installed AI assistants once and exits. Your main model stays unchanged.'
  };
- $('copy-show').before(infoButton('current settings',button=>showTip(button,el('strong',{},'Check current settings'),el('p',{},'Copies a read-only command. Run it in a terminal to see the roles, models, effort and parallel limits your coding tools use now. It changes nothing.'),el('pre',{},showCommand))));
+ $('copy-show').before(infoButton('current settings',button=>showTip(button,el('strong',{},'Check current settings'),el('p',{},'Copies a read-only command. Run it in a terminal to see the roles, models, effort and parallel limits your AI assistants use now. It changes nothing.'),el('pre',{},showCommand))));
  for(const [id,text]of Object.entries(stepInfo)){const heading=$(id),name=heading.textContent;heading.after(infoButton(name,button=>showTip(button,el('strong',{},name),el('p',{},text))));}
  tip.addEventListener('pointerenter',()=>clearTimeout(tipTimer));tip.addEventListener('pointerleave',scheduleHide);
  document.addEventListener('keydown',event=>{if(event.key==='Escape')hideRoleInfo();});
@@ -382,14 +382,14 @@ __APK_SHARE_CODEC__
    const isRole=kind==='helpers',chosen=isRole?helpers:pickedTools,available=isRole?roles:clients.map(id=>({id,name:toolName(id)}));
    const box=$(isRole?'selected-helpers':'selected-tools'),options=$(isRole?'helper-options':'tool-options');box.replaceChildren();options.replaceChildren();box.hidden=false;
    if(available.some(item=>!chosen.includes(item.id))){
-    const all=el('button',{type:'button',class:'suggestion add-all','aria-label':isRole?'Add all subagent roles':'Add all coding tools'},'Add all');
+    const all=el('button',{type:'button',class:'suggestion add-all','aria-label':isRole?'Add all subagent roles':'Add all AI assistants'},'Add all');
     all.addEventListener('click',()=>{const next=A.addAll(chosen,available.map(item=>item.id));if(isRole)helpers=next;else pickedTools=next;render();});
     options.append(all);
    }
    box.classList.toggle('is-empty',!chosen.length);
    if(isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add roles from below'));
-   if(!isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add coding tools from below'));
-   if(!isRole&&chosen.length>=2){const all=el('button',{type:'button',class:'tool-scope scope-all','aria-label':'Configure all selected tools','aria-pressed':String(state.active==='all')},'All');all.style.viewTransitionName='tool-all';all.addEventListener('click',()=>{selectedScope='all';render();});box.append(all);}
+   if(!isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add AI assistants from below'));
+   if(!isRole&&chosen.length>=2){const all=el('button',{type:'button',class:'tool-scope scope-all','aria-label':'Configure all selected AI assistants','aria-pressed':String(state.active==='all')},'All');all.style.viewTransitionName='tool-all';all.addEventListener('click',()=>{selectedScope='all';render();});box.append(all);}
    const ordered=isRole?available:[...chosen.map(id=>available.find(item=>item.id===id)).filter(Boolean),...available.filter(item=>!chosen.includes(item.id))];
    for(const item of ordered){
     if(!chosen.includes(item.id)){
@@ -406,12 +406,12 @@ __APK_SHARE_CODEC__
 
  }
  function apply(preset){
-  const message=state.active==='all'?`Apply ${preset.label} to all selected tools? This replaces their individual modes, models and effort.`:state.selected.length>1?`Apply ${preset.label} to ${toolName(state.active)} only? Other tools keep their choices.`:`Replace your changes to ${toolName(state.active)} with ${preset.label}?`;
+  const message=state.active==='all'?`Apply ${preset.label} to all selected AI assistants? This replaces their individual modes, models and effort.`:state.selected.length>1?`Apply ${preset.label} to ${toolName(state.active)} only? Other AI assistants keep their choices.`:`Replace your changes to ${toolName(state.active)} with ${preset.label}?`;
   const next=A.applyPreset(state,preset,()=>window.confirm(message));if(next!==state){state=next;}render();
  }
  function renderModes(){
   const ready=helpers.length>0&&state.selected.length>0;$('mode-empty').hidden=ready;$('mode-panel').hidden=!ready;if(!ready){$('editor').replaceChildren();return;}
-  const all=state.active==='all',mode=A.modeFor(state),scope=all?'All selected tools':toolName(state.active);if($('scope-label').textContent!==scope){$('scope-label').textContent=scope;flashLabel($('scope-label'));}
+  const all=state.active==='all',mode=A.modeFor(state),scope=all?'All selected AI assistants':toolName(state.active);if($('scope-label').textContent!==scope){$('scope-label').textContent=scope;flashLabel($('scope-label'));}
   const options=$('mode-options');options.replaceChildren();
   for(const p of [...presets,{id:'custom',label:'Custom'}]){const label=el('label',{class:'mode-option'}),radio=el('input',{type:'radio',name:'mode',value:p.id,'aria-label':p.label});label.style.viewTransitionName='mode-'+p.id;radio.checked=mode===p.id;radio.addEventListener('change',()=>{if(p.id==='custom'){for(const client of (all?state.selected:[state.active])){state.profiles[client].custom=true;state.profiles[client].modeSelected=true;}render();}else apply(p);});label.append(radio,el('span',{},p.label));options.append(label);}
   renderModeNotice();renderTopModels();
@@ -432,8 +432,8 @@ __APK_SHARE_CODEC__
   const all=state.active==='all',mode=A.modeFor(state),notice=$('mode-notice');
   const shared=!all&&mode!==null&&mode!=='custom'?A.presetModelSummary(presets,state.active):{same:false,model:null};
   const sharedModel=shared.model?RELEASE.catalog.clients[state.active].models.find(model=>model.id===shared.model)?.label??shared.model:'the same models';
-  const message=mode==='custom'?(all?'Open a coding tool to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`):shared.same?`${toolName(state.active)} uses ${sharedModel} for every role in every mode. Modes change only how many subagents run at once.`:(presets.find(p=>p.id===mode)?.description??'');
-  if(notice.textContent!==message){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.append(message);}
+  const message=mode==='custom'?(all?'Open an AI assistant to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`):shared.same?`${toolName(state.active)} uses ${sharedModel} for every role in every mode. Modes change only how many subagents run at once.`:(presets.find(p=>p.id===mode)?.description??'');
+  if(notice.textContent!==message){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open an ',el('strong',{},'AI assistant'),' to customize its models and effort.');else notice.append(message);}
   notice.hidden=!message;
  }
  function renderEditor(){
@@ -444,7 +444,7 @@ __APK_SHARE_CODEC__
    const choice=state.jobs[client][role.id],row=el('div',{class:'editor editor-row','data-helper-id':role.id,role:'group','aria-label':`${role.name} settings for ${toolName(client)}`});
    row.style.viewTransitionName=`config-${client}-${role.id}`;
    const name=el('div',{class:'editor-name'});name.append(el('span',{},role.name),roleInfo(role));row.append(name);
-   const modelControl=el('div',{class:'model-control'}),modelSelect=el('select',{'aria-label':`${role.name} model`,'data-model-role':role.id});catalog.models.forEach(model=>modelSelect.append(el('option',{value:model.id},model.label)));if(client!=='agy')modelSelect.append(el('option',{value:'__custom__'},'Custom model…'));
+   const modelControl=el('div',{class:'model-control'}),modelSelect=el('select',{'aria-label':`${role.name} model`,'data-model-role':role.id});catalog.models.forEach(model=>modelSelect.append(el('option',{value:model.id},model.label)));if(client!=='gemini')modelSelect.append(el('option',{value:'__custom__'},'Custom model…'));
    const known=catalog.models.some(model=>model.id===choice.model);modelSelect.value=known?choice.model:'__custom__';
    const custom=el('input',{type:'text',class:'custom-model','aria-label':`${role.name} custom model ID`,placeholder:'Native model ID',autocomplete:'off',spellcheck:'false',maxlength:'128'});custom.hidden=known;custom.value=known?'':choice.model;
    modelSelect.addEventListener('change',()=>{if(modelSelect.value==='__custom__'){state.jobs[client][role.id]={model:'',effort:choice.effort};state.profiles[client].custom=true;state.profiles[client].modeSelected=true;render();const focus=()=>{if(state.active===client)document.querySelector(`[aria-label="${role.name} custom model ID"]`)?.focus();};if(activeTransition)activeTransition.finished.then(focus);else focus();return;}state.jobs[client][role.id]=A.preferenceForModel(profile,role.id,modelSelect.value,state.jobs[client],catalog,client==='kimi');state.profiles[client].custom=true;state.profiles[client].modeSelected=true;render();});
@@ -483,7 +483,7 @@ __APK_SHARE_CODEC__
    const fragment=encodeFormState({state,helpers,pickedTools,selectedScope},RELEASE);
    if(location.hash!==fragment)history.replaceState(history.state,'',location.pathname+location.search+fragment);
    lastAddress=fragment;
-  }catch{message=pickedTools.some(client=>{const cap=A.concurrencyFor(state,client);return !Number.isInteger(cap)||cap<1||cap>32;})?'Check parallel limits in the coding tool details.':'Check your model IDs before sharing this setup.';}
+  }catch{message=pickedTools.some(client=>{const cap=A.concurrencyFor(state,client);return !Number.isInteger(cap)||cap<1||cap>32;})?'Check parallel limits in the AI assistant details.':'Check your model IDs before sharing this setup.';}
   $('link-error').textContent=message;$('link-error').hidden=!message;
  }
  function setStepHint(number,message){
@@ -531,19 +531,19 @@ __APK_SHARE_CODEC__
    const cap=A.concurrencyFor(state,client),validCap=Number.isInteger(cap)&&cap>=1&&cap<=32,capInput=$('max-concurrent');
    if(document.activeElement!==capInput||capInput.dataset.client!==client)capInput.value=cap;
    capInput.dataset.client=client;capInput.setAttribute('aria-invalid',String(!validCap));
-   $('concurrency-label').textContent=['kimi','agy'].includes(client)?'Max per session (advisory)':'Max per session';
+   $('concurrency-label').textContent=['kimi','gemini'].includes(client)?'Max per session (advisory)':'Max per session';
    $('concurrency-error').hidden=validCap;
    $('decrease-concurrency').disabled=validCap&&cap===1;$('increase-concurrency').disabled=validCap&&cap===32;
   }
   let next='',summary='Complete the steps above.',detail='',missing=[];
   if(!helpers.length)missing.push(['helpers-heading','a subagent role in step 1']);
-  if(!pickedTools.length)missing.push(['tools-heading','a coding tool in step 2']);
+  if(!pickedTools.length)missing.push(['tools-heading','an AI assistant in step 2']);
   if(!missing.length){
-   if(pickedTools.some(client=>A.modeFor(state,client)===null))missing.push(['mode-heading','a work mode for each selected coding tool in step 3']);
+   if(pickedTools.some(client=>A.modeFor(state,client)===null))missing.push(['mode-heading','a work mode for each selected AI assistant in step 3']);
    else{
     const {config,errors}=A.buildConfig(state,RELEASE.preferences,RELEASE.catalog);
     if(errors.length){summary='Check your settings.';detail=errors[0];}
-    else try{next=A.buildCommand(config,RELEASE);summary=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${pickedTools.length} coding tool${pickedTools.length===1?'':'s'}`;}
+    else try{next=A.buildCommand(config,RELEASE);summary=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${pickedTools.length} AI assistant${pickedTools.length===1?'':'s'}`;}
     catch{summary='Command unavailable.';detail='Check the configuration release.';}
    }
   }

@@ -5,18 +5,18 @@ import {validatePolicy,rolePreference,ROLES} from '../src/policy.mjs';
 
 test('release catalog carries dated sourced native selectors and compatible efforts',()=>{
  const catalog=modelCatalog();assert.match(catalog.reviewedAt,/^\d{4}-\d\d-\d\d$/);
- assert.equal(catalog.clients.codex.models.length,9);assert.equal(catalog.clients.kimi.models.length,6);assert.equal(catalog.clients.agy.label,'Antigravity');
+ assert.equal(catalog.clients.chatgpt.models.length,9);assert.equal(catalog.clients.kimi.models.length,6);assert.equal(catalog.clients.gemini.label,'Gemini');
  for(const [client,data]of Object.entries(catalog.clients)){
   assert.equal(new Set(data.models.map(m=>m.id)).size,data.models.length);
   for(const model of data.models){assert.match(model.source,/^https:\/\//);assert.ok(model.efforts.every(e=>data.efforts.includes(e)),client);assert.ok(model.defaultEffort===null||model.efforts.includes(model.defaultEffort));}
  }
- assert.deepEqual(catalog.clients.agy.models.map(m=>m.id),['pro','flash','flash_lite','inherit']);
+ assert.deepEqual(catalog.clients.gemini.models.map(m=>m.id),['pro','flash','flash_lite','inherit']);
  assert.ok(catalog.clients.claude.models.some(m=>m.id==='claude-haiku-5-5'));
 });
 
 test('Grok Build inventory lists documented xAI models without per-role effort',()=>{
  const grok=modelCatalog().clients.grok;
- assert.equal(grok.label,'Grok Build');assert.deepEqual(grok.efforts,[]);assert.deepEqual(grok.models.map(m=>m.id),['grok-4.7','grok-4.6','grok-4.5','grok-build-0.1']);
+ assert.equal(grok.label,'Grok');assert.deepEqual(grok.efforts,[]);assert.deepEqual(grok.models.map(m=>m.id),['grok-4.7','grok-4.6','grok-4.5','grok-build-0.1']);
  for(const model of grok.models){assert.deepEqual(model.efforts,[]);assert.equal(model.defaultEffort,null);assert.equal(model.source,'https://docs.x.ai/developers/models');assert.match(model.nativeSource,/^https:\/\/github\.com\/xai-org\/grok-build\//);}
  assert.ok(!('grok' in PRESETS.find(preset=>preset.id==='quality').topModels));
 });
@@ -36,28 +36,28 @@ test('current Kimi inventory includes both K3.1 Pro routes with native thinking 
 test('presets name how much of the plan subagents use and top models stay an explicit Top-tier opt-in',()=>{
  assert.deepEqual(PRESETS.map(preset=>[preset.id,preset.label]),[['fast','Light'],['balanced','Standard'],['quality','Top-tier']]);
  for(const preset of PRESETS)assert.ok(preset.description.length<=70,preset.id);
- const top={codex:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'},catalog=modelCatalog().clients;
+ const top={chatgpt:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'},catalog=modelCatalog().clients;
  assert.deepEqual(PRESETS.find(preset=>preset.id==='quality').topModels,top);
  assert.ok(PRESETS.filter(preset=>preset.id!=='quality').every(preset=>preset.topModels===undefined));
  for(const [client,model] of Object.entries(top))assert.ok(catalog[client].models.find(entry=>entry.id===model)?.efforts.includes('high'),client);
  // Native default subagent settings copy the Coder choice, so no slider position may silently select a top model.
  for(const id of ['fast','balanced','quality'])for(const [client,config] of Object.entries(presetPreferences(id).clients))for(const role of Object.keys(ROLES))assert.notEqual(rolePreference(config,role).model,top[client],`${id} ${client} ${role}`);
  const quality=presetPreferences('quality').clients;
- for(const [client,model] of [['codex','gpt-6.1-sol'],['claude','claude-opus-5-5'],['kimi','kimi-code/k3']])
+ for(const [client,model] of [['chatgpt','gpt-6.1-sol'],['claude','claude-opus-5-5'],['kimi','kimi-code/k3']])
   for(const role of ['worker','reviewer','tester'])assert.deepEqual(rolePreference(quality[client],role),{model,effort:'high'},`${client} ${role}`);
 });
 
 test('native effort choices stay separate from API-only capabilities and delegation modes',()=>{
- const catalog=modelCatalog(),sol=catalog.clients.codex.models.find(model=>model.id==='gpt-6.1-sol');
+ const catalog=modelCatalog(),sol=catalog.clients.chatgpt.models.find(model=>model.id==='gpt-6.1-sol');
  assert.equal(sol.defaultEffort,'low');assert.equal(sol.apiDefaultEffort,'medium');assert.deepEqual(sol.delegationModes,['ultra']);
- const luna=catalog.clients.codex.models.find(model=>model.id==='gpt-6-luna');
+ const luna=catalog.clients.chatgpt.models.find(model=>model.id==='gpt-6-luna');
  assert.ok(luna.apiEfforts.includes('none'));assert.ok(!luna.efforts.includes('none'));
- for(const model of catalog.clients.codex.models){assert.ok(!model.efforts.includes('ultra'));assert.ok(model.efforts.every(level=>model.apiEfforts.includes(level)));}
+ for(const model of catalog.clients.chatgpt.models){assert.ok(!model.efforts.includes('ultra'));assert.ok(model.efforts.every(level=>model.apiEfforts.includes(level)));}
  const legacy=catalog.clients.claude.models.find(model=>model.id==='claude-opus-4-5-20251101');
  assert.deepEqual(legacy.efforts,[]);assert.deepEqual(legacy.apiEfforts,['low','medium','high']);
  const policy=structuredClone(presetPreferences('balanced'));
- policy.clients.codex.code={model:'gpt-6-luna',effort:'none'};assert.throws(()=>validatePolicy(policy));
- policy.clients.codex.code={model:'gpt-6-luna',effort:'high'};
+ policy.clients.chatgpt.code={model:'gpt-6-luna',effort:'none'};assert.throws(()=>validatePolicy(policy));
+ policy.clients.chatgpt.code={model:'gpt-6-luna',effort:'high'};
  policy.clients.claude.code={model:legacy.id,effort:'high'};assert.throws(()=>validatePolicy(policy));
  policy.clients.claude.code.effort=null;assert.doesNotThrow(()=>validatePolicy(policy));
 });
@@ -66,7 +66,7 @@ test('three named presets are valid editable recommendations from the same packa
  const fingerprints=new Set();
  for(const preset of PRESETS){const preferences=presetPreferences(preset.id);validatePolicy(preferences);fingerprints.add(bundledReleaseInfo(preset.id).preferencesHash);for(const client of Object.values(preferences.clients))for(const role of Object.keys(ROLES))assert.ok(rolePreference(client,role));}
  assert.equal(fingerprints.size,3);assert.throws(()=>presetPreferences('../outside'),e=>e.code==='UNKNOWN_PRESET');
- assert.equal(presetPreferences('fast').clients.codex.code.model,'gpt-6-luna');assert.equal(presetPreferences('quality').clients.claude.code.model,'claude-opus-5-5');
+ assert.equal(presetPreferences('fast').clients.chatgpt.code.model,'gpt-6-luna');assert.equal(presetPreferences('quality').clients.claude.code.model,'claude-opus-5-5');
 });
 
 test('Fable is a documented Claude subagent alias with current native effort choices',()=>{
@@ -78,12 +78,12 @@ test('public recommendations never carry personal model bans',()=>{
 });
 test('Top-tier offers frontier models for demanding implementation and review only as an opt-in',()=>{
  const quality=presetPreferences('quality'),top=PRESETS.find(preset=>preset.id==='quality').topModels;
- assert.equal(top.codex,'gpt-6-astra');assert.equal(top.claude,'claude-fable-5-1');
+ assert.equal(top.chatgpt,'gpt-6-astra');assert.equal(top.claude,'claude-fable-5-1');
  for(const role of ['worker','reviewer']){
-  assert.equal(rolePreference(quality.clients.codex,role).model,'gpt-6.1-sol');
+  assert.equal(rolePreference(quality.clients.chatgpt,role).model,'gpt-6.1-sol');
   assert.equal(rolePreference(quality.clients.claude,role).model,'claude-opus-5-5');
  }
- assert.notEqual(rolePreference(quality.clients.codex,'routine').model,'gpt-6-astra');
+ assert.notEqual(rolePreference(quality.clients.chatgpt,'routine').model,'gpt-6-astra');
  assert.notEqual(rolePreference(quality.clients.claude,'routine').model,'claude-fable-5-1');
 });
 

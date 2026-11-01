@@ -5,8 +5,8 @@ import {parseToml} from './toml.mjs';
 import {CLIENTS} from './policy.mjs';
 import {inspectConfiguration} from './install.mjs';
 
-const ROOTS={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini',grok:'.grok'};
-const ENV_ROOTS={codex:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'};
+const ROOTS={chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
+const ENV_ROOTS={chatgpt:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'};
 const MAX_FILE=1024*1024,MAX_TOTAL=4*MAX_FILE,MAX_ENTRIES=256;
 const identifier=/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
 const namePattern=/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,79}$/;
@@ -88,7 +88,7 @@ function extractSettings(client,id,native,env,models){
   if(subagents.max_concurrent!==undefined)client.concurrency.value=cap(subagents.max_concurrent);
   return;
  }
- if(id==='codex'){
+ if(id==='chatgpt'){
   const agents=native.agents??{};if(!record(agents))throw failure('UNSUPPORTED_NATIVE_SETTING');
   client.defaults.model=optionalString(agents.default_subagent_model);
   client.defaults.effort=optionalString(agents.default_subagent_reasoning_effort);
@@ -132,14 +132,14 @@ async function rolesIn(directory,client,id,budget,models,depth=0){
   try{
    if(entry.isSymbolicLink())throw failure('UNSAFE_FILE');
    if(entry.isDirectory()){
-    if(id==='codex')continue;
+    if(id==='chatgpt')continue;
     if(depth>=4)throw failure('INSPECTION_LIMIT');
     await rolesIn(file,client,id,budget,models,depth+1);continue;
    }
-   if(!entry.name.endsWith(id==='codex'?'.toml':'.md'))continue;
+   if(!entry.name.endsWith(id==='chatgpt'?'.toml':'.md'))continue;
    const body=await readFile(file,budget);if(body===null)throw failure('CONFIG_CHANGED_DURING_READ');
-   const fields=id==='codex'?parseToml(body):frontmatter(body);
-   const role={name:safeString(fields.name,namePattern),model:optionalString(fields.model),effort:optionalString(id==='codex'?fields.model_reasoning_effort:fields.effort)};
+   const fields=id==='chatgpt'?parseToml(body):frontmatter(body);
+   const role={name:safeString(fields.name,namePattern),model:optionalString(fields.model),effort:optionalString(id==='chatgpt'?fields.model_reasoning_effort:fields.effort)};
    if(id==='kimi'){
     // APK's Markdown role files contain explicit routing guidance, not a
     // native model binding. Other prose is never interpreted as configuration.
@@ -154,7 +154,7 @@ async function rolesIn(directory,client,id,budget,models,depth=0){
     role.model=models.get(role.name)??role.model;
     if(fields.effort!==undefined){role.effort=null;warning(client,failure('UNSUPPORTED_ROLE_EFFORT'));}
    }
-   if(id==='agy'){
+   if(id==='gemini'){
     if(role.model!==null&&!['pro','flash','flash_lite','inherit'].includes(role.model))throw failure('UNSUPPORTED_NATIVE_SETTING');
     role.enabled=fields.subagent??null;
     if(fields.effort!==undefined){role.effort=null;warning(client,failure('UNSUPPORTED_ROLE_EFFORT'));}
@@ -179,19 +179,19 @@ export async function readConfiguration({client=null,home,env=process.env,explic
  const report={schemaVersion:1,scope:'user',modelExecution:'not_checked',clients:{}};
  for(const id of client?[client]:CLIENTS){
   const root=path.resolve(!explicitHome&&env[ENV_ROOTS[id]]?env[ENV_ROOTS[id]]:path.join(home,ROOTS[id]));
-  const c={status:'not_configured',defaults:{model:null,effort:null,enabled:null},concurrency:{value:null,kind:['codex','claude','grok'].includes(id)?'native_setting':'guidance'},roles:[],pool:[],warnings:[],apk:{status:'not_checked'}};
+  const c={status:'not_configured',defaults:{model:null,effort:null,enabled:null},concurrency:{value:null,kind:['chatgpt','claude','grok'].includes(id)?'native_setting':'guidance'},roles:[],pool:[],warnings:[],apk:{status:'not_checked'}};
   report.clients[id]=c;const budget={bytes:0,entries:0},models=new Map();
   try{
    await safePath(root);
-   if(id!=='agy'){
+   if(id!=='gemini'){
     try{
      const text=await readFile(path.join(root,id==='claude'?'settings.json':'config.toml'),budget);
      if(text!==null){let native;if(id==='claude'){try{native=JSON.parse(text);}catch{throw failure('INVALID_JSON');}}else native=parseToml(text);extractSettings(c,id,native,env,models);}
      else if(id==='claude')extractSettings(c,id,{},env,models);
     }catch(error){warning(c,error);}
    }
-   await rolesIn(path.join(root,id==='agy'?'config/agents':'agents'),c,id,budget,models);
-   if(id==='kimi'||id==='agy'){try{await readGuidance(root,c,budget);}catch(error){warning(c,error);}}
+   await rolesIn(path.join(root,id==='gemini'?'config/agents':'agents'),c,id,budget,models);
+   if(id==='kimi'||id==='gemini'){try{await readGuidance(root,c,budget);}catch(error){warning(c,error);}}
    if(c.status!=='attention'&&(c.roles.length||c.pool.length||c.defaults.model!==null||c.defaults.effort!==null||c.defaults.enabled!==null||c.concurrency.value!==null||Object.keys(c.overrides??{}).length))c.status='configured';
    if(root===path.resolve(home,ROOTS[id])){
     try{const installed=await inspectConfiguration({client:id,home,stateDir});c.apk.status=installed.status;if(installed.status==='verified'){c.apk.releaseVersion=installed.releaseVersion;c.apk.preset=installed.preset;}}

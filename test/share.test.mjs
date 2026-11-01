@@ -10,7 +10,7 @@ import vm from 'node:vm';
 const release={version:PACKAGE_VERSION,preset:'balanced',preferences:presetPreferences(),presets:PRESETS.map(p=>({...p,preferences:presetPreferences(p.id)})),roles:ROLE_DEFINITIONS,catalog:modelCatalog()};
 const clone=value=>structuredClone(value);
 const effective=(preferences,role)=>preferences.roles?.[role.id]??preferences[role.kind];
-function snapshot(helpers=['worker','reviewer','explorer','routine'],pickedTools=['codex','claude','kimi','agy']){
+function snapshot(helpers=['worker','reviewer','explorer','routine'],pickedTools=['chatgpt','claude','kimi','gemini']){
  const state={maxConcurrent:3,profiles:{},jobs:{}};
  for(const [id,preferences] of Object.entries(release.preferences.clients)){
   state.profiles[id]={presetId:'balanced',custom:false,preferences:clone(preferences)};
@@ -19,7 +19,7 @@ function snapshot(helpers=['worker','reviewer','explorer','routine'],pickedTools
  return {state,helpers,pickedTools,selectedScope:pickedTools.length>1?'all':pickedTools[0]??null};
 }
 const raw=json=>'#setup='+Buffer.from(typeof json==='string'?json:JSON.stringify(json)).toString('base64url');
-const payload=()=>({v:1,release:PACKAGE_VERSION,roles:['reviewer'],tools:[{id:'codex',mode:'balanced',base:'balanced',choices:{reviewer:{model:'gpt-6.1-sol',effort:'high'}}}],scope:'codex',maxConcurrent:3});
+const payload=()=>({v:1,release:PACKAGE_VERSION,roles:['reviewer'],tools:[{id:'chatgpt',mode:'balanced',base:'balanced',choices:{reviewer:{model:'gpt-6.1-sol',effort:'high'}}}],scope:'chatgpt',maxConcurrent:3});
 const invalid=fn=>assert.throws(fn,{code:'INVALID_SHARE_LINK'});
 
 test('a Grok Build selection with the preset model round-trips and refuses a pinned effort',()=>{
@@ -36,7 +36,7 @@ test('empty and unrelated fragments carry no setup',()=>{
 });
 
 test('a selected role/tool round-trips to the exact canonical visible payload',()=>{
- const input=snapshot(['reviewer'],['codex']),before=clone(input),metadata=clone(release);
+ const input=snapshot(['reviewer'],['chatgpt']),before=clone(input),metadata=clone(release);
  const encoded=encodeFormState(input,release);
  assert.equal(encoded,raw(payload()));
  assert.deepEqual(decodeFormState(encoded,release),payload());
@@ -45,38 +45,38 @@ test('a selected role/tool round-trips to the exact canonical visible payload',(
 });
 
 test('full and partial selections preserve order, cap and scope',()=>{
- for(const roles of [[],['routine'],['routine','worker','explorer','reviewer']])for(const tools of [[],['agy'],['kimi','codex','agy','grok','claude']]){
+ for(const roles of [[],['routine'],['routine','worker','explorer','reviewer']])for(const tools of [[],['gemini'],['kimi','chatgpt','gemini','grok','claude']]){
   const input=snapshot(roles,tools);input.state.maxConcurrent=32;
   if(!roles.length&&!tools.length)continue;
   const decoded=decodeFormState(encodeFormState(input,release),release);
   assert.deepEqual(decoded.roles,roles);assert.deepEqual(decoded.tools.map(t=>t.id),tools);assert.equal(decoded.scope,input.selectedScope);assert.equal(decoded.maxConcurrent,32);
   for(const tool of decoded.tools)assert.deepEqual(Object.keys(tool.choices),roles);
  }
- const input=snapshot(['worker'],['codex','kimi']);input.selectedScope=null;
+ const input=snapshot(['worker'],['chatgpt','kimi']);input.selectedScope=null;
  assert.equal(decodeFormState(encodeFormState(input,release),release).scope,null);
 });
 
 test('unchosen, legacy-selected and explicitly selected modes remain distinct',()=>{
- const input=snapshot(['reviewer'],['codex']);
- input.state.profiles.codex.modeSelected=false;
- input.state.jobs.codex.reviewer={model:'unfinished id; $(draft)',effort:null};
+ const input=snapshot(['reviewer'],['chatgpt']);
+ input.state.profiles.chatgpt.modeSelected=false;
+ input.state.jobs.chatgpt.reviewer={model:'unfinished id; $(draft)',effort:null};
  assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].mode,null);
- input.state.profiles.codex.modeSelected=true;invalid(()=>encodeFormState(input,release));
- input.state.jobs.codex.reviewer={model:'gpt-6.1-sol',effort:'high'};
+ input.state.profiles.chatgpt.modeSelected=true;invalid(()=>encodeFormState(input,release));
+ input.state.jobs.chatgpt.reviewer={model:'gpt-6.1-sol',effort:'high'};
  assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].mode,'balanced');
- delete input.state.profiles.codex.modeSelected;
+ delete input.state.profiles.chatgpt.modeSelected;
  assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].mode,'balanced');
 });
 
 test('custom drafts including empty/Unicode/invalid model IDs and aliases are inert data',()=>{
  for(const model of ['', 'provider:model@2026[1m]', 'sonnet[1m]', 'kimi-code/k3', 'a b;$(id)<script>🦔', '\ud800']){
-  const input=snapshot(['reviewer'],['codex']);input.state.profiles.codex.custom=true;input.state.jobs.codex.reviewer={model,effort:null};
-  assert.deepEqual(decodeFormState(encodeFormState(input,release),release).tools[0],{id:'codex',mode:'custom',base:'balanced',choices:{reviewer:{model,effort:null}}});
+  const input=snapshot(['reviewer'],['chatgpt']);input.state.profiles.chatgpt.custom=true;input.state.jobs.chatgpt.reviewer={model,effort:null};
+  assert.deepEqual(decodeFormState(encodeFormState(input,release),release).tools[0],{id:'chatgpt',mode:'custom',base:'balanced',choices:{reviewer:{model,effort:null}}});
  }
 });
 
 test('links omit unselected preferences, jobs, tools and transient clipboard data',()=>{
- const input=snapshot(['reviewer'],['codex']);input.clipboardStatus='secret transient';input.state.profiles.kimi.preferences.code.model='hidden-profile';input.state.jobs.kimi.worker.model='hidden-tool';input.state.jobs.codex.worker.model='hidden-role';
+ const input=snapshot(['reviewer'],['chatgpt']);input.clipboardStatus='secret transient';input.state.profiles.kimi.preferences.code.model='hidden-profile';input.state.jobs.kimi.worker.model='hidden-tool';input.state.jobs.chatgpt.worker.model='hidden-role';
  const fragment=encodeFormState(input,release),json=Buffer.from(fragment.slice(7),'base64url').toString();
  assert.deepEqual(decodeFormState(fragment,release),payload());
  assert.doesNotMatch(json,/hidden-|clipboard|avoidModels|preferences/);
@@ -88,8 +88,8 @@ test('all named presets enforce effective role overrides as well as code/light d
   for(const id of input.pickedTools){input.state.profiles[id].presetId=preset.id;input.state.profiles[id].preferences=clone(preset.preferences.clients[id]);input.state.jobs[id]=Object.fromEntries(release.roles.map(role=>[role.id,clone(effective(preset.preferences.clients[id],role))]));}
   assert.ok(decodeFormState(encodeFormState(input,release),release));
  }
- const metadata=clone(release);metadata.presets[1].preferences.clients.codex.roles={reviewer:{model:'provider:reviewer',effort:null}};
- const input=snapshot(['reviewer'],['codex']);invalid(()=>encodeFormState(input,metadata));input.state.jobs.codex.reviewer={model:'provider:reviewer',effort:null};
+ const metadata=clone(release);metadata.presets[1].preferences.clients.chatgpt.roles={reviewer:{model:'provider:reviewer',effort:null}};
+ const input=snapshot(['reviewer'],['chatgpt']);invalid(()=>encodeFormState(input,metadata));input.state.jobs.chatgpt.reviewer={model:'provider:reviewer',effort:null};
  assert.equal(decodeFormState(encodeFormState(input,metadata),metadata).tools[0].choices.reviewer.model,'provider:reviewer');
  for(const mutate of [p=>p.tools[0].base='fast',p=>p.tools[0].choices.reviewer.model='other',p=>p.tools[0].choices.reviewer.effort='low']){const p=payload();mutate(p);invalid(()=>decodeFormState(raw(p),release));}
 });
@@ -97,7 +97,7 @@ test('all named presets enforce effective role overrides as well as code/light d
 test('unknown IDs, duplicate selections and incomplete or extra role maps fail closed',()=>{
  const changes=[p=>p.roles=['worker','worker'],p=>p.roles=['unknown'],p=>p.tools.push(clone(p.tools[0])),p=>p.tools[0].id='unknown',p=>p.tools[0].base='unknown',p=>p.tools[0].mode='unknown',p=>p.tools[0].choices={},p=>p.tools[0].choices.worker={model:'x',effort:null},p=>p.tools[0].choices.unknown={model:'x',effort:null}];
  for(const change of changes){const p=payload();change(p);invalid(()=>decodeFormState(raw(p),release));}
- for(const [field,value] of [['helpers',['worker','worker']],['helpers',['unknown']],['pickedTools',['codex','codex']],['pickedTools',['unknown']]]){const input=snapshot();input[field]=value;invalid(()=>encodeFormState(input,release));}
+ for(const [field,value] of [['helpers',['worker','worker']],['helpers',['unknown']],['pickedTools',['chatgpt','chatgpt']],['pickedTools',['unknown']]]){const input=snapshot();input[field]=value;invalid(()=>encodeFormState(input,release));}
 });
 
 test('schema rejects wrong types, unsafe fields and unknown wire properties at every level',()=>{
@@ -123,7 +123,7 @@ test('base64url is unpadded/canonical and UTF-8 and decoded length are bounded',
 test('valid release mismatches have a distinct error and malformed versions do not redirect',()=>{
  const p=payload();p.release='99.2.3';assert.throws(()=>decodeFormState(raw(p),release),{code:'SHARE_RELEASE_MISMATCH',releaseVersion:'99.2.3'});
  for(const version of ['', '../x', '0.1.0#x', '0.1.0+build.1', 'https://example.com', 1]){p.release=version;invalid(()=>decodeFormState(raw(p),release));}
- const newer=clone(release);newer.version='1.0.0-beta.1';assert.equal(decodeFormState(encodeFormState(snapshot(['reviewer'],['codex']),newer),newer).release,newer.version);
+ const newer=clone(release);newer.version='1.0.0-beta.1';assert.equal(decodeFormState(encodeFormState(snapshot(['reviewer'],['chatgpt']),newer),newer).release,newer.version);
 });
 
 test('only known valid archived release links redirect from the HTTP root and discard queries',()=>{
@@ -144,9 +144,9 @@ test('malformed old-release payloads remain invalid instead of becoming archive 
 
 test('known archived release links can retain a client removed from the current release inventory',()=>{
  const older=clone(release);older.version='0.0.9';
- older.preferences.clients.retired=clone(older.preferences.clients.codex);older.catalog.clients.retired=clone(older.catalog.clients.codex);
- for(const preset of older.presets)preset.preferences.clients.retired=clone(preset.preferences.clients.codex);
- const input=snapshot(['reviewer'],['codex']);input.pickedTools=['retired'];input.selectedScope='retired';input.state.profiles.retired=clone(input.state.profiles.codex);input.state.jobs.retired=clone(input.state.jobs.codex);
+ older.preferences.clients.retired=clone(older.preferences.clients.chatgpt);older.catalog.clients.retired=clone(older.catalog.clients.chatgpt);
+ for(const preset of older.presets)preset.preferences.clients.retired=clone(preset.preferences.clients.chatgpt);
+ const input=snapshot(['reviewer'],['chatgpt']);input.pickedTools=['retired'];input.selectedScope='retired';input.state.profiles.retired=clone(input.state.profiles.chatgpt);input.state.jobs.retired=clone(input.state.jobs.chatgpt);
  const fragment=encodeFormState(input,older);assert.equal(decodeFormState(fragment,older).tools[0].id,'retired');
  let mismatch;try{decodeFormState(fragment,release);}catch(error){mismatch=error;}
  assert.equal(mismatch?.code,'SHARE_RELEASE_MISMATCH');assert.equal(mismatch.releaseVersion,'0.0.9');
@@ -180,17 +180,17 @@ test('generic native effort levels are accepted for drafts; Antigravity is alway
   const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer={model:'draft',effort};
   assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].choices.reviewer.effort,effort);
  }
- for(const [id,effort] of [['codex','ultra'],['claude','none'],['kimi','minimal'],['agy','high'],['grok','high']]){const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer.effort=effort;invalid(()=>encodeFormState(input,release));}
+ for(const [id,effort] of [['chatgpt','ultra'],['claude','none'],['kimi','minimal'],['gemini','high'],['grok','high']]){const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer.effort=effort;invalid(()=>encodeFormState(input,release));}
 });
 
 test('encoding refuses accessors, symbols and prototype surprises without running getters',()=>{
  let calls=0;
  for(const target of ['snapshot','state','profile','choice','release']){
-  const input=snapshot(['reviewer'],['codex']),metadata=clone(release),object={snapshot:input,state:input.state,profile:input.state.profiles.codex,choice:input.state.jobs.codex.reviewer,release:metadata}[target];
+  const input=snapshot(['reviewer'],['chatgpt']),metadata=clone(release),object={snapshot:input,state:input.state,profile:input.state.profiles.chatgpt,choice:input.state.jobs.chatgpt.reviewer,release:metadata}[target];
   Object.defineProperty(object,'trap',{enumerable:true,get(){calls++;throw new Error('getter executed');}});invalid(()=>encodeFormState(input,metadata));
  }
  assert.equal(calls,0);
- const input=snapshot(['reviewer'],['codex']);Object.setPrototypeOf(input.state.jobs.codex.reviewer,{model:'inherited'});invalid(()=>encodeFormState(input,release));
+ const input=snapshot(['reviewer'],['chatgpt']);Object.setPrototypeOf(input.state.jobs.chatgpt.reviewer,{model:'inherited'});invalid(()=>encodeFormState(input,release));
  const symbolic=snapshot();symbolic[Symbol('hidden')]='x';invalid(()=>encodeFormState(symbolic,release));
  const sparse=snapshot();delete sparse.helpers[0];invalid(()=>encodeFormState(sparse,release));
  const inherited=snapshot();Object.setPrototypeOf(inherited.state.profiles,{secret:true});invalid(()=>encodeFormState(inherited,release));
@@ -198,10 +198,10 @@ test('encoding refuses accessors, symbols and prototype surprises without runnin
 
 
 test('oversized encoded state is refused even when all draft fields are individually valid',()=>{
- const metadata=clone(release),input=snapshot([],['codex']);
+ const metadata=clone(release),input=snapshot([],['chatgpt']);
  metadata.roles=Array.from({length:400},(_,index)=>({id:'role-'+index,name:'Role '+index,kind:'code'}));
- input.helpers=metadata.roles.map(role=>role.id);input.state.profiles.codex.custom=true;
- input.state.jobs.codex=Object.fromEntries(input.helpers.map(role=>[role,{model:'🦔'.repeat(64),effort:null}]));
+ input.helpers=metadata.roles.map(role=>role.id);input.state.profiles.chatgpt.custom=true;
+ input.state.jobs.chatgpt=Object.fromEntries(input.helpers.map(role=>[role,{model:'🦔'.repeat(64),effort:null}]));
  invalid(()=>encodeFormState(input,metadata));
 });
 
@@ -214,14 +214,14 @@ test('old release links report release mismatch before comparing changed preset 
 });
 
 test('per-tool parallel limits use strict v2 links and preserve independent custom values',()=>{
- const input=snapshot(['reviewer'],['codex','claude']);for(const [id,cap]of [['codex',5],['claude',2]]){input.state.profiles[id].maxConcurrent=cap;input.state.profiles[id].custom=true;}
- const decoded=decodeFormState(encodeFormState(input,release),release);assert.equal(decoded.v,2);assert.equal(decoded.maxConcurrent,undefined);assert.deepEqual(decoded.tools.map(t=>[t.id,t.maxConcurrent]),[['codex',5],['claude',2]]);
+ const input=snapshot(['reviewer'],['chatgpt','claude']);for(const [id,cap]of [['chatgpt',5],['claude',2]]){input.state.profiles[id].maxConcurrent=cap;input.state.profiles[id].custom=true;}
+ const decoded=decodeFormState(encodeFormState(input,release),release);assert.equal(decoded.v,2);assert.equal(decoded.maxConcurrent,undefined);assert.deepEqual(decoded.tools.map(t=>[t.id,t.maxConcurrent]),[['chatgpt',5],['claude',2]]);
  for(const value of [0,33,1.5,'3',null]){const broken=clone(decoded);broken.tools[0].maxConcurrent=value;invalid(()=>decodeFormState(raw(broken),release));}
  const extra=clone(decoded);extra.maxConcurrent=3;invalid(()=>decodeFormState(raw(extra),release));
 });
 test('v2 named presets bind parallelism as well as models while legacy scalar links remain readable',()=>{
- const input=snapshot(['reviewer'],['codex']);input.state.profiles.codex.maxConcurrent=3;assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].mode,'balanced');
- input.state.profiles.codex.maxConcurrent=5;invalid(()=>encodeFormState(input,release));input.state.profiles.codex.custom=true;assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].maxConcurrent,5);
+ const input=snapshot(['reviewer'],['chatgpt']);input.state.profiles.chatgpt.maxConcurrent=3;assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].mode,'balanced');
+ input.state.profiles.chatgpt.maxConcurrent=5;invalid(()=>encodeFormState(input,release));input.state.profiles.chatgpt.custom=true;assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].maxConcurrent,5);
  const legacy=payload();legacy.maxConcurrent=7;assert.equal(decodeFormState(raw(legacy),release).maxConcurrent,7);
 });
 

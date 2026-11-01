@@ -3,7 +3,7 @@
 Start with policies/balanced.json or another preset in the selected release. The [JSON Schema](../schema/policy.schema.json) describes data shape; the configuration validator also checks the release catalog's known model/effort compatibility.
 
 - schemaVersion1; maxConcurrent is the shared fallback, from 1 to 32. Optional clients[tool].maxConcurrent overrides it for one tool. Older policies without overrides keep their shared behavior.
-- clients contains codex, claude, kimi, agy (the technical key for Antigravity) and/or grok (Grok Build).
+- clients contains chatgpt (Codex), claude (Claude Code), kimi (Kimi Code), gemini (Antigravity) and/or grok (Grok Build). Version 0.2.0 and earlier used the keys codex and agy. They are not accepted.
 - Optional top-level selectedRoles is a nonempty unique array of worker, reviewer, explorer, tester, writer and routine IDs. Omit it for all six roles in the executing release. Only selected roles receive native files and routing instructions.
 - code/light hold default model+effort pairs.
 - Optional roles inside each client overrides each selected role independently. Worker/reviewer/tester otherwise use code; explorer/writer/routine use light. Public presets also contain role-specific overrides.
