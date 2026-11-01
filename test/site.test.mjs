@@ -388,3 +388,12 @@ test('adding all selections keeps model edits and the chosen concurrency in the 
  state.selected=api.addAll(state.selected,['codex','claude','kimi','agy']);state.selectedRoles=api.addAll(state.selectedRoles,ROLE_IDS);
  const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);assert.equal(result.config.maxConcurrent,7);assert.equal(result.config.clients.codex.roles.reviewer.model,'custom/reviewer');assert.deepEqual(Object.keys(result.config.clients),['codex','claude','kimi','agy']);equivalent(decodedCommand(api.buildCommand(result.config,release)),result.config);
 });
+
+test('concurrency stepper changes the generated command one step at a time and respects both limits',()=>{
+ const state=api.initialState(preferences);state.maxConcurrent=3;
+ api.stepConcurrency(state,1);assert.equal(decodedCommand(api.buildCommand(plain(api.buildConfig(state,preferences).config),release)).maxConcurrent,4);
+ api.stepConcurrency(state,-1);assert.equal(state.maxConcurrent,3);
+ state.maxConcurrent=1;api.stepConcurrency(state,-1);assert.equal(state.maxConcurrent,1);
+ state.maxConcurrent=32;api.stepConcurrency(state,1);assert.equal(state.maxConcurrent,32);
+ for(const draft of ['', '1.5','NaN']){api.updateConcurrency(state,draft);api.stepConcurrency(state,1);assert.equal(state.maxConcurrent,1);assert.ok(api.buildConfig(state,preferences).config);}
+});
