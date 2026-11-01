@@ -112,8 +112,10 @@ __APK_SHARE_CODEC__
       profiles: Object.fromEntries(available.map(client => [client, {presetId, custom: false, modeSelected:!empty,top:topModelFor(RELEASE.presets?.find(preset=>preset.id===presetId),client),presetCap:preferences.clients[client].maxConcurrent??preferences.maxConcurrent,maxConcurrent:preferences.clients[client].maxConcurrent??preferences.maxConcurrent,preferences: clone(preferences.clients[client])}])),
       jobs: Object.fromEntries(available.map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
   }
-  function topModelFor(preset, client) {return typeof preset?.topModels?.[client]==='string'?preset.topModels[client]:null;}
-  // Code roles without a role-specific preset choice can switch to the preset's optional top model.
+  // A top choice is a model and its effort; the same model at a higher effort also counts.
+  function topModelFor(preset, client) {const top=preset?.topModels?.[client];return top&&typeof top.model==='string'?{model:top.model,effort:top.effort??null}:null;}
+  const isTop=(choice,top)=>!!top&&choice?.model===top.model&&choice?.effort===top.effort;
+  // Code roles without a role-specific preset choice can switch to the preset's optional top choice.
   function topModelRoles(state, client) {
     const profile=state.profiles?.[client];
     if(!profile?.top||profile.custom||profile.modeSelected===false)return [];
@@ -121,17 +123,17 @@ __APK_SHARE_CODEC__
   }
   function topModelsOn(state, client) {
     const roles=topModelRoles(state,client).filter(role=>(state.selectedRoles??ROLES).includes(role));
-    return roles.length>0&&roles.every(role=>state.jobs?.[client]?.[role]?.model===state.profiles[client].top);
+    return roles.length>0&&roles.every(role=>isTop(state.jobs?.[client]?.[role],state.profiles[client].top));
   }
   function setTopModels(state, clients, on) {
     for(const client of clients){
       const profile=state.profiles[client];
-      for(const role of topModelRoles(state,client)){const base=effective(profile.preferences,role);state.jobs[client][role]={model:on?profile.top:base.model,effort:base.effort};}
+      for(const role of topModelRoles(state,client)){const base=effective(profile.preferences,role);state.jobs[client][role]=on?{...profile.top}:{model:base.model,effort:base.effort};}
     }
   }
   function presetJob(state, client, role) {
     const profile=state.profiles[client],base=effective(profile.preferences,role);
-    return topModelsOn(state,client)&&topModelRoles(state,client).includes(role)?{model:profile.top,effort:base.effort}:base;
+    return topModelsOn(state,client)&&topModelRoles(state,client).includes(role)?{...profile.top}:base;
   }
   // Tools whose presets choose identical role models differ only by parallel limits.
   function presetModelSummary(presets, client) {
@@ -192,7 +194,7 @@ __APK_SHARE_CODEC__
       state.profiles[tool.id]={presetId:tool.base,custom:tool.mode==='custom'||tool.mode!==null&&maxConcurrent!==presetCap,modeSelected:tool.mode!==null,top:topModelFor(base,tool.id),presetCap,maxConcurrent,preferences:selected};
       state.jobs[tool.id]=Object.fromEntries(ROLES.map(role=>[role,clone(effective(selected,role))]));
       for(const [role,choice]of Object.entries(tool.choices))state.jobs[tool.id][role]={...choice};
-      if(topModelRoles(state,tool.id).some(role=>tool.choices[role]?.model===state.profiles[tool.id].top))setTopModels(state,[tool.id],true);
+      if(topModelRoles(state,tool.id).some(role=>isTop(tool.choices[role],state.profiles[tool.id].top)))setTopModels(state,[tool.id],true);
     }
     return state;
   }
@@ -430,7 +432,7 @@ __APK_SHARE_CODEC__
  }
  function renderTopModels(){
   const targets=topTargets(),toggle=$('top-models-toggle');$('top-models').hidden=!targets.length;if(!targets.length)return;
-  const names=targets.map(client=>{const top=state.profiles[client].top;return RELEASE.catalog.clients[client].models.find(model=>model.id===top)?.label??top;});
+  const names=targets.map(client=>{const top=state.profiles[client].top,label=RELEASE.catalog.clients[client].models.find(model=>model.id===top.model)?.label??top.model;return top.effort?`${label} · ${top.effort}`:label;});
   const text=state.active==='all'?`Use top models (${names.join(', ')}) for code, review and tests`:`Use ${names[0]} for code, review and tests`;
   if($('top-models-label').textContent!==text)$('top-models-label').textContent=text;
   const on=targets.filter(client=>A.topModelsOn(state,client)).length;toggle.setAttribute('aria-checked',String(on===targets.length));toggle.toggleAttribute('data-mixed',on>0&&on<targets.length);

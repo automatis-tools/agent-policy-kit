@@ -11,16 +11,6 @@
         "model": "gpt-6.1-sol",
         "effort": "medium"
       },
-      "roles": {
-        "explorer": {
-          "model": "gpt-6.1-sol",
-          "effort": "high"
-        },
-        "writer": {
-          "model": "gpt-6.1-sol",
-          "effort": "high"
-        }
-      },
       "avoidModels": []
     },
     "claude": {
@@ -35,11 +25,11 @@
       "roles": {
         "explorer": {
           "model": "claude-opus-5-5",
-          "effort": "high"
+          "effort": "medium"
         },
         "writer": {
           "model": "claude-opus-5-5",
-          "effort": "high"
+          "effort": "medium"
         }
       },
       "avoidModels": []

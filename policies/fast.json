@@ -5,21 +5,11 @@
     "chatgpt": {
       "code": {
         "model": "gpt-6-luna",
-        "effort": "medium"
+        "effort": "high"
       },
       "light": {
         "model": "gpt-6-luna",
         "effort": "low"
-      },
-      "roles": {
-        "reviewer": {
-          "model": "gpt-6-luna",
-          "effort": "high"
-        },
-        "tester": {
-          "model": "gpt-6-luna",
-          "effort": "high"
-        }
       },
       "avoidModels": []
     },

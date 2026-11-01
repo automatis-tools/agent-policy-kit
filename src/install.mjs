@@ -87,11 +87,15 @@ function ensureObject(parent,key) {
   if(!object(parent[key]))fail('UNSUPPORTED_CONFIG');
   return parent[key];
 }
-function jsonInstall(text,maxConcurrent,defaultModel) {
+// Claude Code 2.1.316+ reads CLAUDE_CODE_SUBAGENT_EFFORT for subagents that name no effort; older versions ignore it.
+// It copies the Coder effort, capped at high, so a Coder at xhigh or max does not raise every unnamed subagent.
+const CLAUDE_SUBAGENT_EFFORTS=['low','medium','high'];
+const claudeSubagentEffort=effort=>effort===null?null:CLAUDE_SUBAGENT_EFFORTS.includes(effort)?effort:'high';
+function jsonInstall(text,maxConcurrent,defaultChoice) {
   const value=configJson(text),ops=[],created=[];
   if(!own(value,'env'))created.push(['env']);
-  const env=ensureObject(value,'env');
-  for(const [key,after] of [['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS',String(maxConcurrent)],['CLAUDE_CODE_SUBAGENT_MODEL',defaultModel]]) {
+  const env=ensureObject(value,'env'),effort=claudeSubagentEffort(defaultChoice.effort);
+  for(const [key,after] of [['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS',String(maxConcurrent)],['CLAUDE_CODE_SUBAGENT_MODEL',defaultChoice.model],...(effort===null?[]:[['CLAUDE_CODE_SUBAGENT_EFFORT',effort]])]) {
     if(own(env,key)&&typeof env[key]!=='string')fail('UNSUPPORTED_CONFIG');
     ops.push({kind:'value',path:['env',key],existed:own(env,key),before:env[key]??null,after});env[key]=after;
   }
@@ -235,12 +239,14 @@ function validateTomlSnapshot(file,client,schemaVersion,selectedRoles=ROLE_IDS) 
     if(!aliases.includes(name)||pinned.has(name))fail('INVALID_RECEIPT');pinned.add(name);scalar(op,['models',name,'overrides','default_effort'],'string');
   }
 }
-function validateJsonSnapshot(file) {
-  if(!Array.isArray(file.ops)||file.ops.length!==2||!Array.isArray(file.created)||file.created.length>1||!file.created.every(keys=>equal(keys,['env'])))fail('INVALID_RECEIPT');
-  for(const[i,key]of ['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL'].entries()) {
+function validateJsonSnapshot(file,schemaVersion) {
+  // Receipts before format v4 never owned CLAUDE_CODE_SUBAGENT_EFFORT; v4 owns it only when the Coder effort was pinned.
+  if(!Array.isArray(file.ops)||!(schemaVersion===4?[2,3]:[2]).includes(file.ops.length)||!Array.isArray(file.created)||file.created.length>1||!file.created.every(keys=>equal(keys,['env'])))fail('INVALID_RECEIPT');
+  for(const[i,key]of ['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL','CLAUDE_CODE_SUBAGENT_EFFORT'].slice(0,file.ops.length).entries()) {
     const op=file.ops[i];fields(op,['kind','path','existed','before','after']);
     if(op.kind!=='value'||!equal(op.path,['env',key])||typeof op.existed!=='boolean'||typeof op.after!=='string'||op.after.length>4096||(op.existed?typeof op.before!=='string'||op.before.length>4096:op.before!==null))fail('INVALID_RECEIPT');
     if(i===0&&(!/^[1-9]\d?$/.test(op.after)||Number(op.after)>32))fail('INVALID_RECEIPT');
+    if(i===2&&!CLAUDE_SUBAGENT_EFFORTS.includes(op.after))fail('INVALID_RECEIPT');
   }
 }
 function validateReceipt(r,plan) {
@@ -260,7 +266,7 @@ function validateReceipt(r,plan) {
       fields(file,['path','type','existed','prefix','block']);
       if(file.type!=='instructions'||!['','\n','\n\n'].includes(file.prefix)||typeof file.block!=='string'||file.block.length>65536||!file.block.startsWith(BEGIN+'\n')||!file.block.endsWith(END+'\n')||file.block.split(BEGIN).length!==2||file.block.split(END).length!==2)fail('INVALID_RECEIPT');
     } else if(plan.client==='claude') {
-      fields(file,['path','type','existed','ops','created']);if(file.type!=='json')fail('INVALID_RECEIPT');validateJsonSnapshot(file);
+      fields(file,['path','type','existed','ops','created']);if(file.type!=='json')fail('INVALID_RECEIPT');validateJsonSnapshot(file,r.schemaVersion);
     } else {
       fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client,r.schemaVersion,r.schemaVersion===4?r.selectedRoles:LEGACY_ROLE_IDS);
     }
@@ -397,7 +403,7 @@ export async function planInstall(options) {
   }
   const files=[];plan.warnings=[...nativeWarnings(plan.client),...(resolvedAliases?['kimi-catalog-alias-resolved']:[])];
   if(plan.client==='claude') {
-    const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,roleIds[0]).model);nativeChange(l.config,config,edited.text);
+    const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,roleIds[0]));nativeChange(l.config,config,edited.text);
     files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
   } else if(config) {
     let text=config.text??'';const ops=[];
