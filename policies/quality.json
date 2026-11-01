@@ -5,7 +5,7 @@
     "codex": {
       "code": {
         "model": "gpt-6-astra",
-        "effort": "xhigh"
+        "effort": "high"
       },
       "light": {
         "model": "gpt-6.1-sol",
@@ -26,7 +26,7 @@
     "claude": {
       "code": {
         "model": "claude-fable-5-1",
-        "effort": "xhigh"
+        "effort": "high"
       },
       "light": {
         "model": "claude-sonnet-5-5",
@@ -47,7 +47,7 @@
     "kimi": {
       "code": {
         "model": "kimi-code/k3.1-pro",
-        "effort": "max"
+        "effort": "high"
       },
       "light": {
         "model": "kimi-code/kimi-for-coding",

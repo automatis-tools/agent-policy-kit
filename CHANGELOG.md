@@ -4,6 +4,10 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## Unreleased
 
+- Rename work modes to Light, Standard and Top-tier and describe them by how much of a plan's limits subagents use. Preset ids, model choices and share-link ids are unchanged. Top-tier now pins high effort instead of xhigh/max for Astra, Fable and K3.1 Pro, because native default subagent settings copy the Coder choice to subagents started without a named role.
+
+- Start a fresh or reset form with every subagent role selected, and give the empty coding-tool field the same appearance as the empty role field.
+
 - Automatically deploy the latest website from verified main while preserving exact tagged release pages and older share links. Configuration guards keep commands pinned to published package capabilities; npm releases remain explicit.
 
 - Credit Mykola Maksymenko in the configuration page and package metadata. Link the supplied LinkedIn profile and related projects, with static author/project structured data and a release-specific canonical URL.

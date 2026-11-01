@@ -128,7 +128,7 @@ test('replacing custom settings requires confirmation and preserves the selected
   state.jobs.codex.worker = {model: 'custom/code', effort: 'low'};
   const before = JSON.stringify(state);
   const fast = JSON.parse(fs.readFileSync(new URL('../policies/fast.json', import.meta.url), 'utf8'));
-  const preset = {id: 'fast', label: 'Fast & economical', preferences: fast};
+  const preset = {id: 'fast', label: 'Light', preferences: fast};
   assert.equal(api.applyPreset(state, preset), state, 'no implicit confirmation');
   assert.equal(api.applyPreset(state, preset, () => false), state);
   assert.equal(JSON.stringify(state), before, 'cancel preserves every custom choice');
@@ -146,7 +146,7 @@ test('replacing custom settings requires confirmation and preserves the selected
 test('an individual preset changes only that tool and All reports mixed modes',()=>{
  const state=api.initialState(preferences);state.active='kimi';
  const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
- const preset={id:'quality',label:'Quality first',preferences:quality},before=JSON.stringify(state);
+ const preset={id:'quality',label:'Top-tier',preferences:quality},before=JSON.stringify(state);
  assert.equal(api.applyPreset(state,preset),state,'scope warning requires confirmation');
  assert.equal(api.applyPreset(state,preset,()=>false),state);assert.equal(JSON.stringify(state),before);
  let prompts=0;const next=api.applyPreset(state,preset,()=>{prompts++;return true;});assert.equal(prompts,1);

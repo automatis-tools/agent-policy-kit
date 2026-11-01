@@ -36,7 +36,7 @@ Choose only the roles you need:
 | Docs writer | Verified docs, examples and release notes |
 | Task runner | Prescribed commands and mechanical edits; uncertain decisions return to the parent |
 
-Fast & economical favors bounded work and lighter models. Balanced puts more capability into implementation and verification. Quality first uses frontier models for demanding work, with higher usage and latency possible. All choices remain editable. Claude Fable in Quality may use additional usage credits.
+Subagents draw on the same plan limits as your main session, and every parallel session adds to that usage. Choose the mode by how much of your plan subagents may use. Light uses light models for every role, so limits last longest; it suits entry plans and many parallel sessions. Standard gives code, review and tests stronger models and keeps search and routine work on light models; it fits most plans. Top-tier uses each tool's top model at high effort for code, review and tests; it uses limits fastest and suits top plans with few parallel sessions. All choices remain editable. Claude Fable in Top-tier may use additional usage credits on plans that do not include it.
 
 See the [exact preset choices and rationale](docs/model-catalog.md#how-the-presets-are-designed). Recommendations contain no personal model bans. They configure the environment; the main agent still chooses whether to delegate.
 

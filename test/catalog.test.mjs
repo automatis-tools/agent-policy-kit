@@ -22,7 +22,17 @@ test('current Kimi inventory includes both K3.1 Pro routes with native thinking 
   assert.equal(model.source,'https://www.kimi.com/code/docs/en/kimi-code/models');
  }
  const quality=presetPreferences('quality').clients.kimi;
- assert.deepEqual(quality.code,{model:'kimi-code/k3.1-pro',effort:'max'});assert.deepEqual(rolePreference(quality,'explorer'),{model:'kimi-code/k3',effort:'high'});
+ assert.deepEqual(quality.code,{model:'kimi-code/k3.1-pro',effort:'high'});assert.deepEqual(rolePreference(quality,'explorer'),{model:'kimi-code/k3',effort:'high'});
+});
+
+test('presets name how much of the plan subagents use and Top-tier keeps fallback subagents at high effort',()=>{
+ assert.deepEqual(PRESETS.map(preset=>[preset.id,preset.label]),[['fast','Light'],['balanced','Standard'],['quality','Top-tier']]);
+ for(const preset of PRESETS)assert.ok(preset.description.length<=140,preset.id);
+ // Native default subagent settings copy the Coder choice, so Top-tier must not turn every unnamed subagent into an xhigh/max frontier run.
+ const quality=presetPreferences('quality').clients;
+ for(const [client,model] of [['codex','gpt-6-astra'],['claude','claude-fable-5-1'],['kimi','kimi-code/k3.1-pro']])
+  for(const role of ['worker','reviewer','tester'])assert.deepEqual(rolePreference(quality[client],role),{model,effort:'high'},`${client} ${role}`);
+ for(const id of ['fast','balanced'])for(const config of Object.values(presetPreferences(id).clients))for(const role of Object.keys(ROLES))assert.ok(!['gpt-6-astra','claude-fable-5-1','kimi-code/k3.1-pro'].includes(rolePreference(config,role).model),`${id} ${role}`);
 });
 
 test('native effort choices stay separate from API-only capabilities and delegation modes',()=>{
