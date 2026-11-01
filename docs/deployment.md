@@ -6,6 +6,8 @@ The latest configurator at https://agent-policy-kit.trymenow.io/ follows reviewe
 
 GitHub Actions runs Deploy configurator after a successful same-repository push verification on main. A successful version-tag verification can retry a site build after a package release. The deployment workflow always checks out main, never the triggering branch or tag's code. It verifies successful main-push CI for the checked-out commit and rechecks the latest main immediately before upload. Stale runs skip; deployments are serialized.
 
+A merged version bump waits for its release. When the package version has no v-prefixed or bare tag reachable from main, the guard skips the deployment, and the run states that the version is not tagged and published yet. The run does not fail. The tag push after npm publication starts the deployment. A tagged version that npm does not serve yet still fails the build; use the manual retry after publication.
+
 The production environment permits the main branch only. It has no required-reviewer pause, so normal merges need no manual deployment. workflow_dispatch provides a main-only retry after an external outage or delayed npm publication.
 
 ## Latest page and archived releases
