@@ -8,3 +8,4 @@ coverage/
 .superpowers/
 dist/
 .wrangler/
+.gitworktrees/
