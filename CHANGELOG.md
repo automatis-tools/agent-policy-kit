@@ -2,7 +2,25 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
-## 0.2.0 — Unreleased
+## 0.2.0 — 2026-11-01
+
+### Why this release
+
+Subagents draw on the same plan limits as the main session, and every parallel session adds to that usage. Without explicit choices, subagents can inherit the most expensive model and use up a weekly limit within days. This release names the work modes by how much of a plan subagents may use, adds per-tool parallel limits, a read-only settings check and Grok Build support.
+
+### Who should update
+
+Anyone who wants Grok Build roles, per-tool parallel limits or the renamed modes. Re-running setup with 0.2.0 applies the new preset values: Top-tier now uses Opus 5.5, GPT-6.1 Sol and K3 at high effort, with top models behind an opt-in switch, and Kimi's Standard Docs writer uses K3 256K. Installations of 0.1.0 keep working unchanged until setup is run again.
+
+### Migration and rollback
+
+Preset ids (`fast`, `balanced`, `quality`), receipt format v4 and ownership, drift and rollback behavior are unchanged. Version 1 share links still open; new links use version 2 and carry each tool's parallel limit. Applying 0.1.0 again restores its owned settings, as the synthetic upgrade/downgrade gate verifies. Grok Build is new, so it has nothing to migrate.
+
+### Presets and model catalog
+
+The model catalog snapshot is dated 2026-10-30; Grok Build entries were checked on 2026-11-01 against the Grok Build 1.0.70 user guide and the xAI model list. An independent audit compared every preset, tool and role with the catalog and the documentation tables, and a test now keeps those tables in sync. Configuration checks are not model-quality evaluations.
+
+### What changed
 
 - Add Grok Build as a fifth coding tool, listed after Antigravity. APK writes `agents/apk-<role>.md` role files (Reviewer and Code explorer use the read-only `permission_mode: plan`), per-role models and a `general-purpose` fallback copied from the first selected role (the Coder when selected) in `config.toml` `[subagents.models]`, a native `[subagents] max_concurrent` cap and a delegation block in `AGENTS.md` under `$GROK_HOME` (default `~/.grok`). Per-role effort is not configurable, so every Grok choice has effort null and the page shows no effort controls. Presets use Grok Build 0.1, xAI's fast coding model, for light work and Grok 4.7 for stronger roles; Grok 4.6 and 4.5 stay available in Custom. Explicit commands use `--grok`, `--grok-max-concurrent` and `--avoid-grok`. Removal restores the original settings and refuses on local edits.
 
@@ -15,6 +33,14 @@ Each npm version is one configuration release: its presets, native role definiti
 - Automatically deploy the latest website from verified main while preserving exact tagged release pages and older share links. Configuration guards keep commands pinned to published package capabilities; npm releases remain explicit.
 
 - Credit Mykola Maksymenko in the configuration page and package metadata. Link the supplied LinkedIn profile and related projects, with static author/project structured data and a release-specific canonical URL.
+
+- Interactive terminals get readable setup, doctor, release and show output; captured output keeps the existing JSON contract, and `--json` forces JSON.
+
+- `agent-policy show` reads the current user-level subagent settings of every tool, before or after APK installation, without writing files. The page footer offers it as "Check current settings" with a copy button.
+
+- Each tool has its own parallel limit from 1 to 32, set in its details on the page or with `--TOOL-max-concurrent`; policies accept `clients[tool].maxConcurrent`.
+
+- The page adds Add all for roles and tools, a GitHub link in the header, Reset form beside the release line, and preset switching for a single selected tool without a needless confirmation.
 
 ## 0.1.0 — 2026-10-30
 
