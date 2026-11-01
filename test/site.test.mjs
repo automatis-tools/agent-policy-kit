@@ -101,10 +101,12 @@ test('the header links to the repository instead of showing the release version'
  assert.match(page,/<a class="repo-link" href="https:\/\/github\.com\/automatis-tools\/agent-policy-kit"/);
 });
 
-test('step 4 offers the read-only show command pinned to the page release',()=>{
- assert.match(template,/<p class="show-command">Check current settings: <code id="show-command"><\/code><\/p><div class="setup-footer">/);
- assert.match(template,/\$\('show-command'\)\.textContent=`npx --yes --ignore-scripts --package \$\{RELEASE\.packageSpec\} agent-policy show`;/);
- assert.match(fs.readFileSync(new URL('../bin/agent-policy.mjs',import.meta.url),'utf8'),/'show'\]\.includes\(command\)/);
+test('the footer offers a quiet copy button for the read-only show command',()=>{
+ assert.doesNotMatch(template,/class="show-command"/);
+ const footer=template.match(/<footer>[\s\S]*?<\/footer>/)[0];
+ assert.match(footer,/<span class="show-settings">Check current settings <button type="button" class="quiet-button" id="copy-show" aria-label="Copy the command that shows current settings">Copy<\/button><code id="show-command" hidden><\/code><\/span>/);
+ assert.match(template,/const showCommand=`npx --yes --ignore-scripts --package \$\{RELEASE\.packageSpec\} agent-policy show`;/);
+ assert.match(template,/navigator\.clipboard\.writeText\(showCommand\)/);
 });
 
 test('Reset form sits with the form result, not in the site header',()=>{
