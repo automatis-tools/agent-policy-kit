@@ -15,25 +15,13 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 
 ![Configurator: models and effort for each subagent role, and the setup command](docs/assets/configurator.png)
 
-No configurator needed for the defaults:
-
-```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 \
-  agent-policy setup --release --preset balanced          # preview
-npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 \
-  agent-policy setup --release --preset balanced --apply  # apply
-```
-
 ## Good to know
 
 - Your main agent and its model stay unchanged. It still decides when to delegate.
 - No proxy and no background process. Delete the npm package after setup.
-- `agent-policy show` reads your current settings. `agent-policy uninstall --apply` removes APK's settings and keeps yours.
-- Claude Fable may use additional usage credits on plans that do not include it.
+- `npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove APK's settings and keep yours.
 
 [Model catalog](docs/model-catalog.md) · [Release notes](CHANGELOG.md) · [AI operator guide](AGENT_INSTALL.md) · [Support](docs/compatibility.md) · [Privacy](docs/privacy.md)
-
-Node.js 22.13+ or 24+ · macOS/Linux · MIT
 
 ## Related projects
 
