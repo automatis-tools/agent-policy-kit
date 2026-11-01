@@ -10,7 +10,8 @@ Agent Policy Kit lets you match subagent roles with models and effort. It config
 flowchart LR
     Roles("1. Choose subagent roles") --> Tools("2. Choose your coding tools")
     Tools --> Models("3. Choose models and effort")
-    Models --> Command("4. Run one setup command")
+    Models --> Parallel("4. Set parallel subagents")
+    Parallel --> Command("5. Run one setup command")
     Command --> Done("Native configs saved<br/>APK exits")
     classDef default fill:#f5f7fb,stroke:#e0e5ed,color:#19283e
     classDef action fill:#3158c3,stroke:#3158c3,color:#ffffff

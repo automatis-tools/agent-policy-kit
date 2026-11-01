@@ -264,10 +264,10 @@ test('command is version pinned, fully explicit and shell safe', () => {
   assert.equal(Buffer.from(api.encodeConfig({note: 'Привіт'}), 'base64url').toString('utf8'), JSON.stringify({note: 'Привіт'}));
 });
 
-test('approved four-step builder exposes roles, tools, modes and a copy command action', () => {
+test('five-step builder separates roles, tools, modes, parallelism and the copy action', () => {
   assert.match(template, /Set up subagents for your coding tools\./);
   assert.match(template, /Apply your setup locally with one command\./);
-  assert.deepEqual([...template.matchAll(/class="step-number">(\d)<\/span>/g)].map(match=>match[1]),['1','2','3','4']);
+  assert.deepEqual([...template.matchAll(/class="step-number">(\d)<\/span>/g)].map(match=>match[1]),['1','2','3','4','5']);
   assert.match(script, /type:'radio',name:'mode'/);
   assert.match(script, /\['Role','Model','Effort'\]/);
   assert.match(script, /agy: 'Antigravity'/);
@@ -396,4 +396,12 @@ test('concurrency stepper changes the generated command one step at a time and r
  state.maxConcurrent=1;api.stepConcurrency(state,-1);assert.equal(state.maxConcurrent,1);
  state.maxConcurrent=32;api.stepConcurrency(state,1);assert.equal(state.maxConcurrent,32);
  for(const draft of ['', '1.5','NaN']){api.updateConcurrency(state,draft);api.stepConcurrency(state,1);assert.equal(state.maxConcurrent,1);assert.ok(api.buildConfig(state,preferences).config);}
+});
+
+test('separate parallelism step cannot make model settings appear incomplete or mark stale copy complete',()=>{
+ const empty=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[false,false,false,false,false]);
+ const state=api.initialState(preferences);assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,true,true,true,false]);
+ state.maxConcurrent='';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,false,false]);
+ state.maxConcurrent=5;assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,true,true]);
+ state.jobs.codex.worker.model='invalid model';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false,false]);
 });
