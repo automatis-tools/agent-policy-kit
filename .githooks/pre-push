@@ -14,6 +14,10 @@ done
 [ "$updates" -eq 1 ] || exit 0
 
 cd "$(git rev-parse --show-toplevel)"
+# Git exports GIT_DIR (in a linked worktree) and other repository variables to hooks. Tests that
+# create fixture repositories must not inherit them, or their git commands write to this repository.
+# shellcheck disable=SC2046
+unset $(git rev-parse --local-env-vars)
 if [ ! -d node_modules ]; then
   echo 'pre-push: install dependencies first: npm ci --ignore-scripts --no-audit --no-fund' >&2
   exit 1

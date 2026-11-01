@@ -39,6 +39,18 @@ test('pre-push hook skips checks when every pushed ref is a deletion or nothing 
  assert.deepEqual(f.calls(),[]);
 });
 
+test('pre-push hook hides the repository from checks when git pushes from a linked worktree',t=>{
+ const dir=fs.realpathSync(fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'apk-pre-push-wt-')));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const bin=path.join(dir,'bin'),log=path.join(dir,'npm.log'),globalConfig=path.join(dir,'gitconfig');fs.mkdirSync(bin);fs.writeFileSync(globalConfig,'');
+ fs.writeFileSync(path.join(bin,'npm'),`#!/bin/sh\nprintf '%s|%s|%s\\n' "$*" "\${GIT_DIR-unset}" "\${GIT_CONFIG_PARAMETERS-unset}" >> ${JSON.stringify(log)}\n`,{mode:0o700});
+ const env={...Object.fromEntries(Object.entries(process.env).filter(([key])=>!key.startsWith('GIT_'))),PATH:bin+path.delimiter+process.env.PATH,GIT_CONFIG_GLOBAL:globalConfig,GIT_CONFIG_NOSYSTEM:'1'};
+ const git=(cwd,...args)=>{const got=spawnSync('git',args,{cwd,env,encoding:'utf8'});assert.equal(got.status,0,got.stderr);return got;};
+ git(dir,'init','-q','--bare','remote.git');git(dir,'init','-q','-b','main','repo');const repo=path.join(dir,'repo'),wt=path.join(dir,'wt');
+ git(repo,'-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-q','--allow-empty','-m','init');git(repo,'worktree','add','-q','-b','topic',wt);fs.mkdirSync(path.join(wt,'node_modules'));
+ git(wt,'-c',`core.hooksPath=${path.dirname(hook)}`,'push','-q',path.join(dir,'remote.git'),'topic');
+ assert.deepEqual(fs.readFileSync(log,'utf8').trim().split('\n'),['run --silent check|unset|unset','run --silent test:unit|unset|unset']);
+});
+
 test('pre-push hook explains missing dependencies instead of running the check',t=>{
  const f=fixture(t,{modules:false});const got=f.run(`refs/heads/x ${sha} refs/heads/x ${zero}\n`);
  assert.equal(got.status,1);assert.match(got.stderr,/npm ci --ignore-scripts/);assert.deepEqual(f.calls(),[]);
