@@ -101,6 +101,12 @@ test('the header links to the repository instead of showing the release version'
  assert.match(page,/<a class="repo-link" href="https:\/\/github\.com\/automatis-tools\/agent-policy-kit"/);
 });
 
+test('Reset form sits with the form result, not in the site header',()=>{
+ const header=template.match(/<header>[\s\S]*?<\/header>/)[0];
+ assert.doesNotMatch(header,/reset-form/);
+ assert.match(template,/<div class="setup-footer"><p class="release-status" id="release-status"><\/p><button type="button" class="reset-form" id="reset-form">Reset form<\/button><\/div><\/section>/);
+});
+
 test('empty role and tool fields share one empty-field appearance',()=>{
  const declarations=selector=>{const body=template.match(new RegExp(`(?:^|[}\\n])${selector.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\{([^}]*)\\}`))?.[1];assert.ok(body,selector);return Object.fromEntries(body.split(';').filter(Boolean).map(item=>{const at=item.indexOf(':');return [item.slice(0,at),item.slice(at+1)];}));};
  const field=declarations('.tag-box'),emptyTools=declarations('.tool-group.is-empty');
