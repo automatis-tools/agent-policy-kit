@@ -28,7 +28,7 @@ test('partial setup retains successful clients and explains blockers without dup
 });
 test('errors and informational native limitations remain bounded and are not fake blockers',()=>{
  const text=formatResult('setup',report([{client:'chatgpt',status:'configured',warnings:['chatgpt-native-precedence-limits']}]),context);
- assert.doesNotMatch(text,/incomplete|Action required|codex-native-precedence-limits/);assert.match(text,/override/i);
+ assert.doesNotMatch(text,/incomplete|Action required|chatgpt-native-precedence-limits/);assert.match(text,/override/i);
  assert.equal(formatResult('setup',{error:'BAD\nPRIVATE_SECRET'},context).includes('PRIVATE_SECRET'),false);
 });
 test('uninstall preview and completed removal are distinct',()=>{

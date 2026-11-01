@@ -86,15 +86,16 @@ test('two real configuration packages upgrade and downgrade models and templates
   const run=(which,args,extra={})=>isolated(which==='A'?bin:binB,args,extra);
   assert.equal(parse(run('A',['release'])).version,CURRENT_VERSION);assert.equal(parse(run('B',['release'])).version,NEXT_VERSION);
   const nativeBin=path.join(consumer,'native-bin');fs.mkdirSync(nativeBin);
-  for(const [name,version]of Object.entries({chatgpt:'codex-cli 0.166.0',claude:'2.1.312 (Claude Code)'}))fs.writeFileSync(path.join(nativeBin,name),`#!/usr/bin/env node\nconsole.log(${JSON.stringify(version)});\n`,{mode:0o755});
+  for(const [name,version]of Object.entries({codex:'codex-cli 0.166.0',claude:'2.1.312 (Claude Code)'}))fs.writeFileSync(path.join(nativeBin,name),`#!/usr/bin/env node\nconsole.log(${JSON.stringify(version)});\n`,{mode:0o755});
   env.PATH=[nativeBin,path.dirname(process.execPath),'/usr/bin','/bin'].join(path.delimiter);
+  env.AGENT_POLICY_APPLICATIONS_DIR=path.join(freshHome,'Applications');
   const put=(file,text)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);};
   const codex=path.join(freshHome,'.codex/config.toml'),claude=path.join(freshHome,'.claude/settings.json'),role=path.join(freshHome,'.codex/agents/apk-worker.toml');
   const original='# user config\nmodel="main"\nmodel_reasoning_effort="ultra"\n[agents]\nenabled=false\nmax_concurrent_threads_per_session=9\n';
   put(codex,original);put(claude,JSON.stringify({model:'opus',theme:'light',env:{USER_SECRET:'PRIVATE_SENTINEL'}}));
   put(path.join(freshHome,'.codex/AGENTS.md'),'Original instructions.\n');put(path.join(freshHome,'.claude/CLAUDE.md'),'Original Claude instructions.\n');
   // Diagnose executable fixture support separately from identity validation.
-  for(const name of ['chatgpt','claude']){
+  for(const name of ['codex','claude']){
     const probe=isolated(path.join(nativeBin,name),['--version']);
     assert.equal(probe.status,0,`Isolated ${name} launcher: ${probe.stderr}`);
     const nested=isolated(process.execPath,['-e',`const {spawnSync}=require('node:child_process');const r=spawnSync(${JSON.stringify(path.join(nativeBin,name))},['--version'],{detached:true,stdio:['ignore','pipe','pipe'],encoding:'utf8'});console.log(JSON.stringify({status:r.status,error:r.error?.code,stderr:r.stderr,stdout:r.stdout}));`]);
