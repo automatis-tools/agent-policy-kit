@@ -101,6 +101,12 @@ test('the header links to the repository instead of showing the release version'
  assert.match(page,/<a class="repo-link" href="https:\/\/github\.com\/automatis-tools\/agent-policy-kit"/);
 });
 
+test('Reset form sits with the form result, not in the site header',()=>{
+ const header=template.match(/<header>[\s\S]*?<\/header>/)[0];
+ assert.doesNotMatch(header,/reset-form/);
+ assert.match(template,/<div class="setup-footer"><p class="release-status" id="release-status"><\/p><button type="button" class="reset-form" id="reset-form">Reset form<\/button><\/div><\/section>/);
+});
+
 test('empty role and tool fields share one empty-field appearance',()=>{
  const declarations=selector=>{const body=template.match(new RegExp(`(?:^|[}\\n])${selector.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\{([^}]*)\\}`))?.[1];assert.ok(body,selector);return Object.fromEntries(body.split(';').filter(Boolean).map(item=>{const at=item.indexOf(':');return [item.slice(0,at),item.slice(at+1)];}));};
  const field=declarations('.tag-box'),emptyTools=declarations('.tool-group.is-empty');
@@ -201,6 +207,16 @@ test('replacing custom settings requires confirmation and preserves the selected
   const named = api.applyPreset(next, {id:'balanced',preferences}, () => {throw new Error('Named All preset needs no destructive-change confirmation');});
   assert.equal(named.active, 'all');
   assert.deepEqual(plain(api.buildConfig(named, preferences).config), preferences);
+});
+
+test('switching the only selected tool between presets asks only when edits would be lost',()=>{
+ const fast=JSON.parse(fs.readFileSync(new URL('../policies/fast.json',import.meta.url),'utf8'));
+ let state=api.initialState(preferences,'balanced',{empty:true});state.selected=['codex'];state.active='codex';
+ state=api.applyPreset(state,{id:'balanced',preferences});assert.equal(api.modeFor(state,'codex'),'balanced');
+ const light=api.applyPreset(state,{id:'fast',label:'Light',preferences:fast},()=>{throw new Error('nothing to lose, no confirmation');});
+ assert.equal(api.modeFor(light,'codex'),'fast');
+ state.jobs.codex.worker={model:'custom/code',effort:'low'};let asked=0;
+ assert.equal(api.applyPreset(state,{id:'fast',label:'Light',preferences:fast},()=>{asked++;return false;}),state);assert.equal(asked,1);
 });
 
 test('an individual preset changes only that tool and All reports mixed modes',()=>{
