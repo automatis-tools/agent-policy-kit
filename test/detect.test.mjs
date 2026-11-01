@@ -227,3 +227,25 @@ test('AGENT_POLICY_APPLICATIONS_DIR replaces /Applications for the ChatGPT Deskt
   assert.equal(result.status,'detected'); assert.equal(result.origin,'desktop_app');
   await assert.rejects(resolveClient('chatgpt',{...rest,env:{...f.env,AGENT_POLICY_APPLICATIONS_DIR:'relative'}}),{code:'INVALID_DETECTION_OPTIONS'});
 });
+
+test('missing Claude Desktop builds do not use up the candidate limit',async t=>{
+  const f = await fixture(t);
+  const base = path.join(f.hostHome,'Library/Application Support/Claude/claude-code/2.1.309');
+  // Nine build folders sort before the working one and contain no CLI, as an interrupted download leaves them.
+  for (const build of ['a','b','c','d','e','f','g','h','i']) await fs.mkdir(path.join(base,build),{recursive:true});
+  await executable(claudeDesktop(f.hostHome,'2.1.309','z-working'),'console.log("2.1.309 (Claude Code)");');
+  const result = await resolveClient('claude',f);
+  assert.equal(result.status,'detected'); assert.equal(result.origin,'desktop_app');
+});
+
+test('the newest Claude Desktop build of one version is checked first',async t=>{
+  const f = await fixture(t);
+  const older = claudeDesktop(f.hostHome,'2.1.309','a-older'), newer = claudeDesktop(f.hostHome,'2.1.309','z-newer');
+  await executable(older,'console.log("2.1.309 (Claude Code)");');
+  await executable(newer,'console.log("2.1.309 (Claude Code)");');
+  const past = new Date(Date.now()-86400000);
+  await fs.utimes(older,past,past);
+  assert.equal((await resolveClient('claude',f)).executable,newer);
+  await fs.utimes(newer,new Date(Date.now()-2*86400000),new Date(Date.now()-2*86400000));
+  assert.equal((await resolveClient('claude',f)).executable,older);
+});
