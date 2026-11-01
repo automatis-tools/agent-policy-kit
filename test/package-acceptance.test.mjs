@@ -46,7 +46,7 @@ test('packed configurator produces independent native files that survive npm and
   for (const name of names) assert.equal(/(?:^|\/)(?:\.agent-work|\.superpowers|artifacts|node_modules)(?:\/|$)/.test(name), false, name);
   const tarball = path.join(root, packed[0].filename);
   parse(command('npm', ['install', '--prefix', consumer, tarball, '--ignore-scripts', '--no-audit', '--no-fund', '--offline', '--json'], { cwd: consumer, env }));
-  assert.match(fs.readFileSync(path.join(consumer, 'node_modules/agent-policy-kit/README.md'), 'utf8'), /```mermaid\nflowchart LR/);
+  assert.match(fs.readFileSync(path.join(consumer, 'node_modules/agent-policy-kit/README.md'), 'utf8'), /^# Agent Policy Kit\n[\s\S]*\]\(docs\/assets\/subagent-limits\.svg\)/);
   fs.rmSync(snapshot, { recursive: true, force: true });
   const bin = path.join(consumer, 'node_modules/.bin/agent-policy');
   assert.ok(fs.existsSync(bin));

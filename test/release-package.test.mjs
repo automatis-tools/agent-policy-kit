@@ -47,7 +47,7 @@ test('two real configuration packages upgrade and downgrade models and templates
   for (const name of names) assert.equal(/(?:^|\/)(?:\.agent-work|\.superpowers|artifacts|node_modules)(?:\/|$)/.test(name), false, name);
   const tarball = path.join(root, packed[0].filename);
   parse(command('npm', ['install', '--prefix', consumer, tarball, '--ignore-scripts', '--no-audit', '--no-fund', '--offline', '--json'], { cwd: consumer, env }));
-  assert.match(fs.readFileSync(path.join(consumer, 'node_modules/agent-policy-kit/README.md'), 'utf8'), /```mermaid\nflowchart LR/);
+  assert.match(fs.readFileSync(path.join(consumer, 'node_modules/agent-policy-kit/README.md'), 'utf8'), /^# Agent Policy Kit\n[\s\S]*\]\(docs\/assets\/subagent-limits\.svg\)/);
   const snapshotB=path.join(root,'synthetic release B'),prefixB=path.join(consumer,'release B');
   fs.cpSync(snapshot,snapshotB,{recursive:true});
   const pkgB=path.join(snapshotB,'package.json'),pkg=JSON.parse(fs.readFileSync(pkgB));pkg.version=NEXT_VERSION;fs.writeFileSync(pkgB,JSON.stringify(pkg));
