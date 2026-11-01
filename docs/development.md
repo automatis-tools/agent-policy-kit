@@ -16,7 +16,7 @@ Enable the contributor pre-push check once per clone:
 git config core.hooksPath .githooks
 ```
 
-The hook runs npm run check before each push that updates a branch or tag. A push that only deletes refs skips the check. The hook is not packaged and is unrelated to generated client settings. Unit and package tests run in CI.
+The hook runs npm run check and npm run test:unit before each push that updates a branch or tag. A push that only deletes refs skips both. The hook is not packaged and is unrelated to generated client settings. The packed-package gate runs in CI, and CI also requires the Lint check.
 
 npm run test:cache primes public dependency metadata on a fresh machine before the offline tarball consumers run. It installs only into a disposable directory and removes it afterward. npm ci alone may cache tarballs without the registry metadata required by a new offline consumer.
 
