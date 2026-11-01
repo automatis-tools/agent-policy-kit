@@ -83,3 +83,9 @@ test('published role schema accepts every runtime catalog subset including five 
   assert.ok(selectedRoles.length>=selection.minItems&&selectedRoles.length<=selection.maxItems);
  }
 });
+
+test('client parallel limits override the shared fallback and reject invalid pins',()=>{
+ const p=preferences();p.clients.codex.maxConcurrent=5;assert.equal(validatePolicy(p).clients.codex.maxConcurrent,5);
+ for(const value of [0,33,1.5,'3',null]){p.clients.codex.maxConcurrent=value;assert.throws(()=>validatePolicy(p),{code:'INVALID_POLICY'});}
+ delete p.clients.codex.maxConcurrent;assert.equal(validatePolicy(p).maxConcurrent,3);
+});

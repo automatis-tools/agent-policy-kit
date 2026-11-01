@@ -21,7 +21,8 @@ export function validatePolicy(value) {
   object(value.clients,CLIENTS);
   if (!Object.keys(value.clients).length) invalid();
   for (const [client,config] of Object.entries(value.clients)) {
-    object(config,['code','light','roles','avoidModels']);
+    object(config,['code','light','roles','avoidModels','maxConcurrent']);
+    if(config.maxConcurrent!==undefined&&(!Number.isInteger(config.maxConcurrent)||config.maxConcurrent<1||config.maxConcurrent>32))invalid();
     if(config.roles!==undefined)object(config.roles,Object.keys(ROLES));
     for (const selected of [config.code,config.light,...Object.values(config.roles??{})]) {
       object(selected,['model','effort']); model(selected.model);

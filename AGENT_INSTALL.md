@@ -4,6 +4,8 @@ APK is configuration-only. Native files remain independent after npm package/sou
 
 Perform authorized technical setup/removal yourself; do not hand the owner a shell checklist. Use JSON plans/results, preserve main models, credentials, permissions, unrelated settings and later edits. Never log in, collect credentials, accept terms, start model tasks, publish, weaken sandboxes or bypass trust to force installation success. Private backups can contain existing secrets; keep state private.
 
+Captured output stays JSON. Use --json explicitly when a terminal is attached. Interactive users receive a readable summary. Run show to inspect existing user-level native subagent settings without APK receipts or client executables. Show reads current supported fields, including manual edits, but does not resolve project, managed or session precedence. An incomplete read exits with code 3 while retaining independent client results. Doctor remains the owned-configuration integrity check.
+
 ## 1. Select the requested release
 
 Package version is configuration-release version. Read that version's CHANGELOG.md or release output for what changed, why and migration limits. Check the installed tool versions, actual provisioned model aliases and current official model/effort documentation before applying. Preserve explicit user choices; a newer package/model is not an instruction to switch silently. See [model maintenance](docs/model-updates.md) and the dated [model catalog/presets](docs/model-catalog.md).
@@ -11,8 +13,8 @@ Package version is configuration-release version. Read that version's CHANGELOG.
 After publication, pinned invocation is supported:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy release
-npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release
+npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy release
+npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy setup --release
 ```
 
 Before publication, replace the registry spec with the verified local .tgz. For several commands, install to a temporary or user-owned prefix with npm install --prefix PREFIX TARBALL --ignore-scripts --no-audit --no-fund, then invoke PREFIX/node_modules/.bin/agent-policy. No stable runtime prefix, sudo or shell-profile changes are needed.
@@ -33,6 +35,8 @@ agent-policy setup \
 ```
 
 Use --codex, --claude, --kimi and/or --antigravity to select tools. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Antigravity accepts role=tier without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
+
+Optional --codex-max-concurrent, --claude-max-concurrent, --kimi-max-concurrent and --antigravity-max-concurrent override --max-concurrent for their selected tool. They accept whole numbers from 1 to 32 and require the corresponding tool argument. JSON preferences can instead set clients[tool].maxConcurrent. Omitted overrides use the top-level fallback.
 
 Explicit arguments are setup/install-only and cannot combine with --client, --release, --preset, --policy or --config. Duplicate flags and incomplete role maps fail before writes. Omit --apply to plan first. Explicit commands allow deliberate owned replacement and record custom source with no named preset provenance. The native files do not retain a dependency on the codec or package.
 

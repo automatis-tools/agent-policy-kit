@@ -1,3 +1,4 @@
+import {PACKAGE_VERSION} from '../src/release.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +13,7 @@ test('CLI exposes configuration commands and no ongoing runtime entry points',t=
   const home=fixture(t),help=cli(home,['--help']);assert.equal(help.status,0);
   for(const command of ['setup','uninstall','doctor','instructions']) assert.match(help.stdout,new RegExp(`\\b${command}\\b`));
   assert.doesNotMatch(help.stdout,/^\s+(?:run|hook|record|audit|evaluate)\s/m);
-  assert.equal(cli(home,['--version']).stdout.trim(),'0.1.0');
+  assert.equal(cli(home,['--version']).stdout.trim(),PACKAGE_VERSION);
 });
 test('packaged instructions work before any policy/client setup',t=>{
   const got=cli(fixture(t),['instructions']);assert.equal(got.status,0);assert.match(got.stdout,/configuration.only|configurator/i);
@@ -83,4 +84,17 @@ test('external preference updates coordinate the retained canonical file after o
  fs.writeFileSync(canonical,JSON.stringify(replacement));
  assert.equal(cli(home,['setup','--client','codex','--policy',policy,'--apply'],undefined,env).status,0);
  const report=JSON.parse(cli(home,['doctor','--client','codex','--policy',policy],undefined,env).stdout);assert.equal(report.clients.codex.configuration.status,'verified');assert.match(fs.readFileSync(path.join(home,'.codex/config.toml'),'utf8'),/max_concurrent_threads_per_session = 2/);
+});
+
+test('show reads native subagents without an APK installation and --json preserves machine output',t=>{
+ const home=fixture(t);fs.mkdirSync(path.join(home,'.codex/agents'),{recursive:true});fs.writeFileSync(path.join(home,'.codex/config.toml'),'[agents]\nmax_concurrent_threads_per_session=5\n');fs.writeFileSync(path.join(home,'.codex/agents/manual.toml'),'name="manual"\nmodel="custom/existing"\n');
+ const got=cli(home,['show','--client','codex','--json']);assert.equal(got.status,0);const report=JSON.parse(got.stdout);assert.equal(report.clients.codex.concurrency.value,5);assert.equal(report.clients.codex.roles[0].model,'custom/existing');assert.equal(fs.existsSync(path.join(home,'.agent-policy-kit')),false);
+});
+test('show reports an incomplete read with a nonzero exit while preserving readable clients',t=>{
+ const home=fixture(t);fs.mkdirSync(path.join(home,'.claude'),{recursive:true});fs.writeFileSync(path.join(home,'.claude/settings.json'),'{bad');const got=cli(home,['show','--json']);assert.equal(got.status,3);assert.equal(JSON.parse(got.stdout).clients.claude.status,'attention');assert.equal(JSON.parse(got.stdout).clients.codex.status,'not_configured');
+});
+
+test('per-tool limit flags reject orphan and duplicate overrides before writing',t=>{
+ const home=fixture(t),base=['setup','--roles','reviewer','--max-concurrent','3','--codex','reviewer=gpt-6.1-sol:high','--apply'];
+ for(const [suffix,error]of [[['--claude-max-concurrent','2'],'INVALID_EXPLICIT_CONFIG'],[['--codex-max-concurrent','2','--codex-max-concurrent','3'],'DUPLICATE_OPTION']]){const got=cli(home,[...base,...suffix]);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,error);assert.deepEqual(fs.readdirSync(home),[]);}
 });

@@ -348,7 +348,7 @@ export async function planInstall(options) {
   if(!own(policy.clients,plan.client))fail('INVALID_POLICY');
   let selected=policy.clients[plan.client],resolvedAliases=false;
   const roleIds=selectedRoleIds(policy);
-  const maxConcurrent=policy.maxConcurrent,policyHash=digest(json(canonical(policy)));
+  const maxConcurrent=selected.maxConcurrent??policy.maxConcurrent,policyHash=digest(json(canonical(policy)));
   const policyBefore=await readDependency(plan,l.policy,plan.stateDir);
   const baselines=record?await undoFiles(plan,record,false):new Map();
   if(record&&!replace) {

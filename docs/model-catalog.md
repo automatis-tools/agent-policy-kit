@@ -15,11 +15,11 @@ Hidden security/utility models, session modes and private deployments are separa
 
 | Upstream ID | Native effort levels | Default | Role in this release |
 |---|---|---|---|
-| k3.1-pro | low / high / max | high | Optional flagship; Quality uses explicit max for code/review/tests |
+| k3.1-pro | low / high / max | high | Optional flagship; Top-tier top-model switch for code/review/tests |
 | k3.1-pro-highspeed | low / high / max | high | Optional faster-output variant |
-| k3 | low / high / max | high | Quality exploration/documentation |
-| k3-256k | low / high / max | high | Balanced implementation/review/tests |
-| kimi-for-coding | low / high / max | max | K2.8 Preview; Fast and lighter Balanced work |
+| k3 | low / high / max | high | Top-tier code, review, tests, exploration and documentation |
+| k3-256k | low / high / max | high | Standard implementation, review, tests and docs |
+| kimi-for-coding | low / high / max | max | K2.8 Preview; Light, Standard exploration and routine work, Top-tier Task runner |
 | kimi-for-coding-highspeed | Fixed thinking; no effort override | Unpinned | Optional K2.7 Code Highspeed |
 
 Both K3.1 Pro variants require thinking. Kimi documents approximately twice the quota usage for Pro Highspeed versus regular Pro; account tier controls access and context limits. The old kimi.ai/help page still lists only four IDs, so it is not the current inventory source. Native aliases use the kimi-code/ prefix; setup still requires an existing provisioned alias or a unique matching upstream model. It never creates provider credentials.
@@ -38,15 +38,18 @@ Account/provider access varies. Custom model IDs remain available for supported 
 
 ## How the presets are designed
 
-These are starting recommendations for different priorities, reviewed on 2026-10-30. No comparative task benchmark was run. The four vendors' effort labels and subscription usage are not directly comparable.
+These are starting recommendations, reviewed on 2026-10-30. Subagent usage counts against the same plan limits as the main session, and every parallel session adds to it. The presets therefore differ in how much of the plan subagents may use, not in a claimed quality ranking. No comparative task benchmark was run. Vendors' effort labels and subscription usage are not directly comparable, so one role can get different levels in different tools.
 
-- **Fast & economical:** bounded tasks on lighter models. Reviews and test creation receive extra reasoning because checking edge cases differs from executing known steps. Kimi uses one efficient alias at one coherent effort; Antigravity uses Flash for code and Flash Lite for lighter work.
-- **Balanced:** stronger implementation, review and test creation, with lighter fact gathering and mechanical work. Kimi uses K3 256K for code to keep its quota footprint below the full-context K3 variant; larger-context choices remain editable.
-- **Quality first:** demanding implementation, review and tests get frontier models and deeper supported reasoning. Exploration, documentation and mechanical steps use choices suited to those roles rather than automatically selecting the largest model everywhere. Kimi keeps one effort per shared alias; Pro max is reserved for code/review/tests, while K3 handles exploration and docs at high effort.
+- **Light:** light models for every role, so plan limits last longest. It suits entry plans and many parallel sessions. In Codex and Claude Code, reviews and test creation receive extra reasoning because checking edge cases differs from executing known steps. Kimi roles share one alias and therefore one effort, kept low to save quota; Antigravity has no per-role effort and uses Flash for code and Flash Lite for lighter work.
+- **Standard:** stronger implementation, review, test creation and documentation, with light models for fact gathering and mechanical work. Antigravity's light tier for exploration and docs is Flash. Codex runs Luna at high for exploration, OpenAI's suggested starting level for Luna; Claude's Haiku explorer uses its native default, medium. No role uses Astra, Fable or K3.1 Pro. Kimi uses K3 256K for code to keep its quota footprint below the full-context K3 variant; larger-context choices remain editable.
+- **Top-tier:** Opus 5.5, GPT-6.1 Sol and K3 at high effort for implementation, review and tests. It uses limits fastest and suits top plans with few parallel sessions. Exploration and documentation use the same high-end model; only the Task runner stays lighter. Kimi keeps one effort per shared alias, and because K2.8 has no medium level its Task runner rises from low to high. Antigravity has one top tier, Pro, so its Standard and Top-tier differ only in exploration, docs and the Task runner.
+- **Top models switch:** under Top-tier, a per-tool switch replaces the Coder, Reviewer and Test writer model with the tool's top model: Fable 5.1, GPT-6 Astra or K3.1 Pro, still at high effort. Antigravity has no such tier. The switch is off by default because these models use limits much faster and native default subagent settings copy the first selected role (the Coder when selected) to subagents started without a named role. It is part of Top-tier, not a separate preset, and share links keep it.
 
-No preset bans any model. An unselected model remains available in Custom. Explicit personal avoid lists are still supported in user policy/CLI input. The shared concurrency ceiling of three is a modest operational default, not a claim that a particular parallelism level improves quality; native enforcement varies by client.
+Top-tier, with or without top models, pins high rather than xhigh or max. Native default subagent settings copy the first selected role (the Coder when selected), so a higher level would also apply to every subagent started without a named role. OpenAI recommends starting Astra at Light and places High and Extra High in the same band for difficult multi-step work. Anthropic describes high as the level for work where verification matters and xhigh as deeper reasoning at higher token spend; high is Fable's native default. Higher levels remain available in Custom.
 
-### Fast & economical
+No preset bans any model. An unselected model remains available in Custom. Explicit personal avoid lists are still supported in user policy/CLI input. Parallelism defaults are Light 2, Standard 3 and Top-tier 2 for each tool. They bound simultaneous delegation rather than starting tasks or measuring quality. Light keeps short work bounded. Standard allows three independent responsibilities to overlap. Top-tier limits concurrent long-running work on heavier models. These are product defaults, not benchmark results. Each tool can override its limit in its details. Native enforcement varies by client.
+
+### Light
 
 | Role | Codex | Claude Code | Kimi Code | Antigravity |
 |---|---|---|---|---|
@@ -57,7 +60,7 @@ No preset bans any model. An unselected model remains available in Custom. Expli
 | Docs writer | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite |
 | Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite |
 
-### Balanced
+### Standard
 
 | Role | Codex | Claude Code | Kimi Code | Antigravity |
 |---|---|---|---|---|
@@ -65,19 +68,21 @@ No preset bans any model. An unselected model remains available in Custom. Expli
 | Reviewer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro |
 | Code explorer | Luna · high | Haiku 5.5 · medium | K2.8 Preview · low | Flash |
 | Test writer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro |
-| Docs writer | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · low | Flash |
+| Docs writer | Sol · medium | Sonnet 5.5 · medium | K3 256K · high | Flash |
 | Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite |
 
-### Quality first
+### Top-tier
 
 | Role | Codex | Claude Code | Kimi Code | Antigravity |
 |---|---|---|---|---|
-| Coder | Astra · xhigh | Fable 5.1 · xhigh | K3.1 Pro · max | Pro |
-| Reviewer | Astra · xhigh | Fable 5.1 · xhigh | K3.1 Pro · max | Pro |
+| Coder | Sol · high | Opus 5.5 · high | K3 · high | Pro |
+| Reviewer | Sol · high | Opus 5.5 · high | K3 · high | Pro |
 | Code explorer | Sol · high | Opus 5.5 · high | K3 · high | Pro |
-| Test writer | Astra · xhigh | Fable 5.1 · xhigh | K3.1 Pro · max | Pro |
+| Test writer | Sol · high | Opus 5.5 · high | K3 · high | Pro |
 | Docs writer | Sol · high | Opus 5.5 · high | K3 · high | Pro |
 | Task runner | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · high | Flash |
+
+With the top models switch on, Coder, Reviewer and Test writer use Astra · high in Codex, Fable 5.1 · high in Claude Code and K3.1 Pro · high in Kimi Code.
 
 ## Reasons and access requirements
 

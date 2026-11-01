@@ -151,6 +151,12 @@
               "$ref": "#/$defs/profile"
             }
           }
+        },
+        "maxConcurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Overrides the shared maxConcurrent fallback for this tool."
         }
       }
     },
@@ -200,6 +206,12 @@
               "$ref": "#/$defs/tierProfile"
             }
           }
+        },
+        "maxConcurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Overrides the shared maxConcurrent fallback for this tool."
         }
       }
     },
@@ -281,6 +293,12 @@
               "$ref": "#/$defs/kimiProfile"
             }
           }
+        },
+        "maxConcurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Overrides the shared maxConcurrent fallback for this tool."
         }
       }
     },
@@ -353,6 +371,12 @@
               "$ref": "#/$defs/claudeProfile"
             }
           }
+        },
+        "maxConcurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Overrides the shared maxConcurrent fallback for this tool."
         }
       }
     }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "maxConcurrent": 3,
+  "maxConcurrent": 2,
   "clients": {
     "codex": {
       "code": {

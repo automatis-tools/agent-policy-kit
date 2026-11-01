@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {modelCatalog,presetPreferences,PRESETS,bundledReleaseInfo} from '../src/release.mjs';
 import {validatePolicy,rolePreference,ROLES} from '../src/policy.mjs';
@@ -22,7 +23,21 @@ test('current Kimi inventory includes both K3.1 Pro routes with native thinking 
   assert.equal(model.source,'https://www.kimi.com/code/docs/en/kimi-code/models');
  }
  const quality=presetPreferences('quality').clients.kimi;
- assert.deepEqual(quality.code,{model:'kimi-code/k3.1-pro',effort:'max'});assert.deepEqual(rolePreference(quality,'explorer'),{model:'kimi-code/k3',effort:'high'});
+ assert.deepEqual(quality.code,{model:'kimi-code/k3',effort:'high'});assert.deepEqual(rolePreference(quality,'explorer'),{model:'kimi-code/k3',effort:'high'});
+});
+
+test('presets name how much of the plan subagents use and top models stay an explicit Top-tier opt-in',()=>{
+ assert.deepEqual(PRESETS.map(preset=>[preset.id,preset.label]),[['fast','Light'],['balanced','Standard'],['quality','Top-tier']]);
+ for(const preset of PRESETS)assert.ok(preset.description.length<=70,preset.id);
+ const top={codex:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'},catalog=modelCatalog().clients;
+ assert.deepEqual(PRESETS.find(preset=>preset.id==='quality').topModels,top);
+ assert.ok(PRESETS.filter(preset=>preset.id!=='quality').every(preset=>preset.topModels===undefined));
+ for(const [client,model] of Object.entries(top))assert.ok(catalog[client].models.find(entry=>entry.id===model)?.efforts.includes('high'),client);
+ // Native default subagent settings copy the Coder choice, so no slider position may silently select a top model.
+ for(const id of ['fast','balanced','quality'])for(const [client,config] of Object.entries(presetPreferences(id).clients))for(const role of Object.keys(ROLES))assert.notEqual(rolePreference(config,role).model,top[client],`${id} ${client} ${role}`);
+ const quality=presetPreferences('quality').clients;
+ for(const [client,model] of [['codex','gpt-6.1-sol'],['claude','claude-opus-5-5'],['kimi','kimi-code/k3']])
+  for(const role of ['worker','reviewer','tester'])assert.deepEqual(rolePreference(quality[client],role),{model,effort:'high'},`${client} ${role}`);
 });
 
 test('native effort choices stay separate from API-only capabilities and delegation modes',()=>{
@@ -44,7 +59,7 @@ test('three named presets are valid editable recommendations from the same packa
  const fingerprints=new Set();
  for(const preset of PRESETS){const preferences=presetPreferences(preset.id);validatePolicy(preferences);fingerprints.add(bundledReleaseInfo(preset.id).preferencesHash);for(const client of Object.values(preferences.clients))for(const role of Object.keys(ROLES))assert.ok(rolePreference(client,role));}
  assert.equal(fingerprints.size,3);assert.throws(()=>presetPreferences('../outside'),e=>e.code==='UNKNOWN_PRESET');
- assert.equal(presetPreferences('fast').clients.codex.code.model,'gpt-6-luna');assert.equal(presetPreferences('quality').clients.claude.code.model,'claude-fable-5-1');
+ assert.equal(presetPreferences('fast').clients.codex.code.model,'gpt-6-luna');assert.equal(presetPreferences('quality').clients.claude.code.model,'claude-opus-5-5');
 });
 
 test('Fable is a documented Claude subagent alias with current native effort choices',()=>{
@@ -54,12 +69,35 @@ test('Fable is a documented Claude subagent alias with current native effort cho
 test('public recommendations never carry personal model bans',()=>{
  for(const preset of PRESETS)for(const [client,config]of Object.entries(presetPreferences(preset.id).clients))assert.deepEqual(config.avoidModels,[],`${preset.id}/${client} must leave model choice open`);
 });
-test('Quality prioritizes frontier models for demanding implementation and review',()=>{
- const quality=presetPreferences('quality');
+test('Top-tier offers frontier models for demanding implementation and review only as an opt-in',()=>{
+ const quality=presetPreferences('quality'),top=PRESETS.find(preset=>preset.id==='quality').topModels;
+ assert.equal(top.codex,'gpt-6-astra');assert.equal(top.claude,'claude-fable-5-1');
  for(const role of ['worker','reviewer']){
-  assert.equal(rolePreference(quality.clients.codex,role).model,'gpt-6-astra');
-  assert.equal(rolePreference(quality.clients.claude,role).model,'claude-fable-5-1');
+  assert.equal(rolePreference(quality.clients.codex,role).model,'gpt-6.1-sol');
+  assert.equal(rolePreference(quality.clients.claude,role).model,'claude-opus-5-5');
  }
  assert.notEqual(rolePreference(quality.clients.codex,'routine').model,'gpt-6-astra');
  assert.notEqual(rolePreference(quality.clients.claude,'routine').model,'claude-fable-5-1');
+});
+
+test('docs preset tables match the preset data in every cell',()=>{
+ const doc=fs.readFileSync(new URL('../docs/model-catalog.md',import.meta.url),'utf8').split('\n'),catalog=modelCatalog().clients;
+ const roleIds={'Coder':'worker','Reviewer':'reviewer','Code explorer':'explorer','Test writer':'tester','Docs writer':'writer','Task runner':'routine'};
+ const norm=value=>value.replace(/GPT-6(?:\.1)? /,'').replace('K3 · 256K','K3 256K').replace(/\s+/g,' ').trim();
+ for(const preset of PRESETS){
+  const start=doc.indexOf('### '+preset.label),preferences=presetPreferences(preset.id);assert.ok(start>0,preset.label);
+  const header=doc.slice(start).find(line=>line.startsWith('| Role |')).split('|').slice(2,-1).map(title=>title.trim());
+  const clients=header.map(title=>Object.keys(catalog).find(id=>title===catalog[id].label||title.startsWith(catalog[id].label+' ')));
+  assert.deepEqual([...clients].sort(),Object.keys(preferences.clients).sort(),preset.label);
+  let rows=0;
+  for(const line of doc.slice(start+1)){
+   if(line.startsWith('#'))break;
+   const match=line.match(/^\| (Coder|Reviewer|Code explorer|Test writer|Docs writer|Task runner) \|(.*)\|$/);if(!match)continue;rows++;
+   match[2].split('|').map(cell=>cell.trim()).forEach((cell,index)=>{
+    const client=clients[index],choice=rolePreference(preferences.clients[client],roleIds[match[1]]),label=catalog[client].models.find(model=>model.id===choice.model).label;
+    assert.equal(norm(cell),norm(label+(choice.effort?' · '+choice.effort:'')),`${preset.label} ${match[1]} ${client}`);
+   });
+  }
+  assert.equal(rows,6,preset.label);
+ }
 });

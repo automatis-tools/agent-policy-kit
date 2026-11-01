@@ -100,6 +100,13 @@ console.log(JSON.stringify({client,roles:roles.length,configuration:'readable',e
   }
   env.PATH=[nativeBin,path.dirname(process.execPath),'/usr/bin','/bin'].join(path.delimiter);
   function put(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
+  const inspectHome=path.join(consumer,'existing native profile');fs.mkdirSync(inspectHome);
+  put(path.join(inspectHome,'.codex/config.toml'),'[agents]\nmax_concurrent_threads_per_session=5\n');
+  put(path.join(inspectHome,'.codex/agents/existing.toml'),'name="existing"\nmodel="fixture/manual"\n');
+  const inspected=parse(cli(['show','--client','codex','--home',inspectHome,'--json']));
+  assert.equal(inspected.clients.codex.concurrency.value,5);
+  assert.equal(inspected.clients.codex.roles[0].model,'fixture/manual');
+  assert.equal(fs.existsSync(path.join(inspectHome,'.agent-policy-kit')),false);
   const prerequisiteHome=path.join(consumer,'unprovisioned');fs.mkdirSync(prerequisiteHome);
   const missing=cli(['install','--client','kimi','--home',prerequisiteHome,'--state-dir',path.join(prerequisiteHome,'.policy'),'--apply']);
   assert.equal(missing.status,3);assert.equal(JSON.parse(missing.stdout).results[0].status,'prerequisite');
@@ -197,6 +204,7 @@ command="echo user_hook"
   vm.runInContext(page.match(/<script>([\s\S]*?)<\/script>/)[1],context);
   const pageRelease=vm.runInContext('RELEASE',context),api=context.APKConfigurator,selection=api.initialState(pageRelease.preferences);
   selection.selected=['codex','claude'];selection.selectedRoles=['reviewer','explorer'];selection.jobs.codex.reviewer.effort='max';
+  api.updateConcurrency(selection,'codex','5');api.updateConcurrency(selection,'claude','2');
   const built=api.buildConfig(selection,pageRelease.preferences);assert.deepEqual(Array.from(built.errors),[]);
   const generated=api.buildCommand(built.config,pageRelease);
   assert.ok(generated.startsWith(`npx --yes --ignore-scripts --package agent-policy-kit@${packed[0].version} agent-policy setup`));
@@ -209,6 +217,10 @@ command="echo user_hook"
   assert.equal(subset.results.find(result=>result.client==='agy').status,'not_selected');
   for(const client of ['codex','claude'])for(const role of ROLE_IDS)assert.equal(fs.existsSync(path.join(freshHome,dirs[client],'agents',`apk-${role}.${client==='codex'?'toml':'md'}`)),['reviewer','explorer'].includes(role));
   assert.match(fs.readFileSync(path.join(freshHome,'.codex/agents/apk-reviewer.toml'),'utf8'),/model_reasoning_effort = "max"/);
+  assert.match(fs.readFileSync(codexConfig,'utf8'),/max_concurrent_threads_per_session\s*=\s*5/);
+  assert.equal(JSON.parse(fs.readFileSync(claudeConfig,'utf8')).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'2');
+  const parallelRead=cli(['show','--json']);assert.equal(parallelRead.status,3,'the preserved user-role fixture has unsupported frontmatter');
+  const parallelReport=JSON.parse(parallelRead.stdout);assert.ok(parallelReport.clients.claude.warnings.includes('UNSUPPORTED_ROLE_FORMAT'));assert.equal(parallelReport.clients.codex.concurrency.value,5);assert.equal(parallelReport.clients.claude.concurrency.value,2);
   assert.equal(fs.readFileSync(kimiConfig,'utf8'),kimiBeforeSubset);
   const subsetDoctor=parse(cli(['doctor']));for(const client of ['codex','claude'])assert.equal(subsetDoctor.clients[client].configuration.status,'verified');
   const subsetReceipt=path.join(state,'installations/codex.json'),subsetSnapshot=JSON.parse(fs.readFileSync(subsetReceipt));

@@ -204,3 +204,28 @@ test('old release links report release mismatch before comparing changed preset 
  const malformed=clone(old);malformed.extra=true;invalid(()=>decodeFormState(raw(malformed),release));
  for(const version of ['0.0.9#unsafe', '../old', '']){const malformed=clone(old);malformed.release=version;invalid(()=>decodeFormState(raw(malformed),release));}
 });
+
+test('per-tool parallel limits use strict v2 links and preserve independent custom values',()=>{
+ const input=snapshot(['reviewer'],['codex','claude']);for(const [id,cap]of [['codex',5],['claude',2]]){input.state.profiles[id].maxConcurrent=cap;input.state.profiles[id].custom=true;}
+ const decoded=decodeFormState(encodeFormState(input,release),release);assert.equal(decoded.v,2);assert.equal(decoded.maxConcurrent,undefined);assert.deepEqual(decoded.tools.map(t=>[t.id,t.maxConcurrent]),[['codex',5],['claude',2]]);
+ for(const value of [0,33,1.5,'3',null]){const broken=clone(decoded);broken.tools[0].maxConcurrent=value;invalid(()=>decodeFormState(raw(broken),release));}
+ const extra=clone(decoded);extra.maxConcurrent=3;invalid(()=>decodeFormState(raw(extra),release));
+});
+test('v2 named presets bind parallelism as well as models while legacy scalar links remain readable',()=>{
+ const input=snapshot(['reviewer'],['codex']);input.state.profiles.codex.maxConcurrent=3;assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].mode,'balanced');
+ input.state.profiles.codex.maxConcurrent=5;invalid(()=>encodeFormState(input,release));input.state.profiles.codex.custom=true;assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].maxConcurrent,5);
+ const legacy=payload();legacy.maxConcurrent=7;assert.equal(decodeFormState(raw(legacy),release).maxConcurrent,7);
+});
+
+test('Top-tier links accept the top-model variant only when every shared code role uses it',()=>{
+ const claude=presetPreferences('quality').clients.claude,top='claude-fable-5-1';
+ const effectiveRole=id=>effective(claude,ROLE_DEFINITIONS.find(role=>role.id===id));
+ const link=choices=>raw({v:2,release:PACKAGE_VERSION,roles:Object.keys(choices),tools:[{id:'claude',mode:'quality',base:'quality',choices,maxConcurrent:2}],scope:'claude'});
+ const base={worker:effectiveRole('worker'),reviewer:effectiveRole('reviewer'),explorer:effectiveRole('explorer')};
+ assert.deepEqual(decodeFormState(link(base),release).tools[0].choices,base);
+ const topped={...base,worker:{model:top,effort:'high'},reviewer:{model:top,effort:'high'}};
+ assert.deepEqual(decodeFormState(link(topped),release).tools[0].choices,topped);
+ invalid(()=>decodeFormState(link({...base,worker:{model:top,effort:'high'}}),release));
+ invalid(()=>decodeFormState(link({...topped,explorer:{model:top,effort:'high'}}),release));
+ invalid(()=>decodeFormState(link({...topped,worker:{model:top,effort:'xhigh'}}),release));
+});

@@ -1,6 +1,6 @@
 // Pure command codec, also embedded in the offline configuration page.
 export const TOOL_FLAGS=Object.freeze({codex:'codex',claude:'claude',kimi:'kimi',antigravity:'agy'});
-export const EXPLICIT_FIELDS=Object.freeze(['roles','max-concurrent',...Object.keys(TOOL_FLAGS),...Object.keys(TOOL_FLAGS).map(flag=>'avoid-'+flag)]);
+export const EXPLICIT_FIELDS=Object.freeze(['roles','max-concurrent',...Object.keys(TOOL_FLAGS),...Object.keys(TOOL_FLAGS).map(flag=>'avoid-'+flag),...Object.keys(TOOL_FLAGS).map(flag=>flag+'-max-concurrent')]);
 const EXPLICIT_MODEL=/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
 const EXPLICIT_EFFORTS=['none','minimal','low','medium','high','xhigh','max'];
 function invalidExplicit(){throw Object.assign(new Error('Invalid explicit configuration.'),{code:'INVALID_EXPLICIT_CONFIG'});}
@@ -21,7 +21,7 @@ export function parseExplicitOptions(options,roleIds){
  if(requested.some(role=>!roleIds.includes(role)))invalidExplicit();
  const roles=roleIds.filter(role=>requested.includes(role)),maxConcurrent=Number(options['max-concurrent']);
  if(!/^[1-9]\d*$/.test(options['max-concurrent'])||!Number.isInteger(maxConcurrent)||maxConcurrent>32)invalidExplicit();
- for(const flag of Object.keys(TOOL_FLAGS))if(options['avoid-'+flag]!==undefined&&options[flag]===undefined)invalidExplicit();
+ for(const flag of Object.keys(TOOL_FLAGS))if((options['avoid-'+flag]!==undefined||options[flag+'-max-concurrent']!==undefined)&&options[flag]===undefined)invalidExplicit();
  const clients={};
  for(const flag of Object.keys(options).filter(flag=>Object.hasOwn(TOOL_FLAGS,flag))){
   const client=TOOL_FLAGS[flag],choices={};
@@ -41,7 +41,9 @@ export function parseExplicitOptions(options,roleIds){
   const avoidModels=options['avoid-'+flag]===undefined?[]:explicitList(options['avoid-'+flag],32);
   if(avoidModels.some(model=>!EXPLICIT_MODEL.test(model)))invalidExplicit();
   const first=choices[roles[0]];
-  clients[client]={code:{...first},light:{...first},roles:Object.fromEntries(roles.map(role=>[role,choices[role]])),avoidModels};
+  const limit=options[flag+'-max-concurrent'];
+  if(limit!==undefined&&(!/^[1-9]\d*$/.test(limit)||Number(limit)>32))invalidExplicit();
+  clients[client]={...(limit===undefined?{}:{maxConcurrent:Number(limit)}),code:{...first},light:{...first},roles:Object.fromEntries(roles.map(role=>[role,choices[role]])),avoidModels};
  }
  if(!Object.keys(clients).length)invalidExplicit();
  return {schemaVersion:1,maxConcurrent,...(roles.length===roleIds.length?{}:{selectedRoles:roles}),clients};
@@ -66,6 +68,7 @@ export function explicitOptions(config,roleCatalog){
    if(client==='agy'&&selected.effort!==null)invalidExplicit();
    return `${role}=${selected.model}${client==='agy'?'':':'+(selected.effort??'native')}`;
   }).join(',');
+  if(preferences.maxConcurrent!==undefined)options[flag+'-max-concurrent']=String(preferences.maxConcurrent);
   if(!Array.isArray(preferences.avoidModels)||preferences.avoidModels.some(model=>typeof model!=='string'||!EXPLICIT_MODEL.test(model)))invalidExplicit();
   if(preferences.avoidModels.length)options['avoid-'+flag]=preferences.avoidModels.join(',');
  }
@@ -77,6 +80,6 @@ export function formatExplicitCommand(config,version,roleCatalog){
  if(typeof version!=='string'||!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version))throw new Error('Invalid release version.');
  const options=explicitOptions(config,roleCatalog),quote=value=>"'"+value.replaceAll("'","'\"'\"'")+"'";
  const lines=[`npx --yes --ignore-scripts --package agent-policy-kit@${version} agent-policy setup`];
- for(const [name,value]of Object.entries(options))lines.push(`--${name} ${name==='max-concurrent'?value:quote(value)}`);
+ for(const [name,value]of Object.entries(options))lines.push(`--${name} ${name==='max-concurrent'||name.endsWith('-max-concurrent')?value:quote(value)}`);
  lines.push('--apply');return lines.join(' \\\n  ');
 }

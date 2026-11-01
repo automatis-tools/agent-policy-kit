@@ -19,7 +19,7 @@ __APK_BASE_CSS__
 @font-face{font-family:'Public Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url('data:font/woff2;base64,__APK_FONT_DATA__') format('woff2')}
 :root{--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--text-hero:36px;--text-section:20px;--text-ui:15px;--text-support:15px;--text-meta:13px;--success:#237347;--success-paper:#edf7f0;--success-line:#c4dfce}
 *{box-sizing:border-box}body{background:var(--white)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:default}:focus-visible{outline:2px solid var(--accent);outline-offset:4px}[hidden]{display:none!important}::selection{color:var(--ink);background:var(--selection)}
-header,main,footer{width:min(calc(100% - 64px),920px);margin-inline:auto}header{min-height:74px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}.mark{display:grid;place-items:center;min-width:42px;height:34px;background:var(--brand-blue);border-bottom:3px solid var(--brand-yellow);border-radius:5px;color:var(--white);font-size:14px;font-weight:650;letter-spacing:-.5px}.brand{font-size:16px;font-weight:600;letter-spacing:-.2px}.concept{margin-left:auto;padding:4px 7px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:var(--text-meta);line-height:1.3}
+header,main,footer{width:min(calc(100% - 64px),920px);margin-inline:auto}header{min-height:74px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}.mark{display:grid;place-items:center;min-width:42px;height:34px;background:var(--brand-blue);border-bottom:3px solid var(--brand-yellow);border-radius:5px;color:var(--white);font-size:14px;font-weight:650;letter-spacing:-.5px}.brand{font-size:16px;font-weight:600;letter-spacing:-.2px}.repo-link{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:5px;color:var(--ink);font-size:var(--text-meta);font-weight:500;line-height:1.3;text-decoration:none}.repo-link:hover{background:var(--control-hover);color:var(--accent)}.repo-link svg{flex-shrink:0}
 .intro{margin:32px 0}.intro h1{margin:0 0 12px;font-size:var(--text-hero);font-weight:650;line-height:1.2;letter-spacing:-.035em}.intro p{margin:0;color:var(--muted);font-size:var(--text-ui);line-height:1.7;max-width:70ch}
 .builder{--step-gap:32px;display:grid;gap:var(--step-gap)}.builder>section{position:relative;padding-left:34px}.builder>section:not(:last-child)::before{content:"";position:absolute;left:10px;top:13px;width:2px;height:calc(100% + var(--step-gap));background:var(--line);pointer-events:none}.builder>section>.step-heading>.step-number{position:absolute;left:0;top:2px;z-index:1}.step-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}.step-heading h2{margin:0;font-size:var(--text-section);line-height:1.4;font-weight:600;letter-spacing:-.015em}.step-number{display:grid;place-items:center;width:22px;height:22px;background:var(--paper);border:1px solid var(--line);border-radius:50%;color:var(--muted);font:400 var(--text-meta)/1 var(--mono)}.step-hint{margin-left:auto;padding:3px 6px;border-radius:4px;color:var(--accent);font-size:var(--text-meta);line-height:1.4;font-weight:500}.step-hint[data-success=true]{color:var(--success);font-weight:600}
 .tag-box{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:56px;padding:10px 12px;background:var(--white);border:1px solid var(--line);border-radius:7px}.tag-box:focus-within{outline:2px solid var(--accent);outline-offset:2px}.empty{padding:5px 1px;font-size:var(--text-ui);color:var(--muted)}.suggestions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;min-height:34px}.suggestion{padding:6px 11px;border:1px dashed var(--line);border-radius:5px;background:var(--white);color:var(--ink);font-size:var(--text-ui);line-height:1.4;font-weight:400}.suggestion:hover{border-color:var(--brand-blue);background:var(--control-hover);color:var(--accent)}.plus{color:var(--accent);margin-right:5px}
@@ -27,11 +27,12 @@ header,main,footer{width:min(calc(100% - 64px),920px);margin-inline:auto}header{
 .tool-group{display:flex;gap:4px;min-height:54px;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}.tool-group .tool-scope{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:44px;padding:8px 28px 8px 13px;border:0;border-radius:5px;background:transparent;color:var(--ink);font-size:var(--text-ui);font-weight:500;line-height:1.4}.tool-group .tool-scope small{border-radius:3px;font-size:var(--text-meta);font-weight:400;line-height:1.5;color:var(--muted)}.tool-group .tool-scope:hover{background:var(--control-hover);color:var(--accent)}.tool-item.active .tool-scope{background:transparent;color:var(--accent);font-weight:600}.tool-item.active{box-shadow:inset 0 -2px 0 var(--brand-blue)}.tool-item{position:relative;display:flex;flex:1;min-width:0;border:1px solid var(--line);border-radius:5px;background:var(--control-hover)}.tool-item .tool-scope{width:100%}.tool-remove{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:24px;height:30px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:15px;opacity:.8}.tool-item.active .tool-remove{color:var(--muted)}.tool-remove:hover{background:var(--control-hover);opacity:1}.tool-item.active .tool-remove:hover{background:var(--control-hover);color:var(--accent)}
 .mode-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}.scope-label{display:inline-block;padding:3px 6px;margin-left:-6px;border-radius:4px;color:var(--muted);font-size:var(--text-support);line-height:1.5}.mode-placeholder{padding:20px;border:1px dashed var(--line);border-radius:7px;color:var(--muted);font-size:var(--text-support)}#mode-options{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 16px}#mode-options::before{content:"";position:absolute;top:13px;left:12.5%;right:12.5%;height:2px;background:var(--line)}.mode-option{position:relative;z-index:1;display:grid;grid-template-rows:20px auto;align-content:start;align-items:center;justify-items:center;gap:10px;padding:4px;text-align:center;font-size:var(--text-ui);font-weight:400;line-height:1.5;cursor:pointer}.mode-option input{appearance:none;position:relative;z-index:1;width:10px;height:10px;margin:0;border:0;border-radius:50%;background:var(--muted);cursor:pointer}.mode-option input:checked{width:18px;height:18px;border:3px solid var(--white);box-shadow:0 0 0 2px var(--brand-blue);background:var(--brand-blue)}.mode-option input:checked+span{color:var(--accent);font-weight:600}.mode-option:has(input:disabled){cursor:default}.notice{padding:0;margin:0 0 14px;color:var(--muted);font-size:var(--text-support);line-height:1.6}
 .advanced{border-top:1px solid var(--line);padding-top:12px}.advanced summary{width:fit-content;color:var(--accent);font-size:var(--text-support);line-height:1.5;cursor:pointer}.editor{display:grid;grid-template-columns:140px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;margin-top:16px}.editor label{display:block;margin-bottom:7px;color:var(--muted);font-size:var(--text-support);line-height:1.4}.editor select{appearance:none;width:100%;min-width:0;height:42px;padding:0 32px 0 10px;border:1px solid var(--line);border-radius:5px;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%2359657a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center/16px 16px;color:var(--ink);font-size:var(--text-ui)}.efforts{display:flex;gap:3px;align-items:center;min-height:42px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}.efforts button{flex:1;min-height:32px;padding:5px;border:0;border-radius:4px;background:transparent;color:var(--muted);font-size:var(--text-support)}.efforts button[aria-pressed=true]{background:var(--control-hover);color:var(--accent);font-weight:600;box-shadow:inset 0 0 0 1px var(--brand-blue)}.unavailable{width:100%;text-align:center;color:var(--muted);font-size:var(--text-support)}.role-description{margin:10px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}
-.output{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px 20px;padding:18px 20px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}.output[data-ready=true]{border-color:var(--brand-blue)}.output strong{font-size:var(--text-ui);font-weight:600;line-height:1.5}.output p{margin:5px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}.output p a{color:var(--accent);text-underline-offset:3px}.output[data-ready=false] .primary{background:var(--line);border-color:var(--line);color:var(--muted);opacity:1}.primary{white-space:nowrap}
+.output{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px 20px;padding:18px 20px;border:1px solid var(--line);border-radius:6px;background:var(--paper)}.output[data-ready=true]{border-color:var(--brand-blue)}.output strong{font-size:var(--text-ui);font-weight:600;line-height:1.5}.output p{margin:5px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}.output p:empty{display:none}.output p a{color:var(--accent);text-underline-offset:3px}.output[data-ready=false] .primary{background:var(--line);border-color:var(--line);color:var(--muted);opacity:1}.primary{white-space:nowrap}
 footer{display:grid;gap:14px;margin-top:20px;padding:16px 0 24px;border-top:1px solid var(--line);color:var(--muted);font-size:var(--text-meta);line-height:1.6}.footer-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px 24px;flex-wrap:wrap}.footer-attribution{font-size:var(--text-ui)}.footer-attribution nav{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}.footer-attribution>span{color:var(--ink)}
 @media(forced-colors:active){.tag,.suggestion{border-color:ButtonText}.tool-group .tool-scope[aria-pressed=true],.efforts button[aria-pressed=true]{outline:2px solid ButtonText;outline-offset:-3px}.mode-option input{appearance:auto}#mode-options::before{height:0;border-top:2px solid CanvasText}.editor select{appearance:auto;background-image:none}}
 
 html{scrollbar-gutter:stable}body{overflow-anchor:none}
+.suggestion.add-all{border-style:solid;background:var(--paper)}.suggestion.add-all:hover{background:var(--control-hover)}
 .helper-option{display:inline-flex;align-items:stretch;border:1px dashed var(--line);border-radius:5px;background:var(--white)}.helper-option>.suggestion{border:0;background:transparent;border-radius:4px 0 0 4px;padding-right:5px}.helper-option:hover{border-color:var(--brand-blue);background:var(--control-hover)}.helper-option:hover>.suggestion{color:var(--accent)}
 .helper-info{display:grid;place-items:center;align-self:stretch;flex-shrink:0;width:27px;min-height:28px;border:0;padding:0 5px;background:transparent;color:var(--accent);cursor:help;border-radius:4px}.helper-info:hover{background:var(--control-hover)}.info-dot{display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:10px;line-height:1;font-weight:600}.tag .helper-info{margin-right:3px}.tag .tag-label{padding-right:4px}
 .role-tooltip{position:fixed;z-index:1000;width:min(420px,calc(100vw - 32px));padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);box-shadow:0 6px 15px #19283e07;opacity:0;transform:translateY(3px);transition:opacity 120ms ease,transform 120ms ease;view-transition-name:role-tooltip}.role-tooltip.visible{opacity:1;transform:none}.role-tooltip strong{font-size:14px;font-weight:600}.role-tooltip p{font-size:var(--text-ui);line-height:1.7;margin:9px 0 14px;color:var(--muted)}.role-tooltip .definition-label{font-size:var(--text-meta);font-weight:600;color:var(--muted);margin:0 0 7px}.role-tooltip pre{margin:0;padding:11px;border:1px solid var(--line);border-radius:5px;background:var(--paper);white-space:pre-wrap;font:var(--text-meta)/1.7 var(--mono)}.role-tooltip .definition-note{margin:10px 0 0;font-size:var(--text-meta)}
@@ -50,12 +51,14 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 
 
 .advanced h3{margin:0 0 12px;font-size:var(--text-ui);font-weight:600;line-height:1.5;color:var(--ink)}
-.setup-result{display:contents}.setup-result>[aria-live]{grid-column:1;grid-row:1;min-width:0}.output>.primary{grid-column:2;grid-row:1;align-self:start}#copy-feedback{grid-column:1/-1;grid-row:3}.setup-command{grid-column:1/-1;grid-row:2;display:block;width:100%;min-width:0;margin-top:0;padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);font:var(--text-meta)/1.7 var(--mono);field-sizing:content;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden;resize:none}.release-status{margin:9px 0 0;color:var(--muted);font-size:var(--text-meta);line-height:1.5}.model-control{min-width:0}.custom-model{display:block;width:100%;margin-top:7px;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);font-size:var(--text-ui)}.custom-model[aria-invalid=true]{border-color:var(--amber)}
+.concurrency{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}.concurrency-row{display:flex;align-items:center;justify-content:space-between;gap:16px}.concurrency label{color:var(--ink);font-size:var(--text-ui);font-weight:400;line-height:1.5}.concurrency-stepper{display:inline-flex;flex-shrink:0;align-items:stretch;border:1px solid var(--line);border-radius:5px;background:var(--paper)}.concurrency-stepper button{display:grid;place-items:center;width:42px;min-height:42px;padding:0;border:0;border-radius:4px;background:transparent;color:var(--ink);font-size:var(--text-ui);font-weight:400;line-height:1.5}.concurrency-stepper button:hover:not(:disabled){background:var(--control-hover);color:var(--accent)}.concurrency-stepper button:disabled{color:var(--muted);opacity:.4}.concurrency input{appearance:textfield;width:56px;min-width:0;margin:0;padding:8px 4px;border:0;border-inline:1px solid var(--line);border-radius:0;background:var(--white);color:var(--ink);font:inherit;font-size:var(--text-ui);font-weight:400;line-height:1.5;font-variant-numeric:tabular-nums;text-align:center}.concurrency input::-webkit-inner-spin-button,.concurrency input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.concurrency input:focus-visible{outline-offset:-2px}.concurrency input[aria-invalid=true]{box-shadow:inset 0 0 0 1px var(--amber)}.concurrency .field-error{margin:8px 0 0;color:var(--muted);font-size:var(--text-support);line-height:1.6}.concurrency .field-error{color:var(--ink)}.setup-result{display:contents}.setup-result>[aria-live]{grid-column:1;grid-row:1;min-width:0}.output>.primary{grid-column:2;grid-row:1;align-self:start}#copy-feedback{grid-column:1/-1;grid-row:3}.setup-command{grid-column:1/-1;grid-row:2;display:block;width:100%;min-width:0;margin-top:0;padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);font:var(--text-meta)/1.7 var(--mono);field-sizing:content;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden;resize:none}.quiet-button{margin-left:6px;padding:1px 8px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--muted);font-size:var(--text-meta);line-height:1.5}.quiet-button:hover{background:var(--control-hover);color:var(--accent)}.show-settings{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0 2px}.show-settings code:not([hidden]){flex-basis:100%;margin-top:4px;font-family:var(--mono);color:var(--ink);overflow-wrap:anywhere;user-select:all}.setup-footer{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-top:9px}.setup-footer .release-status{margin:0}.release-status{margin:9px 0 0;color:var(--muted);font-size:var(--text-meta);line-height:1.5}.model-control{min-width:0}.custom-model{display:block;width:100%;margin-top:7px;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);font-size:var(--text-ui)}.custom-model[aria-invalid=true]{border-color:var(--amber)}
 
 
 #selected-tools[hidden]+#tool-options{margin-top:0}
 
 .tool-group .empty{align-self:center;padding:8px 9px}
+.tool-group.is-empty{min-height:56px;padding:10px 12px;background:var(--white)}.tool-group.is-empty .empty{padding:5px 1px}
+.top-models{margin-top:14px}.top-models [role=switch]{display:inline-flex;align-items:center;gap:10px;padding:2px 0;border:0;background:transparent;color:var(--ink);font-size:var(--text-ui);text-align:left;cursor:pointer}.switch-track{position:relative;flex-shrink:0;width:34px;height:20px;border-radius:10px;background:var(--line);transition:background-color .15s}.switch-track::before{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--white);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}.top-models [aria-checked=true] .switch-track,.top-models [data-mixed] .switch-track{background:var(--accent)}.top-models [aria-checked=true] .switch-track::before{transform:translateX(14px)}.top-models [data-mixed] .switch-track::before{transform:translateX(7px)}@media(forced-colors:active){.switch-track{border:1px solid ButtonText}.switch-track::before{background:ButtonText;box-shadow:none}}
 .tool-group>.scope-all{padding:8px 13px}.tool-group>.scope-all[aria-pressed=true]{background:var(--control-hover);color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--brand-blue)}
 
 .reset-form{padding:4px 0;border:0;background:transparent;color:var(--muted);font-size:var(--text-support);text-decoration:underline;text-underline-offset:3px}.reset-form:hover{color:var(--accent)}.intro .link-error{margin-top:12px;color:var(--amber);font-size:var(--text-support)}.builder>section[data-complete=true]>.step-heading>.step-number{background:var(--success-paper);border-color:var(--success-line);color:var(--success);font-size:14px;font-weight:600}.builder>section[data-complete=true]::before{background:var(--success-line)}
@@ -63,21 +66,22 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 .how-it-works{margin-top:18px;border:1px solid var(--line);border-radius:7px;background:var(--paper);interpolate-size:allow-keywords}.how-it-works summary{padding:14px 16px;color:var(--accent);font-size:var(--text-ui);font-weight:500;line-height:1.5;cursor:pointer}.how-it-works summary:hover{background:var(--control-hover);border-radius:6px}.how-it-works::details-content{height:0;overflow:hidden;opacity:0;transition:height 200ms ease,opacity 180ms ease,content-visibility 200ms allow-discrete}.how-it-works[open]::details-content{height:auto;opacity:1}.how-it-works .explanation{padding:2px 16px 18px;display:grid;gap:14px}.intro .how-it-works p{max-width:70ch;font-size:var(--text-ui);line-height:1.7}.how-it-works strong{color:var(--ink);font-weight:600}@media(prefers-reduced-motion:reduce){.how-it-works::details-content{transition:none}}
 @media(max-width:600px){header,main,footer{width:calc(100% - 32px)}.intro h1{font-size:30px}.step-heading{flex-wrap:wrap;gap:6px 10px}.step-hint{flex-basis:100%;margin-left:0;padding-left:0}.output{grid-template-columns:minmax(0,1fr);padding:16px}.output>.primary{grid-column:1;grid-row:2;justify-self:start}.setup-command{grid-row:3}#copy-feedback{grid-row:4}.editor-head{display:none}.editor-row{grid-template-columns:minmax(0,1fr);gap:10px;padding:16px 0}.editor-name{font-weight:600}.tool-group{flex-wrap:wrap}.tool-item{flex-basis:calc(50% - 4px)}.tool-group>.scope-all{flex-basis:100%}.tool-group .tool-scope{padding-left:8px;padding-right:24px}.mode-option{font-size:var(--text-meta);gap:12px}.brand{font-size:15px}header{gap:9px}footer{gap:14px}}
 </style></head><body>
-<header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><span class="concept" id="release-version"></span><button type="button" class="reset-form" id="reset-form">Reset form</button></header>
+<header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><a class="repo-link" href="__APK_REPOSITORY_URL__" target="_blank" rel="noopener noreferrer" aria-label="Agent Policy Kit on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg><span>GitHub</span></a></header>
 <main>
 <div class="intro"><h1>Set up subagents for your coding tools.</h1><p>Choose roles, models and effort. Apply your setup locally with one command.</p><details class="how-it-works"><summary>How it works and why you need it</summary><div class="explanation">
 <p>Coding agents can delegate specific tasks to temporary subagents. Those tasks vary in complexity and importance. A single model for every task is rarely the best balance of capability, speed and cost.</p>
 <p>Agent Policy Kit lets you match subagent roles with models and effort. It configures your coding tools’ native environment, then exits. The main agent still decides when to delegate, and its model stays unchanged.</p>
 </div></details><p class="link-error" id="link-error" role="status" hidden></p></div>
 <div class="builder">
-<section aria-labelledby="helpers-heading"><div class="step-heading"><span class="step-number">1</span><h2 id="helpers-heading" tabindex="-1">Subagent roles</h2><span class="step-hint" id="step-hint-1" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="tag-box" id="selected-helpers" role="group" aria-label="Selected subagent roles"></div><div class="suggestions" id="helper-options" role="group" aria-label="Available subagent roles"></div></section>
-<section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">Coding tools</h2><span class="step-hint" id="step-hint-2" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected coding tools"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available coding tools"></div></section>
-<section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading" tabindex="-1">Work mode</h2><span class="step-hint" id="step-hint-3" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and coding tools above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected tools</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div></section></div></section>
-<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2><span class="step-hint" id="step-hint-4" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and a coding tool in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><p class="release-status" id="release-status"></p></section>
+<section aria-labelledby="helpers-heading"><div class="step-heading"><span class="step-number">1</span><h2 id="helpers-heading" tabindex="-1">Subagent roles</h2></div><div class="tag-box" id="selected-helpers" role="group" aria-label="Selected subagent roles"></div><div class="suggestions" id="helper-options" role="group" aria-label="Available subagent roles"></div></section>
+<section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">Coding tools</h2></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected coding tools"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available coding tools"></div></section>
+<section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading" tabindex="-1">Work mode</h2></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and coding tools above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected tools</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><div class="top-models" id="top-models" hidden><button type="button" role="switch" id="top-models-toggle" aria-checked="false"><span class="switch-track" aria-hidden="true"></span><span id="top-models-label">Use top models for code, review and tests</span></button></div><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div><div class="concurrency" id="concurrency-panel" hidden><h3>Parallel subagents</h3><div class="concurrency-row"><label for="max-concurrent" id="concurrency-label">Max per session</label><div class="concurrency-stepper" role="group" aria-label="Maximum concurrent subagents"><button id="decrease-concurrency" type="button" aria-label="Decrease maximum concurrent subagents">−</button><input id="max-concurrent" type="number" min="1" max="32" step="1" value="3" inputmode="numeric" aria-describedby="concurrency-error"><button id="increase-concurrency" type="button" aria-label="Increase maximum concurrent subagents">+</button></div></div><p class="field-error" id="concurrency-error" role="status" hidden>Enter a whole number from 1 to 32.</p></div></section></div></section>
+
+<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2><span class="step-hint" id="step-hint-4" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and a coding tool in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><div class="setup-footer"><p class="release-status" id="release-status"></p><button type="button" class="reset-form" id="reset-form">Reset form</button></div></section>
 </div>
 </main>
 <div id="role-tooltip" class="role-tooltip" role="tooltip" hidden></div>
-<footer><div class="footer-row footer-details"><span>Writes native config, then exits. Main model unchanged.</span><span><a id="agent-guide">AI installation guide</a> · <a id="release-notes">Release notes</a></span></div><div class="footer-row footer-attribution">__APK_ATTRIBUTION__</div></footer>
+<footer><div class="footer-row footer-details"><span class="show-settings">Check current settings <button type="button" class="quiet-button" id="copy-show" aria-label="Copy the command that shows current settings">Copy</button><code id="show-command" hidden></code></span><span><a id="agent-guide">AI installation guide</a> · <a id="release-notes">Release notes</a></span></div><div class="footer-row footer-attribution">__APK_ATTRIBUTION__</div></footer>
 <script>
 'use strict';
 const RELEASE = __APK_RELEASE_DATA__;
@@ -93,14 +97,36 @@ __APK_SHARE_CODEC__
   const TASKS = Object.fromEntries(RELEASE.roles.map(role=>[role.id,role.name]));
   const NOTES = {codex: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', agy: 'Native tiers only; per-task effort is unavailable.'};
   const clone = value => JSON.parse(JSON.stringify(value));
+  const addAll = (selected, available) => [...selected, ...available.filter(id => !selected.includes(id))];
   function effective(config, role) {
     return config.roles?.[role] ?? config[ROLE_KINDS[role]];
   }
   function initialState(preferences, presetId = 'balanced', {empty=false}={}) {
     const available = CLIENTS.filter(client => preferences.clients[client]),selected=empty?[]:available;
-    return {selected, active: empty?null:'all', maxConcurrent: preferences.maxConcurrent,...(empty?{selectedRoles:[]}:{}),
-      profiles: Object.fromEntries(available.map(client => [client, {presetId, custom: false, modeSelected:!empty,presetCap:preferences.maxConcurrent,preferences: clone(preferences.clients[client])}])),
+    return {selected, active: empty?null:'all', maxConcurrent: preferences.maxConcurrent,...(empty?{selectedRoles:[...ROLES]}:{}),
+      profiles: Object.fromEntries(available.map(client => [client, {presetId, custom: false, modeSelected:!empty,top:topModelFor(RELEASE.presets?.find(preset=>preset.id===presetId),client),presetCap:preferences.clients[client].maxConcurrent??preferences.maxConcurrent,maxConcurrent:preferences.clients[client].maxConcurrent??preferences.maxConcurrent,preferences: clone(preferences.clients[client])}])),
       jobs: Object.fromEntries(available.map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
+  }
+  function topModelFor(preset, client) {return typeof preset?.topModels?.[client]==='string'?preset.topModels[client]:null;}
+  // Code roles without a role-specific preset choice can switch to the preset's optional top model.
+  function topModelRoles(state, client) {
+    const profile=state.profiles?.[client];
+    if(!profile?.top||profile.custom||profile.modeSelected===false)return [];
+    return ROLES.filter(role=>ROLE_KINDS[role]==='code'&&!profile.preferences.roles?.[role]);
+  }
+  function topModelsOn(state, client) {
+    const roles=topModelRoles(state,client).filter(role=>(state.selectedRoles??ROLES).includes(role));
+    return roles.length>0&&roles.every(role=>state.jobs?.[client]?.[role]?.model===state.profiles[client].top);
+  }
+  function setTopModels(state, clients, on) {
+    for(const client of clients){
+      const profile=state.profiles[client];
+      for(const role of topModelRoles(state,client)){const base=effective(profile.preferences,role);state.jobs[client][role]={model:on?profile.top:base.model,effort:base.effort};}
+    }
+  }
+  function presetJob(state, client, role) {
+    const profile=state.profiles[client],base=effective(profile.preferences,role);
+    return topModelsOn(state,client)&&topModelRoles(state,client).includes(role)?{model:profile.top,effort:base.effort}:base;
   }
   function modeFor(state, client = state.active) {
     if (client !== 'all') {const profile=state.profiles[client];return !profile||profile.modeSelected===false?null:profile.custom?'custom':profile.presetId;}
@@ -115,17 +141,48 @@ __APK_SHARE_CODEC__
     const mixed=new Set(chosen.map(client=>state.profiles[client].presetId)).size>1,pending=chosen.length<targets.length;
     const edited=chosen.some(client=>{
       const profile=state.profiles[client];
-      return (Number.isInteger(profile.presetCap)&&state.maxConcurrent!==profile.presetCap)||ROLES.some(role=>{const current=state.jobs?.[client]?.[role],base=effective(profile.preferences,role);return current?.model!==base.model||current?.effort!==base.effort;});
+      return concurrencyFor(state,client)!==profile.presetCap||ROLES.some(role=>{const current=state.jobs?.[client]?.[role],base=presetJob(state,client,role);return current?.model!==base.model||current?.effort!==base.effort;});
     });
-    if(replacing&&(!all||mixed||pending||edited)&&!confirmReplace())return state;
+    // The scope warning only matters when other selected tools keep their choices; otherwise ask only before losing edits.
+    const scoped=!all&&(Array.isArray(state.selected)?state.selected.length:0)>1;
+    if(replacing&&(scoped||mixed||pending||edited)&&!confirmReplace())return state;
     const next = clone(state);
     for (const client of targets) {
       const preferences = preset.preferences.clients[client];
-      next.profiles[client] = {presetId: preset.id ?? 'balanced', custom: false, modeSelected:true,presetCap:preset.preferences.maxConcurrent,preferences: clone(preferences)};
+      next.profiles[client] = {presetId: preset.id ?? 'balanced', custom: false, modeSelected:true,top:topModelFor(preset,client),presetCap:preferences.maxConcurrent??preset.preferences.maxConcurrent,maxConcurrent:preferences.maxConcurrent??preset.preferences.maxConcurrent,preferences: clone(preferences)};
       next.jobs[client] = Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences, role))]));
     }
-    if (all) next.maxConcurrent = preset.preferences.maxConcurrent;
     return next;
+  }
+  function concurrencyFor(state, client) {
+    const profile=state.profiles?.[client];
+    return profile&&Object.hasOwn(profile,'maxConcurrent')?profile.maxConcurrent:state.maxConcurrent;
+  }
+  function updateConcurrency(state, client, value) {
+    const profile=state.profiles[client];
+    if(!profile)throw new Error('Choose one coding tool.');
+    const count=Number(value),next=value===''?'':Number.isFinite(count)?count:String(value);
+    if(next!==concurrencyFor(state,client)){profile.custom=true;profile.modeSelected=true;}
+    profile.maxConcurrent=next;
+  }
+  function stepConcurrency(state, client, step) {
+    const current=concurrencyFor(state,client),value=Number(current);
+    updateConcurrency(state,client,current!==''&&Number.isInteger(value)?Math.max(1,Math.min(32,value+step)):1);
+  }
+  function restoreState(data, preferences, presets, presetId='balanced') {
+    const state=initialState(preferences,presetId,{empty:true});
+    if(data.v===1){state.maxConcurrent=data.maxConcurrent;for(const profile of Object.values(state.profiles))profile.maxConcurrent=data.maxConcurrent;}
+    state.selected=data.tools.map(tool=>tool.id);state.selectedRoles=[...data.roles];
+    state.active=data.scope??(state.selected.length>=2?'all':state.selected[0]??null);
+    for(const tool of data.tools){
+      const base=presets.find(preset=>preset.id===tool.base),selected=clone(base.preferences.clients[tool.id]);
+      const presetCap=selected.maxConcurrent??base.preferences.maxConcurrent,maxConcurrent=data.v===1?data.maxConcurrent:tool.maxConcurrent;
+      state.profiles[tool.id]={presetId:tool.base,custom:tool.mode==='custom'||tool.mode!==null&&maxConcurrent!==presetCap,modeSelected:tool.mode!==null,top:topModelFor(base,tool.id),presetCap,maxConcurrent,preferences:selected};
+      state.jobs[tool.id]=Object.fromEntries(ROLES.map(role=>[role,clone(effective(selected,role))]));
+      for(const [role,choice]of Object.entries(tool.choices))state.jobs[tool.id][role]={...choice};
+      if(topModelRoles(state,tool.id).some(role=>tool.choices[role]?.model===state.profiles[tool.id].top))setTopModels(state,[tool.id],true);
+    }
+    return state;
   }
   function allowedEfforts(catalog, model) {
     const supported = catalog?.models?.find(choice => choice.id === model)?.efforts ?? catalog?.efforts ?? [];
@@ -160,8 +217,9 @@ __APK_SHARE_CODEC__
   }
   function buildConfig(state, preferences, catalog = RELEASE.catalog) {
     const errors = [];
-    const maxConcurrent = Number(state.maxConcurrent);
-    if (!Number.isInteger(maxConcurrent) || maxConcurrent < 1 || maxConcurrent > 32) errors.push('Invalid preset parallelism. Reset defaults.');
+    const selectedTools=(Array.isArray(state.selected)?state.selected:[]).filter(client=>CLIENTS.includes(client));
+    const limits=selectedTools.map(client=>concurrencyFor(state,client));
+    const maxConcurrent=limits.length&&limits.every(limit=>limit===limits[0])&&Number.isInteger(limits[0])&&limits[0]>=1&&limits[0]<=32?limits[0]:preferences.maxConcurrent;
     if (!Array.isArray(state.selected) || !state.selected.length) errors.push('Choose at least one coding tool.');
     else if(new Set(state.selected).size!==state.selected.length||state.selected.some(client=>!CLIENTS.includes(client)))errors.push('Choose supported coding tools.');
     const selection=state.selectedRoles===undefined?ROLES:Array.isArray(state.selectedRoles)?state.selectedRoles:[];
@@ -172,7 +230,9 @@ __APK_SHARE_CODEC__
       if(state.profiles?.[client]?.modeSelected===false){errors.push(`${LABELS[client]}: choose a work mode.`);continue;}
       const defaults = state.profiles?.[client]?.preferences ?? preferences.clients[client];
       if (!defaults) { errors.push(`${LABELS[client]} has no release defaults.`); continue; }
-      const config = clone(defaults);
+      const config = clone(defaults),limit=concurrencyFor(state,client);
+      if(!Number.isInteger(limit)||limit<1||limit>32)errors.push(`${LABELS[client]}: enter a whole number from 1 to 32 for parallel subagents.`);
+      if(limit===maxConcurrent)delete config.maxConcurrent;else config.maxConcurrent=limit;
       const roles = {};
       const choices = [];
       for (const role of selectedRoles) {
@@ -219,7 +279,7 @@ __APK_SHARE_CODEC__
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
   function buildCommand(config, release) {return formatExplicitCommand(config,release.version,RELEASE.roles);}
-  globalThis.APKConfigurator = Object.freeze({initialState, modeFor, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, buildConfig, encodeConfig, buildCommand});
+  globalThis.APKConfigurator = Object.freeze({initialState, modeFor, topModelRoles, topModelsOn, setTopModels, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, updateConcurrency, stepConcurrency, concurrencyFor, restoreState, addAll, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
 
 (() => {
@@ -228,7 +288,7 @@ __APK_SHARE_CODEC__
  const clients=Object.keys(RELEASE.preferences.clients),toolName=id=>RELEASE.catalog.clients[id].label;
  const presets=RELEASE.presets,initial=presets.find(p=>p.id==='balanced')??presets[0];
  let state=A.initialState(initial.preferences,initial.id,{empty:true});
- let helpers=[],pickedTools=[];
+ let helpers=[...state.selectedRoles],pickedTools=[];
  let selectedScope=null;
  function syncTargets(){
   state.selected=[...pickedTools];state.selectedRoles=[...helpers];
@@ -239,7 +299,13 @@ __APK_SHARE_CODEC__
  const modeName=id=>id===null?'Choose mode':presets.find(p=>p.id===id)?.label??'Custom';
  function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n;}
  let mounted=false,archiveNavigation=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0,lastCopiedCommand=null,linkError='',lastAddress=location.hash;
- $('release-version').textContent='v'+RELEASE.version;
+ const showCommand=`npx --yes --ignore-scripts --package ${RELEASE.packageSpec} agent-policy show`;
+ $('show-command').textContent=showCommand;
+ $('copy-show').addEventListener('click',async()=>{
+  const button=$('copy-show');
+  try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(showCommand);button.textContent='Copied';setTimeout(()=>{button.textContent='Copy';},1600);}
+  catch{$('show-command').hidden=false;getSelection()?.selectAllChildren($('show-command'));}
+ });
  $('release-status').textContent=RELEASE.unreleased?'Release candidate · npm command available after publication.':`Configuration release ${RELEASE.version}`;
  const guideBase=location.protocol==='file:'?new URL('../',location.href).href:`https://unpkg.com/agent-policy-kit@${RELEASE.version}/`;
  $('agent-guide').href=guideBase+'AGENT_INSTALL.md';$('release-notes').href=guideBase+'CHANGELOG.md';
@@ -258,21 +324,33 @@ __APK_SHARE_CODEC__
   if(immediate)tip.hidden=true;else tipTimer=setTimeout(()=>{tip.hidden=true;},130);
  }
  function scheduleHide(){clearTimeout(tipTimer);tipTimer=setTimeout(()=>{if(!tip.matches(':hover')&&document.activeElement!==tipTrigger)hideRoleInfo();},100);}
- function showRoleInfo(role,trigger){
+ function showTip(trigger,...content){
   clearTimeout(tipTimer);tipTrigger?.removeAttribute('aria-describedby');tipTrigger=trigger;
-  tip.replaceChildren(el('strong',{},role.name),el('p',{},role.description),el('div',{class:'definition-label'},'Base role prompt'),el('pre',{},role.prompt),el('p',{class:'definition-note'},'APK saves this description and prompt as a native role. Model and effort are configured separately.'));
+  tip.replaceChildren(...content);
   tip.hidden=false;trigger.setAttribute('aria-describedby','role-tooltip');
   const anchor=trigger.getBoundingClientRect(),box=tip.getBoundingClientRect();
   tip.style.left=Math.max(16,Math.min(anchor.left-12,innerWidth-box.width-16))+'px';
   const below=anchor.bottom+8;tip.style.top=(below+box.height<innerHeight-16?below:Math.max(16,anchor.top-box.height-8))+'px';
   requestAnimationFrame(()=>{if(tipTrigger===trigger)tip.classList.add('visible');});
  }
- function roleInfo(role){
-  const button=el('button',{type:'button',class:'helper-info','aria-label':'About '+role.name});button.append(el('span',{class:'info-dot','aria-hidden':'true'},'?'));
-  button.addEventListener('pointerenter',()=>showRoleInfo(role,button));button.addEventListener('pointerleave',scheduleHide);
-  button.addEventListener('focus',()=>showRoleInfo(role,button));button.addEventListener('blur',scheduleHide);button.addEventListener('click',event=>{event.stopPropagation();showRoleInfo(role,button);});
+ function showRoleInfo(role,trigger){
+  showTip(trigger,el('strong',{},role.name),el('p',{},role.description),el('div',{class:'definition-label'},'Base role prompt'),el('pre',{},role.prompt),el('p',{class:'definition-note'},'APK saves this description and prompt as a native role. Model and effort are configured separately.'));
+ }
+ function infoButton(name,show){
+  const button=el('button',{type:'button',class:'helper-info','aria-label':'About '+name});button.append(el('span',{class:'info-dot','aria-hidden':'true'},'?'));
+  button.addEventListener('pointerenter',()=>show(button));button.addEventListener('pointerleave',scheduleHide);
+  button.addEventListener('focus',()=>show(button));button.addEventListener('blur',scheduleHide);button.addEventListener('click',event=>{event.stopPropagation();show(button);});
   return button;
  }
+ function roleInfo(role){return infoButton(role.name,button=>showRoleInfo(role,button));}
+ const stepInfo={
+  'helpers-heading':'Helpers your main agent can hand work to. Each role gets its own model and effort, so routine work does not run on your most expensive model.',
+  'tools-heading':'The coding tools you use. Only installed ones are configured; nothing else changes. With several tools, click one to adjust it separately.',
+  'mode-heading':'How much of your plan’s limits subagents may use. Light suits entry plans or many parallel sessions; Top-tier suits top plans with few.',
+  'setup-heading':'Run it in a terminal. It writes native settings for installed tools once and exits. Your main model stays unchanged.'
+ };
+ $('copy-show').before(infoButton('current settings',button=>showTip(button,el('strong',{},'Check current settings'),el('p',{},'Copies a read-only command. Run it in a terminal to see the roles, models, effort and parallel limits your coding tools use now. It changes nothing.'),el('pre',{},showCommand))));
+ for(const [id,text]of Object.entries(stepInfo)){const heading=$(id),name=heading.textContent;heading.after(infoButton(name,button=>showTip(button,el('strong',{},name),el('p',{},text))));}
  tip.addEventListener('pointerenter',()=>clearTimeout(tipTimer));tip.addEventListener('pointerleave',scheduleHide);
  document.addEventListener('keydown',event=>{if(event.key==='Escape')hideRoleInfo();});
  document.addEventListener('pointerdown',event=>{if(!tip.contains(event.target)&&!tipTrigger?.contains(event.target))hideRoleInfo();});
@@ -298,8 +376,14 @@ __APK_SHARE_CODEC__
   for(const kind of ['helpers','tools']){
    const isRole=kind==='helpers',chosen=isRole?helpers:pickedTools,available=isRole?roles:clients.map(id=>({id,name:toolName(id)}));
    const box=$(isRole?'selected-helpers':'selected-tools'),options=$(isRole?'helper-options':'tool-options');box.replaceChildren();options.replaceChildren();box.hidden=false;
+   if(available.some(item=>!chosen.includes(item.id))){
+    const all=el('button',{type:'button',class:'suggestion add-all','aria-label':isRole?'Add all subagent roles':'Add all coding tools'},'Add all');
+    all.addEventListener('click',()=>{const next=A.addAll(chosen,available.map(item=>item.id));if(isRole)helpers=next;else pickedTools=next;render();});
+    options.append(all);
+   }
+   box.classList.toggle('is-empty',!chosen.length);
    if(isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add roles from below'));
-   if(!isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add a coding tool'));
+   if(!isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add coding tools from below'));
    if(!isRole&&chosen.length>=2){const all=el('button',{type:'button',class:'tool-scope scope-all','aria-label':'Configure all selected tools','aria-pressed':String(state.active==='all')},'All');all.style.viewTransitionName='tool-all';all.addEventListener('click',()=>{selectedScope='all';render();});box.append(all);}
    const ordered=isRole?available:[...chosen.map(id=>available.find(item=>item.id===id)).filter(Boolean),...available.filter(item=>!chosen.includes(item.id))];
    for(const item of ordered){
@@ -317,7 +401,7 @@ __APK_SHARE_CODEC__
 
  }
  function apply(preset){
-  const message=state.active==='all'?`Apply ${preset.label} to all selected tools? This replaces their individual modes, models and effort.`:`Apply ${preset.label} to ${toolName(state.active)} only? Other tools keep their choices.`;
+  const message=state.active==='all'?`Apply ${preset.label} to all selected tools? This replaces their individual modes, models and effort.`:state.selected.length>1?`Apply ${preset.label} to ${toolName(state.active)} only? Other tools keep their choices.`:`Replace your changes to ${toolName(state.active)} with ${preset.label}?`;
   const next=A.applyPreset(state,preset,()=>window.confirm(message));if(next!==state){state=next;}render();
  }
  function renderModes(){
@@ -325,17 +409,25 @@ __APK_SHARE_CODEC__
   const all=state.active==='all',mode=A.modeFor(state),scope=all?'All selected tools':toolName(state.active);if($('scope-label').textContent!==scope){$('scope-label').textContent=scope;flashLabel($('scope-label'));}
   const options=$('mode-options');options.replaceChildren();
   for(const p of [...presets,{id:'custom',label:'Custom'}]){const label=el('label',{class:'mode-option'}),radio=el('input',{type:'radio',name:'mode',value:p.id,'aria-label':p.label});label.style.viewTransitionName='mode-'+p.id;radio.checked=mode===p.id;radio.addEventListener('change',()=>{if(p.id==='custom'){for(const client of (all?state.selected:[state.active])){state.profiles[client].custom=true;state.profiles[client].modeSelected=true;}render();}else apply(p);});label.append(radio,el('span',{},p.label));options.append(label);}
-  renderModeNotice();
+  renderModeNotice();renderTopModels();
   $('advanced').hidden=all||mode===null;renderEditor();
+ }
+ function topTargets(){
+  if(A.modeFor(state)!=='quality')return [];
+  return (state.active==='all'?state.selected:[state.active]).filter(client=>A.topModelRoles(state,client).some(role=>helpers.includes(role)));
+ }
+ function renderTopModels(){
+  const targets=topTargets(),toggle=$('top-models-toggle');$('top-models').hidden=!targets.length;if(!targets.length)return;
+  const names=targets.map(client=>{const top=state.profiles[client].top;return RELEASE.catalog.clients[client].models.find(model=>model.id===top)?.label??top;});
+  const text=state.active==='all'?`Use top models (${names.join(', ')}) for code, review and tests`:`Use ${names[0]} for code, review and tests`;
+  if($('top-models-label').textContent!==text)$('top-models-label').textContent=text;
+  const on=targets.filter(client=>A.topModelsOn(state,client)).length;toggle.setAttribute('aria-checked',String(on===targets.length));toggle.toggleAttribute('data-mixed',on>0&&on<targets.length);
  }
  function renderModeNotice(){
   const all=state.active==='all',mode=A.modeFor(state),notice=$('mode-notice');
   const message=mode==='custom'?(all?'Open a coding tool to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`):(presets.find(p=>p.id===mode)?.description??'');
-  const fable=state.selected.includes('claude')&&state.profiles.claude.modeSelected!==false&&helpers.some(role=>/^(?:claude-)?fable(?:-|$)/.test(state.jobs.claude?.[role]?.model??''));
-  const credit=fable?'Claude Fable may use usage credits and requires Claude Code 2.1.257+.':'';
-  const text=[message,credit].filter(Boolean).join(' ');
-  if(notice.textContent!==text){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.append(message);if(credit)notice.append((message?' ':'')+credit);}
-  notice.hidden=!text;
+  if(notice.textContent!==message){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.append(message);}
+  notice.hidden=!message;
  }
  function renderEditor(){
   const parent=$('editor');parent.replaceChildren();if(!helpers.length||!state.active||state.active==='all'||state.profiles[state.active].modeSelected===false)return;
@@ -362,19 +454,14 @@ __APK_SHARE_CODEC__
   }
  }
  function freshForm(){
-  state=A.initialState(initial.preferences,initial.id,{empty:true});helpers=[];pickedTools=[];selectedScope=null;lastCopiedCommand=null;commandRevision++;for(const node of toolModeLabels.values())node.getAnimations?.().forEach(animation=>animation.cancel());toolModeLabels.clear();
+  state=A.initialState(initial.preferences,initial.id,{empty:true});helpers=[...state.selectedRoles];pickedTools=[];selectedScope=null;lastCopiedCommand=null;commandRevision++;for(const node of toolModeLabels.values())node.getAnimations?.().forEach(animation=>animation.cancel());toolModeLabels.clear();
  }
  function loadAddress(first=false){
   try{
    const data=decodeFormState(location.hash,RELEASE);
    if(data){
-    freshForm();helpers=[...data.roles];pickedTools=data.tools.map(tool=>tool.id);selectedScope=data.scope;state.maxConcurrent=data.maxConcurrent;
-    for(const tool of data.tools){
-     const base=presets.find(preset=>preset.id===tool.base),preferences=JSON.parse(JSON.stringify(base.preferences.clients[tool.id]));
-     state.profiles[tool.id]={presetId:tool.base,custom:tool.mode==='custom',modeSelected:tool.mode!==null,presetCap:base.preferences.maxConcurrent,preferences};
-     state.jobs[tool.id]=Object.fromEntries(roles.map(role=>[role.id,JSON.parse(JSON.stringify(A.effective(preferences,role.id)))]));
-     for(const [role,choice]of Object.entries(tool.choices))state.jobs[tool.id][role]={...choice};
-    }
+    freshForm();helpers=[...data.roles];pickedTools=data.tools.map(tool=>tool.id);selectedScope=data.scope;
+    state=A.restoreState(data,initial.preferences,presets,initial.id);
    }else if(!first)freshForm();
    linkError='';
   }catch(error){
@@ -389,7 +476,7 @@ __APK_SHARE_CODEC__
    const fragment=encodeFormState({state,helpers,pickedTools,selectedScope},RELEASE);
    if(location.hash!==fragment)history.replaceState(history.state,'',location.pathname+location.search+fragment);
    lastAddress=fragment;
-  }catch{message='Check your model IDs before sharing this setup.';}
+  }catch{message=pickedTools.some(client=>{const cap=A.concurrencyFor(state,client);return !Number.isInteger(cap)||cap<1||cap>32;})?'Check parallel limits in the coding tool details.':'Check your model IDs before sharing this setup.';}
   $('link-error').textContent=message;$('link-error').hidden=!message;
  }
  function setStepHint(number,message){
@@ -424,9 +511,6 @@ __APK_SHARE_CODEC__
    const marker=section.querySelector('.step-number'),value=String(complete[index]),changed=marker.dataset.complete!==undefined&&marker.dataset.complete!==value;section.dataset.complete=value;marker.dataset.complete=value;
    const text=complete[index]?'✓':String(index+1);if(marker.textContent!==text)marker.textContent=text;marker.setAttribute('role','img');marker.setAttribute('aria-label',`Step ${index+1}${complete[index]?' complete':''}`);if(changed)flashStep(marker,complete[index]);
   });
-  setStepHint(1,helpers.length?(helpers.length<roles.length?'You can add more roles.':'All available roles added.'):'');
-  setStepHint(2,pickedTools.length===1?'You can add more coding tools.':pickedTools.length>=2?'Click a coding tool to configure it individually.':'');
-  setStepHint(3,helpers.length&&pickedTools.length?'Click a mode to select it.':'');
   setStepHint(4,copied?'Copied':'');
  }
  function stepLink(id,text){
@@ -434,6 +518,16 @@ __APK_SHARE_CODEC__
  }
  function renderResult(){
   renderModeNotice();
+  const client=state.active,visible=clients.includes(client)&&pickedTools.includes(client)&&helpers.length>0&&state.profiles[client].modeSelected!==false;
+  $('concurrency-panel').hidden=!visible;
+  if(visible){
+   const cap=A.concurrencyFor(state,client),validCap=Number.isInteger(cap)&&cap>=1&&cap<=32,capInput=$('max-concurrent');
+   if(document.activeElement!==capInput||capInput.dataset.client!==client)capInput.value=cap;
+   capInput.dataset.client=client;capInput.setAttribute('aria-invalid',String(!validCap));
+   $('concurrency-label').textContent=['kimi','agy'].includes(client)?'Max per session (advisory)':'Max per session';
+   $('concurrency-error').hidden=validCap;
+   $('decrease-concurrency').disabled=validCap&&cap===1;$('increase-concurrency').disabled=validCap&&cap===32;
+  }
   let next='',summary='Complete the steps above.',detail='',missing=[];
   if(!helpers.length)missing.push(['helpers-heading','a subagent role in step 1']);
   if(!pickedTools.length)missing.push(['tools-heading','a coding tool in step 2']);
@@ -441,8 +535,8 @@ __APK_SHARE_CODEC__
    if(pickedTools.some(client=>A.modeFor(state,client)===null))missing.push(['mode-heading','a work mode for each selected coding tool in step 3']);
    else{
     const {config,errors}=A.buildConfig(state,RELEASE.preferences,RELEASE.catalog);
-    if(errors.length){summary='Check your model settings.';detail=errors[0];}
-    else try{next=A.buildCommand(config,RELEASE);summary=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${pickedTools.length} coding tool${pickedTools.length===1?'':'s'}`;detail='Run this command in your terminal. Only installed tools are configured.';}
+    if(errors.length){summary='Check your settings.';detail=errors[0];}
+    else try{next=A.buildCommand(config,RELEASE);summary=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${pickedTools.length} coding tool${pickedTools.length===1?'':'s'}`;}
     catch{summary='Command unavailable.';detail='Check the configuration release.';}
    }
   }
@@ -466,6 +560,10 @@ __APK_SHARE_CODEC__
  window.addEventListener('hashchange',addressChanged);window.addEventListener('popstate',addressChanged);
  $('reset-form').addEventListener('click',()=>{freshForm();linkError='';render();});
 
+ function refreshConcurrency(){linkError='';toolModeLabel(state.active);renderModes();renderResult();}
+ $('max-concurrent').addEventListener('input',event=>{const client=event.target.dataset.client;if(client!==state.active||!clients.includes(client))return;A.updateConcurrency(state,client,event.target.value);refreshConcurrency();});
+ for(const [id,step]of [['decrease-concurrency',-1],['increase-concurrency',1]])$(id).addEventListener('click',()=>{const client=state.active;if(!clients.includes(client))return;A.stepConcurrency(state,client,step);$('max-concurrent').value=A.concurrencyFor(state,client);refreshConcurrency();});
+ $('top-models-toggle').addEventListener('click',event=>{A.setTopModels(state,topTargets(),event.currentTarget.getAttribute('aria-checked')!=='true');render();});
  $('setup-command').addEventListener('focus',()=>$('setup-command').select());
  $('copy').addEventListener('click',async()=>{
   if(!currentCommand)return;const commandToCopy=currentCommand,revision=commandRevision;
