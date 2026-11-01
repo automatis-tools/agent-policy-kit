@@ -565,3 +565,12 @@ test('restoring old scalar links preserves their count while v2 restores distinc
  const old=api.restoreState({...common,v:1,maxConcurrent:7},preferences,presets);assert.equal(old.profiles.chatgpt.maxConcurrent,7);assert.equal(old.profiles.claude.maxConcurrent,7);assert.equal(api.modeFor(old,'chatgpt'),'custom');
  const modern=api.restoreState({...common,v:2,tools:common.tools.map((t,i)=>({...t,mode:'custom',maxConcurrent:i?2:5}))},preferences,presets);assert.equal(modern.profiles.chatgpt.maxConcurrent,5);assert.equal(modern.profiles.claude.maxConcurrent,2);assert.equal(modern.jobs.chatgpt.reviewer.model,'gpt-6.1-sol');
 });
+
+test('selecting Gemini explains that only Antigravity is configured, not Gemini CLI',()=>{
+ assert.deepEqual(plain(api.assistantNotices([])),[]);
+ assert.deepEqual(plain(api.assistantNotices(['chatgpt','claude','kimi','grok'])),[]);
+ const notices=plain(api.assistantNotices(['claude','gemini']));
+ assert.equal(notices.length,1);assert.match(notices[0],/Gemini/);assert.match(notices[0],/Antigravity/);assert.match(notices[0],/not Gemini CLI/);
+ assert.match(template,/<p class="notice tools-notice" id="tools-notice" role="note" hidden><\/p>/);
+ assert.match(script,/\$\('tools-notice'\)/);
+});

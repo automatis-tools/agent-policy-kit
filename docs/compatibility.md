@@ -8,6 +8,8 @@
 | Gemini (Antigravity) | User role Markdown with Pro/Flash/Flash Lite/inherit tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
 | Grok (Grok Build) | User role Markdown (read-only roles use permission_mode plan), per-role models and a general-purpose fallback in config.toml, native max_concurrent, routing instructions | No documented per-role effort; subagents use the main session effort. Higher-priority project/explicit settings still follow Grok Build rules |
 
+Gemini means Antigravity: APK detects the `agy` executable and writes Antigravity role settings. Gemini CLI also uses `~/.gemini`, but APK does not detect or configure it.
+
 These are preferences implemented through native features. APK does not participate in later agent operation and does not enforce policy on every request. avoidModels is guidance. No hook, wrapper or proxy is installed to bypass native limits.
 
 ## Desktop apps
