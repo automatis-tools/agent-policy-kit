@@ -57,6 +57,7 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 #selected-tools[hidden]+#tool-options{margin-top:0}
 
 .tool-group .empty{align-self:center;padding:8px 9px}
+.tool-group.is-empty{min-height:56px;padding:10px 12px;background:var(--white)}.tool-group.is-empty .empty{padding:5px 1px}
 .tool-group>.scope-all{padding:8px 13px}.tool-group>.scope-all[aria-pressed=true]{background:var(--control-hover);color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--brand-blue)}
 
 .reset-form{padding:4px 0;border:0;background:transparent;color:var(--muted);font-size:var(--text-support);text-decoration:underline;text-underline-offset:3px}.reset-form:hover{color:var(--accent)}.intro .link-error{margin-top:12px;color:var(--amber);font-size:var(--text-support)}.builder>section[data-complete=true]>.step-heading>.step-number{background:var(--success-paper);border-color:var(--success-line);color:var(--success);font-size:14px;font-weight:600}.builder>section[data-complete=true]::before{background:var(--success-line)}
@@ -101,7 +102,7 @@ __APK_SHARE_CODEC__
   }
   function initialState(preferences, presetId = 'balanced', {empty=false}={}) {
     const available = CLIENTS.filter(client => preferences.clients[client]),selected=empty?[]:available;
-    return {selected, active: empty?null:'all', maxConcurrent: preferences.maxConcurrent,...(empty?{selectedRoles:[]}:{}),
+    return {selected, active: empty?null:'all', maxConcurrent: preferences.maxConcurrent,...(empty?{selectedRoles:[...ROLES]}:{}),
       profiles: Object.fromEntries(available.map(client => [client, {presetId, custom: false, modeSelected:!empty,presetCap:preferences.clients[client].maxConcurrent??preferences.maxConcurrent,maxConcurrent:preferences.clients[client].maxConcurrent??preferences.maxConcurrent,preferences: clone(preferences.clients[client])}])),
       jobs: Object.fromEntries(available.map(client => [client, Object.fromEntries(ROLES.map(role => [role, clone(effective(preferences.clients[client], role))]))]))};
   }
@@ -267,7 +268,7 @@ __APK_SHARE_CODEC__
  const clients=Object.keys(RELEASE.preferences.clients),toolName=id=>RELEASE.catalog.clients[id].label;
  const presets=RELEASE.presets,initial=presets.find(p=>p.id==='balanced')??presets[0];
  let state=A.initialState(initial.preferences,initial.id,{empty:true});
- let helpers=[],pickedTools=[];
+ let helpers=[...state.selectedRoles],pickedTools=[];
  let selectedScope=null;
  function syncTargets(){
   state.selected=[...pickedTools];state.selectedRoles=[...helpers];
@@ -342,8 +343,9 @@ __APK_SHARE_CODEC__
     all.addEventListener('click',()=>{const next=A.addAll(chosen,available.map(item=>item.id));if(isRole)helpers=next;else pickedTools=next;render();});
     options.append(all);
    }
+   box.classList.toggle('is-empty',!chosen.length);
    if(isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add roles from below'));
-   if(!isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add a coding tool'));
+   if(!isRole&&!chosen.length)box.append(el('span',{class:'empty'},'Add coding tools from below'));
    if(!isRole&&chosen.length>=2){const all=el('button',{type:'button',class:'tool-scope scope-all','aria-label':'Configure all selected tools','aria-pressed':String(state.active==='all')},'All');all.style.viewTransitionName='tool-all';all.addEventListener('click',()=>{selectedScope='all';render();});box.append(all);}
    const ordered=isRole?available:[...chosen.map(id=>available.find(item=>item.id===id)).filter(Boolean),...available.filter(item=>!chosen.includes(item.id))];
    for(const item of ordered){
@@ -406,7 +408,7 @@ __APK_SHARE_CODEC__
   }
  }
  function freshForm(){
-  state=A.initialState(initial.preferences,initial.id,{empty:true});helpers=[];pickedTools=[];selectedScope=null;lastCopiedCommand=null;commandRevision++;for(const node of toolModeLabels.values())node.getAnimations?.().forEach(animation=>animation.cancel());toolModeLabels.clear();
+  state=A.initialState(initial.preferences,initial.id,{empty:true});helpers=[...state.selectedRoles];pickedTools=[];selectedScope=null;lastCopiedCommand=null;commandRevision++;for(const node of toolModeLabels.values())node.getAnimations?.().forEach(animation=>animation.cancel());toolModeLabels.clear();
  }
  function loadAddress(first=false){
   try{

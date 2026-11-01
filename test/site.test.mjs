@@ -26,6 +26,30 @@ test('empty form waits for an explicit mode selection before generating a comman
  assert.equal(chosen.profiles.codex.modeSelected,true);assert.equal(api.modeFor(chosen),'balanced');assert.ok(api.buildConfig(chosen,preferences).config);
 });
 
+test('fresh form preselects every role in catalog order while tools stay unselected',()=>{
+ const state=api.initialState(preferences,'balanced',{empty:true});
+ assert.deepEqual(plain(state.selectedRoles),ROLE_IDS);assert.deepEqual(plain(state.selected),[]);
+ assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,false,false,false]);
+ state.selectedRoles.pop();assert.deepEqual(plain(api.initialState(preferences,'balanced',{empty:true}).selectedRoles),ROLE_IDS);
+});
+
+test('page starts and resets with every role selected and an independent role list',()=>{
+ assert.match(template,/let helpers=\[\.\.\.state\.selectedRoles\],pickedTools=\[\];/);
+ const freshForm=template.slice(template.indexOf(' function freshForm('),template.indexOf(' function loadAddress('));
+ const context=vm.createContext({A:api,initial:{preferences,id:'balanced'},toolModeLabels:new Map()});
+ vm.runInContext(`let state=null,helpers=['reviewer'],pickedTools=['codex'],selectedScope='codex',lastCopiedCommand='old',commandRevision=0;${freshForm};freshForm();globalThis.result={helpers,pickedTools,selectedScope,stateRoles:state.selectedRoles};`,context);
+ const {result}=context;assert.deepEqual(plain(result.helpers),ROLE_IDS);assert.deepEqual(plain(result.pickedTools),[]);assert.equal(result.selectedScope,null);assert.notEqual(result.helpers,result.stateRoles);
+});
+
+test('empty role and tool fields share one empty-field appearance',()=>{
+ const declarations=selector=>{const body=template.match(new RegExp(`(?:^|[}\\n])${selector.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\{([^}]*)\\}`))?.[1];assert.ok(body,selector);return Object.fromEntries(body.split(';').filter(Boolean).map(item=>{const at=item.indexOf(':');return [item.slice(0,at),item.slice(at+1)];}));};
+ const field=declarations('.tag-box'),emptyTools=declarations('.tool-group.is-empty');
+ for(const property of ['min-height','padding','background'])assert.equal(emptyTools[property],field[property],property);
+ assert.equal(declarations('.tool-group.is-empty .empty').padding,declarations('.empty').padding);
+ assert.match(template,/box\.classList\.toggle\('is-empty',!chosen\.length\)/);
+ assert.match(template,/'Add roles from below'/);assert.match(template,/'Add coding tools from below'/);
+});
+
 test('a partially selected global mode warns before replacing existing choices',()=>{
  let state=api.initialState(preferences,'balanced',{empty:true});state.selected=['codex','claude'];state.selectedRoles=['reviewer'];state.active='codex';
  state=api.applyPreset(state,{id:'balanced',preferences});state.active='all';assert.equal(api.modeFor(state),null);assert.equal(api.buildConfig(state,preferences).config,null);
@@ -401,7 +425,8 @@ test('concurrency stepper changes one tool command at a time and respects both l
 });
 
 test('a bad parallel limit invalidates tool details and copy but leaves role selection complete',()=>{
- const empty=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[false,false,false,false]);
+ const empty=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[true,false,false,false]);
+ empty.selectedRoles=[];assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[false,false,false,false]);
  const state=api.initialState(preferences);assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,true,true,false]);
  state.profiles.codex.maxConcurrent='';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false]);
  state.profiles.codex.maxConcurrent=5;assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,true]);
