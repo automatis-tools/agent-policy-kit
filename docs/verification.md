@@ -2,6 +2,22 @@
 
 Configuration checks, native loading and model execution are separate results.
 
+## 0.3.0
+
+macOS arm64, 2026-11-01.
+
+| Layer | Current evidence |
+|---|---|
+| Full Node 26.5.1 suite | PASS: 368/368, including source-denied real-tarball gates, desktop app bundle detection and the renamed `chatgpt` and `gemini` IDs. A second run with `/Applications` replaced by a missing directory also passed 368/368, so no test depends on apps installed on the host |
+| Hosted CI | PASS on main e8c6ac3: macOS Node 22.13.0 and Ubuntu Node 24 suites plus site-build ([run](https://github.com/automatis-tools/agent-policy-kit/actions/runs/41348755442)) |
+| Two synthetic releases | PASS: the actual 0.3.0 tarball and a synthetic 0.4.0 tarball, A to B to A, mixed applied versions, drift safety and original-user restoration |
+| Published 0.2.0 to 0.3.0 | PASS in an isolated HOME with the npm 0.2.0 package: ChatGPT/Codex reports `OWNERSHIP_CONFLICT` in both directions until the creating version removes it, then setup succeeds; Claude upgrades to 0.3.0 and moves back to 0.2.0 in place; Grok upgrades in place. Kimi NOT CHECKED with a provisioned model pool |
+| Desktop app detection | PASS with the installed apps and a PATH without CLIs: ChatGPT Desktop's bundled `codex-cli 0.166.0-alpha.5.1` and Claude Desktop's bundled Claude Code 2.1.309, both reported as `desktop_app` |
+| Browser | PASS in local Chromium previews: the "AI assistants" step empty and with two assistants, its note, the All scope and the generated `--chatgpt` command |
+| Native ChatGPT/Claude/Kimi/Gemini/Grok loading and provider execution | NOT CHECKED for 0.3.0; no live model tasks used as configuration proof |
+| npm packaging | PASS: `npm pack --dry-run` and `npm publish --dry-run` list 45 files; no private evidence or configuration |
+| Current model catalog | Unchanged from 0.2.0 apart from the `chatgpt`/`gemini` keys and general labels: ChatGPT 9 selectors, Claude 19 selectors, Kimi 6 preferred aliases, Gemini 4 Antigravity tiers, Grok 4 model IDs. Account access and model quality are not established by configuration tests. |
+
 ## 0.2.0
 
 macOS arm64, 2026-11-01.
