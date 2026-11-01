@@ -41,6 +41,42 @@ test('page starts and resets with every role selected and an independent role li
  const {result}=context;assert.deepEqual(plain(result.helpers),ROLE_IDS);assert.deepEqual(plain(result.pickedTools),[]);assert.equal(result.selectedScope,null);assert.notEqual(result.helpers,result.stateRoles);
 });
 
+const TOP={codex:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'};
+function topTier(){const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));return {quality,preset:{id:'quality',label:'Top-tier',preferences:quality,topModels:TOP}};}
+
+test('the Top-tier top-model switch changes only code roles of the chosen tool and keeps the mode',()=>{
+ const {quality,preset}=topTier();
+ let state=api.initialState(preferences,'balanced',{empty:true});state.selected=['codex','claude','agy'];state.active='all';
+ state=api.applyPreset(state,preset);assert.equal(api.modeFor(state),'quality');
+ for(const client of ['codex','claude'])assert.equal(api.topModelsOn(state,client),false,client);
+ assert.deepEqual(plain(api.topModelRoles(state,'agy')),[]);assert.deepEqual(plain(api.topModelRoles(state,'claude')),['worker','reviewer','tester']);
+ api.setTopModels(state,['claude'],true);
+ assert.equal(api.topModelsOn(state,'claude'),true);assert.equal(api.topModelsOn(state,'codex'),false);
+ for(const role of ['worker','reviewer','tester'])assert.deepEqual(plain(state.jobs.claude[role]),{model:TOP.claude,effort:'high'});
+ for(const role of ['explorer','writer','routine'])assert.deepEqual(plain(state.jobs.claude[role]),rolePreference(quality.clients.claude,role));
+ assert.equal(api.modeFor(state,'claude'),'quality');assert.equal(api.modeFor(state),'quality');
+ assert.equal(rolePreference(api.buildConfig(state,preferences).config.clients.claude,'worker').model,TOP.claude);
+ const standard=api.applyPreset(state,{id:'balanced',preferences},()=>{throw new Error('top models belong to Top-tier, not to edits');});
+ assert.equal(api.modeFor(standard),'balanced');
+ const again=api.applyPreset(state,preset,()=>true);assert.equal(api.topModelsOn(again,'claude'),false);
+ api.setTopModels(state,['claude'],false);assert.deepEqual(plain(state.jobs.claude.worker),rolePreference(quality.clients.claude,'worker'));
+ state.profiles.codex.custom=true;assert.deepEqual(plain(api.topModelRoles(state,'codex')),[]);
+});
+
+test('the page shows one top-model switch under Top-tier and wires it to the selected scope',()=>{
+ assert.match(template,/<button type="button" role="switch" id="top-models-toggle" aria-checked="false" aria-describedby="top-models-note">/);
+ assert.match(template,/renderModeNotice\(\);renderTopModels\(\);/);
+ assert.match(template,/A\.setTopModels\(state,topTargets\(\),event\.currentTarget\.getAttribute\('aria-checked'\)!=='true'\)/);
+ assert.match(template,/if\(A\.modeFor\(state\)!=='quality'\)return \[\];/);
+});
+
+test('restoring a Top-tier link with top models applies them to every code role',()=>{
+ const {preset}=topTier(),data={v:2,release:'0.1.0',roles:['reviewer'],tools:[{id:'claude',mode:'quality',base:'quality',maxConcurrent:2,choices:{reviewer:{model:TOP.claude,effort:'high'}}}],scope:'claude'};
+ const state=api.restoreState(data,preferences,[preset],'balanced');
+ assert.equal(api.modeFor(state,'claude'),'quality');assert.equal(api.topModelsOn(state,'claude'),true);
+ for(const role of ['worker','reviewer','tester'])assert.equal(state.jobs.claude[role].model,TOP.claude);
+});
+
 test('every step explains itself briefly and the page does not repeat vendor documentation',()=>{
  const source=template.match(/const stepInfo=(\{[\s\S]*?\});/);assert.ok(source,'stepInfo');
  const entries=Object.entries(vm.runInNewContext('('+source[1]+')'));

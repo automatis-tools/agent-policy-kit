@@ -216,3 +216,16 @@ test('v2 named presets bind parallelism as well as models while legacy scalar li
  input.state.profiles.codex.maxConcurrent=5;invalid(()=>encodeFormState(input,release));input.state.profiles.codex.custom=true;assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].maxConcurrent,5);
  const legacy=payload();legacy.maxConcurrent=7;assert.equal(decodeFormState(raw(legacy),release).maxConcurrent,7);
 });
+
+test('Top-tier links accept the top-model variant only when every shared code role uses it',()=>{
+ const claude=presetPreferences('quality').clients.claude,top='claude-fable-5-1';
+ const effectiveRole=id=>effective(claude,ROLE_DEFINITIONS.find(role=>role.id===id));
+ const link=choices=>raw({v:2,release:PACKAGE_VERSION,roles:Object.keys(choices),tools:[{id:'claude',mode:'quality',base:'quality',choices,maxConcurrent:2}],scope:'claude'});
+ const base={worker:effectiveRole('worker'),reviewer:effectiveRole('reviewer'),explorer:effectiveRole('explorer')};
+ assert.deepEqual(decodeFormState(link(base),release).tools[0].choices,base);
+ const topped={...base,worker:{model:top,effort:'high'},reviewer:{model:top,effort:'high'}};
+ assert.deepEqual(decodeFormState(link(topped),release).tools[0].choices,topped);
+ invalid(()=>decodeFormState(link({...base,worker:{model:top,effort:'high'}}),release));
+ invalid(()=>decodeFormState(link({...topped,explorer:{model:top,effort:'high'}}),release));
+ invalid(()=>decodeFormState(link({...topped,worker:{model:top,effort:'xhigh'}}),release));
+});

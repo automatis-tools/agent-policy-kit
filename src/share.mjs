@@ -46,7 +46,9 @@ function shareRelease(release){
  }
  for(const preset of release.presets){
   shareRecord(preset);if(typeof preset.id!=='string'||!preset.id||preset.id==='custom'||SHARE_UNSAFE.has(preset.id)||presets.has(preset.id))invalidShare();
-  shareRecord(shareRecord(preset.preferences).clients);presets.set(preset.id,preset);
+  shareRecord(shareRecord(preset.preferences).clients);
+  if(preset.topModels!==undefined&&Object.values(shareRecord(preset.topModels)).some(model=>typeof model!=='string'))invalidShare();
+  presets.set(preset.id,preset);
  }
  if(!presets.has(release.preset))invalidShare();
  return {clients,roles,presets,catalog};
@@ -87,13 +89,16 @@ function sharePayload(payload,release,metadata){
   const choices=Object.fromEntries(roles.map(role=>[role,shareChoice(tool.choices[role],id,metadata)]));
   if(mode!==null&&mode!=='custom'){
    if(mode!==base)invalidShare();
-   const preset=metadata.presets.get(mode).preferences,clients=preset.clients;
+   const named=metadata.presets.get(mode),preset=named.preferences,clients=preset.clients;
    if(!legacy&&tool.maxConcurrent!==(clients[id]?.maxConcurrent??preset.maxConcurrent))invalidShare();
    if(!Object.hasOwn(clients,id))invalidShare();
-   const preferences=shareRecord(clients[id]);
+   const preferences=shareRecord(clients[id]),own=role=>preferences.roles&&Object.hasOwn(preferences.roles,role);
+   // A preset's optional top model replaces every shared code role that has no role-specific choice, or none of them.
+   const top=named.topModels&&Object.hasOwn(named.topModels,id)?named.topModels[id]:null;
+   const topRoles=roles.filter(role=>metadata.roles.get(role).kind==='code'&&!own(role)),topped=top!==null&&topRoles.some(role=>choices[role].model===top);
    for(const role of roles){
-    const expected=preferences.roles&&Object.hasOwn(preferences.roles,role)?preferences.roles[role]:preferences[metadata.roles.get(role).kind];
-    const choice=shareChoice(expected,id,metadata);
+    const expected=own(role)?preferences.roles[role]:preferences[metadata.roles.get(role).kind];
+    const choice=shareChoice(expected,id,metadata);if(topped&&topRoles.includes(role))choice.model=top;
     if(choice.model!==choices[role].model||choice.effort!==choices[role].effort)invalidShare();
    }
   }

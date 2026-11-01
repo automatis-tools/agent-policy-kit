@@ -4,7 +4,9 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## Unreleased
 
-- Rename work modes to Light, Standard and Top-tier and describe them by how much of a plan's limits subagents use. Preset ids, model choices and share-link ids are unchanged. Top-tier now pins high effort instead of xhigh/max for Astra, Fable and K3.1 Pro, because native default subagent settings copy the Coder choice to subagents started without a named role.
+- Rename work modes to Light, Standard and Top-tier and describe them by how much of a plan's limits subagents use. Preset ids and share-link ids are unchanged. Top-tier now uses Opus 5.5, GPT-6.1 Sol and K3 at high effort for code, review and tests. A per-tool switch under Top-tier opts those roles into Fable 5.1, GPT-6 Astra or K3.1 Pro; it is off by default. Top models no longer run at xhigh/max, because native default subagent settings copy the Coder choice to subagents started without a named role.
+
+- Explain each configuration step with a short ? note, and stop repeating vendor billing or version documentation in the work-mode notice.
 
 - Start a fresh or reset form with every subagent role selected, and give the empty coding-tool field the same appearance as the empty role field.
 
