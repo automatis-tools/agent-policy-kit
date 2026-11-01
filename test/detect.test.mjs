@@ -17,6 +17,16 @@ async function executable(file,body) {
   await fs.mkdir(path.dirname(file),{recursive:true});
   await fs.writeFile(file,`#!${process.execPath}\n${body}\n`,{mode:0o700});
 }
+// A probe that must time out and a probe that must finish share one timeout. On a loaded host a
+// fake probe can start slower than any fixed timeout, so double it until the probe reaches `ready`.
+// APK_TEST_PROBE_TIMEOUT_MS=20 reproduces a slow start on any host.
+const START_TIMEOUT_MS = Number(process.env.APK_TEST_PROBE_TIMEOUT_MS) || 400;
+async function untilProbeReady(attempt,ready) {
+  for (let timeoutMs = START_TIMEOUT_MS; ; timeoutMs *= 2) {
+    const result = await attempt(timeoutMs);
+    if (await ready(result) || timeoutMs >= 16000) return result;
+  }
+}
 
 test('config directories alone never detect a client or execute anything',async t=>{
   const f = await fixture(t);
@@ -117,7 +127,7 @@ test('timed-out earlier candidates still allow a verified conventional fallback'
   const f = await fixture(t);
   await executable(path.join(f.bin,'codex'),'setInterval(()=>{},1000);');
   await executable(path.join(f.hostHome,'.local/bin/codex'),'console.log("codex-cli 0.165.0");');
-  const result = await resolveClient('codex',{...f,timeoutMs:400});
+  const result = await untilProbeReady(timeoutMs=>resolveClient('codex',{...f,timeoutMs}),result=>result.status !== 'timeout');
   assert.equal(result.status,'detected'); assert.equal(result.origin,'known_location');
 });
 
@@ -139,8 +149,12 @@ test('each POSIX probe cleans its own descendants on timeout, overflow and compl
   t.after(()=>{try{unrelated.kill('SIGKILL');}catch{}});
   for(const mode of ['timeout','overflow','complete']){
     const f=await fixture(t),pidFile=path.join(f.root,'descendant.pid');
-    await executable(path.join(f.bin,'codex'),`import fs from 'node:fs';import {spawn} from 'node:child_process';const child=spawn(process.execPath,['-e','setInterval(()=>{},1000);'],{stdio:'ignore'});fs.writeFileSync(${JSON.stringify(pidFile)},String(child.pid));${mode==='complete'?'console.log("codex-cli 0.165.0");process.exit(0);':mode==='overflow'?'console.log("X".repeat(100000));setInterval(()=>{},1000);':'setInterval(()=>{},1000);'}`);
-    const result=await resolveClient('codex',{...f,timeoutMs:500});
+    // Rename publishes the pid atomically, so a probe killed mid-write never leaves an empty file.
+    await executable(path.join(f.bin,'codex'),`import fs from 'node:fs';import {spawn} from 'node:child_process';const child=spawn(process.execPath,['-e','setInterval(()=>{},1000);'],{stdio:'ignore'});fs.writeFileSync(${JSON.stringify(pidFile+'.tmp')},String(child.pid));fs.renameSync(${JSON.stringify(pidFile+'.tmp')},${JSON.stringify(pidFile)});${mode==='complete'?'console.log("codex-cli 0.165.0");process.exit(0);':mode==='overflow'?'console.log("X".repeat(100000));setInterval(()=>{},1000);':'setInterval(()=>{},1000);'}`);
+    // The timeout case is ready once the descendant exists before the timer fires. Completion and
+    // overflow are ready once they end the probe themselves; both happen after the pid is written.
+    const ready=mode==='timeout'?()=>fs.access(pidFile).then(()=>true,()=>false):result=>result.status!=='timeout';
+    const result=await untilProbeReady(timeoutMs=>resolveClient('codex',{...f,timeoutMs}),ready);
     const pid=Number(await fs.readFile(pidFile,'utf8'));
     t.after(()=>{try{process.kill(pid,'SIGKILL');}catch{}});
     assert.equal(result.status,mode==='timeout'?'timeout':mode==='complete'?'detected':'invalid');
