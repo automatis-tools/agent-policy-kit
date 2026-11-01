@@ -13,8 +13,8 @@ Package version is configuration-release version. Read that version's CHANGELOG.
 After publication, pinned invocation is supported:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy release
-npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy setup --release
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy release
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --release
 ```
 
 Before publication, replace the registry spec with the verified local .tgz. For several commands, install to a temporary or user-owned prefix with npm install --prefix PREFIX TARBALL --ignore-scripts --no-audit --no-fund, then invoke PREFIX/node_modules/.bin/agent-policy. No stable runtime prefix, sudo or shell-profile changes are needed.
