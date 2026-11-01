@@ -38,7 +38,7 @@ const structuredData={'@context':'https://schema.org','@graph':[
   {'@type':'WebPage','@id':canonicalUrl+'#webpage',name:title,url:canonicalUrl,author:{'@id':authorId},mainEntity:{'@id':projectId},mentions:relatedProjects.map(project=>({'@type':'SoftwareSourceCode',name:project.name,codeRepository:project.url}))}
 ]};
 const attribution=`<span>Created by <a rel="author" href="${escapeHtml(authorUrl)}">${escapeHtml(authorName)}</a></span><nav aria-label="Related projects"><span>More tools:</span>${relatedProjects.map(project=>`<a href="${escapeHtml(project.url)}">${escapeHtml(project.name)}</a>`).join(' ')}</nav>`;
-const metadata={__APK_TITLE__:escapeHtml(title),__APK_DESCRIPTION__:escapeHtml(description),__APK_AUTHOR_NAME__:escapeHtml(authorName),__APK_AUTHOR_URL__:escapeHtml(authorUrl),__APK_CANONICAL_URL__:escapeHtml(canonicalUrl),__APK_STRUCTURED_DATA__:JSON.stringify(structuredData).replaceAll('<','\\u003c'),__APK_ATTRIBUTION__:attribution};
+const metadata={__APK_TITLE__:escapeHtml(title),__APK_REPOSITORY_URL__:escapeHtml(repositoryUrl),__APK_DESCRIPTION__:escapeHtml(description),__APK_AUTHOR_NAME__:escapeHtml(authorName),__APK_AUTHOR_URL__:escapeHtml(authorUrl),__APK_CANONICAL_URL__:escapeHtml(canonicalUrl),__APK_STRUCTURED_DATA__:JSON.stringify(structuredData).replaceAll('<','\\u003c'),__APK_ATTRIBUTION__:attribution};
 const preferences=validatePolicy(JSON.parse(fs.readFileSync(path.join(root,'policies/balanced.json'),'utf8')));
 const data={...release,packageSpec:`agent-policy-kit@${release.version}`,preferences,hostedReleases,
   presets:release.presets.map(preset=>({...preset,preferences:presetPreferences(preset.id)})),catalog:modelCatalog(),roles:ROLE_DEFINITIONS,

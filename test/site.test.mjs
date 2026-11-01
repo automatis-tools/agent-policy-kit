@@ -93,6 +93,14 @@ test('on-screen text stays minimal and only tool-specific facts are shown',()=>{
  assert.match(template,/\$\('concurrency-label'\)\.textContent=\['kimi','agy'\]\.includes\(client\)\?'Max per session \(advisory\)':'Max per session';/);
 });
 
+test('the header links to the repository instead of showing the release version',()=>{
+ const header=template.match(/<header>[\s\S]*?<\/header>/)[0];
+ assert.match(header,/<a class="repo-link" href="__APK_REPOSITORY_URL__" target="_blank" rel="noopener noreferrer" aria-label="Agent Policy Kit on GitHub">/);
+ assert.doesNotMatch(template,/release-version/);
+ const page=fs.readFileSync(new URL('../site/index.html',import.meta.url),'utf8');
+ assert.match(page,/<a class="repo-link" href="https:\/\/github\.com\/automatis-tools\/agent-policy-kit"/);
+});
+
 test('empty role and tool fields share one empty-field appearance',()=>{
  const declarations=selector=>{const body=template.match(new RegExp(`(?:^|[}\\n])${selector.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\{([^}]*)\\}`))?.[1];assert.ok(body,selector);return Object.fromEntries(body.split(';').filter(Boolean).map(item=>{const at=item.indexOf(':');return [item.slice(0,at),item.slice(at+1)];}));};
  const field=declarations('.tag-box'),emptyTools=declarations('.tool-group.is-empty');
