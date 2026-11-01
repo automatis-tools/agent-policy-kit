@@ -10,7 +10,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 
 ## Set it up
 
-1. Open the [configurator](https://agent-policy-kit.trymenow.io/v/0.2.0/). Pick roles, your coding tools and a mode: **Light**, **Standard** or **Top-tier**, by how much of your plan subagents may use.
+1. Open the [configurator](https://agent-policy-kit.trymenow.io/). Pick roles, your coding tools and a mode: **Light**, **Standard** or **Top-tier**, by how much of your plan subagents may use.
 2. Copy the command and run it. Remove the last `--apply` line to preview first; nothing is written without it.
 
 ![Configurator: models and effort for each subagent role, and the setup command](docs/assets/configurator.png)
