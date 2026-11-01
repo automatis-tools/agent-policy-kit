@@ -264,10 +264,10 @@ test('command is version pinned, fully explicit and shell safe', () => {
   assert.equal(Buffer.from(api.encodeConfig({note: 'Привіт'}), 'base64url').toString('utf8'), JSON.stringify({note: 'Привіт'}));
 });
 
-test('five-step builder separates roles, tools, modes, parallelism and the copy action', () => {
+test('four-step builder keeps parallelism with roles and the copy action last', () => {
   assert.match(template, /Set up subagents for your coding tools\./);
   assert.match(template, /Apply your setup locally with one command\./);
-  assert.deepEqual([...template.matchAll(/class="step-number">(\d)<\/span>/g)].map(match=>match[1]),['1','2','3','4','5']);
+  assert.deepEqual([...template.matchAll(/class="step-number">(\d)<\/span>/g)].map(match=>match[1]),['1','2','3','4']);
   assert.match(script, /type:'radio',name:'mode'/);
   assert.match(script, /\['Role','Model','Effort'\]/);
   assert.match(script, /agy: 'Antigravity'/);
@@ -398,10 +398,10 @@ test('concurrency stepper changes the generated command one step at a time and r
  for(const draft of ['', '1.5','NaN']){api.updateConcurrency(state,draft);api.stepConcurrency(state,1);assert.equal(state.maxConcurrent,1);assert.ok(api.buildConfig(state,preferences).config);}
 });
 
-test('separate parallelism step cannot make model settings appear incomplete or mark stale copy complete',()=>{
- const empty=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[false,false,false,false,false]);
- const state=api.initialState(preferences);assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,true,true,true,false]);
- state.maxConcurrent='';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,false,false]);
- state.maxConcurrent=5;assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,true,true]);
- state.jobs.codex.worker.model='invalid model';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false,false]);
+test('inline parallel limit invalidates the role step and copy without invalidating model settings',()=>{
+ const empty=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[false,false,false,false]);
+ const state=api.initialState(preferences);assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,true,true,false]);
+ state.maxConcurrent='';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[false,true,true,false]);
+ state.maxConcurrent=5;assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,true]);
+ state.jobs.codex.worker.model='invalid model';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false]);
 });
