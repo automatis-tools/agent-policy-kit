@@ -29,7 +29,7 @@ test('empty form waits for an explicit mode selection before generating a comman
 test('fresh form preselects every role in catalog order while tools stay unselected',()=>{
  const state=api.initialState(preferences,'balanced',{empty:true});
  assert.deepEqual(plain(state.selectedRoles),ROLE_IDS);assert.deepEqual(plain(state.selected),[]);
- assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,false,false,false]);
+ assert.equal(api.buildConfig(state,preferences).config,null,'no command before a tool is chosen');
  state.selectedRoles.pop();assert.deepEqual(plain(api.initialState(preferences,'balanced',{empty:true}).selectedRoles),ROLE_IDS);
 });
 
@@ -510,13 +510,17 @@ test('concurrency stepper changes one tool command at a time and respects both l
  assert.equal(state.profiles.claude.maxConcurrent,3);
 });
 
-test('a bad parallel limit invalidates tool details and copy but leaves role selection complete',()=>{
- const empty=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[true,false,false,false]);
- empty.selectedRoles=[];assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[false,false,false,false]);
- const state=api.initialState(preferences);assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,true,true,false]);
- state.profiles.codex.maxConcurrent='';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false]);
- state.profiles.codex.maxConcurrent=5;assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,true]);
- state.jobs.codex.worker.model='invalid model';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false]);
+test('a bad parallel limit or model blocks the command while role selection stays intact',()=>{
+ const state=api.initialState(preferences);assert.ok(api.buildConfig(state,preferences).config);
+ state.profiles.codex.maxConcurrent='';assert.equal(api.buildConfig(state,preferences).config,null);assert.equal((state.selectedRoles??ROLE_IDS).length,ROLE_IDS.length);
+ state.profiles.codex.maxConcurrent=5;assert.ok(api.buildConfig(state,preferences).config);
+ state.jobs.codex.worker.model='invalid model';assert.equal(api.buildConfig(state,preferences).config,null);
+});
+
+test('step progress follows the generated command and parallel edits clear a stale link error',()=>{
+ assert.equal(api.stepCompletion,undefined);
+ assert.match(template,/const complete=\[helpers\.length>0,pickedTools\.length>0,!!currentCommand,copied\];/);
+ assert.match(template,/function refreshConcurrency\(\)\{linkError='';/);
 });
 
 test('parallel limits belong to individual tool profiles and preset selection restores only that tool',()=>{
