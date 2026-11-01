@@ -2,7 +2,7 @@
 
 Follow the [AI operator guide](../AGENT_INSTALL.md). npx, a temporary prefix or an installed tarball can run this one-shot configurator. Native files never depend on those locations afterward.
 
-Use setup --release --preset balanced to preview a version's default choices; add --apply to configure. Fast and Quality are alternative named presets. The [page](../site/index.html) generates explicit role, model, effort and concurrency arguments. Commands are pinned to that page's APK version.
+Use setup --release --preset balanced to preview Standard, a version's default choices; add --apply to configure. --preset fast selects Light and --preset quality selects Top-tier. The [page](../site/index.html) generates explicit role, model, effort and concurrency arguments. Commands are pinned to that page's APK version.
 
 Interactive terminals show readable results. Captured output remains JSON, and --json always requests JSON. A preview writes nothing. A repeated application reports unchanged clients. Partial results identify the clients that need attention.
 
@@ -20,4 +20,4 @@ Explicit release/custom replacement has no physical uninstall gap. Old ownership
 
 After success the npm package can be removed. Native clients may need fresh sessions; no kit launcher is needed. Reinvoke a compatible APK for owned uninstall. Keep private receipts/backups if future removal is desired. [Recovery](recovery.md) handles drift or interrupted transactions without overwriting later user edits.
 
-The configuration page keeps per-tool limits in individual tool details. Fast starts at 2, Balanced at 3 and Quality at 2. A manual limit marks only that tool Custom. Explicit commands can use --TOOL-max-concurrent overrides alongside the shared --max-concurrent fallback. Preset selection restores its cap as well as its models and effort.
+The configuration page keeps per-tool limits in individual tool details. Light starts at 2, Standard at 3 and Top-tier at 2. A manual limit marks only that tool Custom. Explicit commands can use --TOOL-max-concurrent overrides alongside the shared --max-concurrent fallback. Preset selection restores its cap as well as its models and effort.
