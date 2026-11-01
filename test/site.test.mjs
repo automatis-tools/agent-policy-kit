@@ -41,6 +41,15 @@ test('page starts and resets with every role selected and an independent role li
  const {result}=context;assert.deepEqual(plain(result.helpers),ROLE_IDS);assert.deepEqual(plain(result.pickedTools),[]);assert.equal(result.selectedScope,null);assert.notEqual(result.helpers,result.stateRoles);
 });
 
+test('every step explains itself briefly and the page does not repeat vendor documentation',()=>{
+ const source=template.match(/const stepInfo=(\{[\s\S]*?\});/);assert.ok(source,'stepInfo');
+ const entries=Object.entries(vm.runInNewContext('('+source[1]+')'));
+ assert.deepEqual(entries.map(([id])=>id),['helpers-heading','tools-heading','mode-heading','setup-heading']);
+ for(const [id,text]of entries){assert.match(template,new RegExp(`<h2 id="${id}"`));assert.ok(text.length>0&&text.length<=180,id);}
+ assert.match(template,/heading\.after\(infoButton\(/);
+ assert.doesNotMatch(template,/usage credits|requires Claude Code/);
+});
+
 test('empty role and tool fields share one empty-field appearance',()=>{
  const declarations=selector=>{const body=template.match(new RegExp(`(?:^|[}\\n])${selector.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\{([^}]*)\\}`))?.[1];assert.ok(body,selector);return Object.fromEntries(body.split(';').filter(Boolean).map(item=>{const at=item.indexOf(':');return [item.slice(0,at),item.slice(at+1)];}));};
  const field=declarations('.tag-box'),emptyTools=declarations('.tool-group.is-empty');

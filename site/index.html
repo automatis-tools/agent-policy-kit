@@ -749,21 +749,32 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
   if(immediate)tip.hidden=true;else tipTimer=setTimeout(()=>{tip.hidden=true;},130);
  }
  function scheduleHide(){clearTimeout(tipTimer);tipTimer=setTimeout(()=>{if(!tip.matches(':hover')&&document.activeElement!==tipTrigger)hideRoleInfo();},100);}
- function showRoleInfo(role,trigger){
+ function showTip(trigger,...content){
   clearTimeout(tipTimer);tipTrigger?.removeAttribute('aria-describedby');tipTrigger=trigger;
-  tip.replaceChildren(el('strong',{},role.name),el('p',{},role.description),el('div',{class:'definition-label'},'Base role prompt'),el('pre',{},role.prompt),el('p',{class:'definition-note'},'APK saves this description and prompt as a native role. Model and effort are configured separately.'));
+  tip.replaceChildren(...content);
   tip.hidden=false;trigger.setAttribute('aria-describedby','role-tooltip');
   const anchor=trigger.getBoundingClientRect(),box=tip.getBoundingClientRect();
   tip.style.left=Math.max(16,Math.min(anchor.left-12,innerWidth-box.width-16))+'px';
   const below=anchor.bottom+8;tip.style.top=(below+box.height<innerHeight-16?below:Math.max(16,anchor.top-box.height-8))+'px';
   requestAnimationFrame(()=>{if(tipTrigger===trigger)tip.classList.add('visible');});
  }
- function roleInfo(role){
-  const button=el('button',{type:'button',class:'helper-info','aria-label':'About '+role.name});button.append(el('span',{class:'info-dot','aria-hidden':'true'},'?'));
-  button.addEventListener('pointerenter',()=>showRoleInfo(role,button));button.addEventListener('pointerleave',scheduleHide);
-  button.addEventListener('focus',()=>showRoleInfo(role,button));button.addEventListener('blur',scheduleHide);button.addEventListener('click',event=>{event.stopPropagation();showRoleInfo(role,button);});
+ function showRoleInfo(role,trigger){
+  showTip(trigger,el('strong',{},role.name),el('p',{},role.description),el('div',{class:'definition-label'},'Base role prompt'),el('pre',{},role.prompt),el('p',{class:'definition-note'},'APK saves this description and prompt as a native role. Model and effort are configured separately.'));
+ }
+ function infoButton(name,show){
+  const button=el('button',{type:'button',class:'helper-info','aria-label':'About '+name});button.append(el('span',{class:'info-dot','aria-hidden':'true'},'?'));
+  button.addEventListener('pointerenter',()=>show(button));button.addEventListener('pointerleave',scheduleHide);
+  button.addEventListener('focus',()=>show(button));button.addEventListener('blur',scheduleHide);button.addEventListener('click',event=>{event.stopPropagation();show(button);});
   return button;
  }
+ function roleInfo(role){return infoButton(role.name,button=>showRoleInfo(role,button));}
+ const stepInfo={
+  'helpers-heading':'Helpers your main agent can hand work to. Each role gets its own model and effort, so routine work does not run on your most expensive model.',
+  'tools-heading':'The coding tools you use. The command configures the selected tools that are installed and leaves everything else unchanged.',
+  'mode-heading':'How much of your plan’s limits subagents may use. They share limits with your main sessions, so choose by plan and how many sessions you run at once.',
+  'setup-heading':'Run this command in a terminal. It writes the native settings once and exits; nothing keeps running in your coding sessions.'
+ };
+ for(const [id,text]of Object.entries(stepInfo)){const heading=$(id),name=heading.textContent;heading.after(infoButton(name,button=>showTip(button,el('strong',{},name),el('p',{},text))));}
  tip.addEventListener('pointerenter',()=>clearTimeout(tipTimer));tip.addEventListener('pointerleave',scheduleHide);
  document.addEventListener('keydown',event=>{if(event.key==='Escape')hideRoleInfo();});
  document.addEventListener('pointerdown',event=>{if(!tip.contains(event.target)&&!tipTrigger?.contains(event.target))hideRoleInfo();});
@@ -828,11 +839,8 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
  function renderModeNotice(){
   const all=state.active==='all',mode=A.modeFor(state),notice=$('mode-notice');
   const message=mode==='custom'?(all?'Open a coding tool to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`):(presets.find(p=>p.id===mode)?.description??'');
-  const fable=state.selected.includes('claude')&&state.profiles.claude.modeSelected!==false&&helpers.some(role=>/^(?:claude-)?fable(?:-|$)/.test(state.jobs.claude?.[role]?.model??''));
-  const credit=fable?'Claude Fable may use usage credits and requires Claude Code 2.1.257+.':'';
-  const text=[message,credit].filter(Boolean).join(' ');
-  if(notice.textContent!==text){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.append(message);if(credit)notice.append((message?' ':'')+credit);}
-  notice.hidden=!text;
+  if(notice.textContent!==message){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.append(message);}
+  notice.hidden=!message;
  }
  function renderEditor(){
   const parent=$('editor');parent.replaceChildren();if(!helpers.length||!state.active||state.active==='all'||state.profiles[state.active].modeSelected===false)return;
