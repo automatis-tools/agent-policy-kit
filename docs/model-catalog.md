@@ -8,7 +8,7 @@ models/catalog.json is the release snapshot, checked on 2026-10-30 UTC (2026-10-
 | Claude Code | 14 versioned IDs, 4 family aliases and inherit | [Native model configuration](https://code.claude.com/docs/en/model-config), CLI 2.1.312 |
 | Kimi Code | 6 upstream models through preferred native aliases | [Current Kimi Code models](https://www.kimi.com/code/docs/en/kimi-code/models), CLI 2.4.0 provisioned metadata |
 | Antigravity | Pro, Flash, Flash Lite and inherit tiers | CLI 1.4.10 parser and [subagent documentation](https://antigravity.google/docs/subagents?tab=cli) |
-| Grok Build | Grok 4.7, 4.6 and 4.5 model IDs | [xAI models](https://docs.x.ai/developers/models) and [Grok Build subagents](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md), CLI 1.0.70 |
+| Grok Build | Grok 4.7, 4.6, 4.5 and Grok Build 0.1 model IDs | [xAI models](https://docs.x.ai/developers/models) and [Grok Build subagents](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md), CLI 1.0.70 |
 
 Hidden security/utility models, session modes and private deployments are separate from this native subagent inventory. Custom IDs remain available where the native format supports them.
 
@@ -54,12 +54,12 @@ No preset bans any model. An unselected model remains available in Custom. Expli
 
 | Role | Codex | Claude Code | Kimi Code | Antigravity | Grok Build |
 |---|---|---|---|---|---|
-| Coder | Luna · medium | Haiku 5.5 · medium | K2.8 Preview · low | Flash | Grok 4.7 |
-| Reviewer | Luna · high | Haiku 5.5 · high | K2.8 Preview · low | Flash | Grok 4.7 |
-| Code explorer | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok 4.7 |
-| Test writer | Luna · high | Haiku 5.5 · high | K2.8 Preview · low | Flash | Grok 4.7 |
-| Docs writer | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok 4.7 |
-| Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok 4.7 |
+| Coder | Luna · medium | Haiku 5.5 · medium | K2.8 Preview · low | Flash | Grok Build 0.1 |
+| Reviewer | Luna · high | Haiku 5.5 · high | K2.8 Preview · low | Flash | Grok Build 0.1 |
+| Code explorer | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok Build 0.1 |
+| Test writer | Luna · high | Haiku 5.5 · high | K2.8 Preview · low | Flash | Grok Build 0.1 |
+| Docs writer | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok Build 0.1 |
+| Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok Build 0.1 |
 
 ### Standard
 
@@ -67,10 +67,10 @@ No preset bans any model. An unselected model remains available in Custom. Expli
 |---|---|---|---|---|---|
 | Coder | Sol · medium | Sonnet 5.5 · medium | K3 256K · high | Pro | Grok 4.7 |
 | Reviewer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro | Grok 4.7 |
-| Code explorer | Luna · high | Haiku 5.5 · medium | K2.8 Preview · low | Flash | Grok 4.7 |
+| Code explorer | Luna · high | Haiku 5.5 · medium | K2.8 Preview · low | Flash | Grok Build 0.1 |
 | Test writer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro | Grok 4.7 |
-| Docs writer | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · low | Flash | Grok 4.7 |
-| Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok 4.7 |
+| Docs writer | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · low | Flash | Grok Build 0.1 |
+| Task runner | Luna · low | Haiku 5.5 · low | K2.8 Preview · low | Flash Lite | Grok Build 0.1 |
 
 ### Top-tier
 
@@ -81,7 +81,7 @@ No preset bans any model. An unselected model remains available in Custom. Expli
 | Code explorer | Sol · high | Opus 5.5 · high | K3 · high | Pro | Grok 4.7 |
 | Test writer | Sol · high | Opus 5.5 · high | K3 · high | Pro | Grok 4.7 |
 | Docs writer | Sol · high | Opus 5.5 · high | K3 · high | Pro | Grok 4.7 |
-| Task runner | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · high | Flash | Grok 4.7 |
+| Task runner | Sol · medium | Sonnet 5.5 · medium | K2.8 Preview · high | Flash | Grok Build 0.1 |
 
 With the top models switch on, Coder, Reviewer and Test writer use Astra · high in Codex, Fable 5.1 · high in Claude Code and K3.1 Pro · high in Kimi Code.
 
@@ -93,7 +93,7 @@ Anthropic's [model comparison](https://platform.claude.com/docs/en/models/overvi
 
 [Kimi's model table](https://www.kimi.com/code/docs/en/kimi-code/models.html) describes K2.8 Preview's efficient thinking and the smaller quota footprint of K3 256K. Pro Highspeed has the same capabilities as regular Pro at a quota premium, so it is optional rather than a default for either economical or quality priorities. Selected aliases must be provisioned and Pro must have thinking enabled. Roles sharing one alias share its native effort setting.
 
-Grok Build uses Grok 4.7 for every role in every preset, because the free plan offers only that model; the presets differ only by parallel subagents: Light 1, Standard 2 and Top-tier 3, so more parallel work uses the plan faster. The page shows this instead of the generic mode description. Other Grok models stay available in Custom. Per-role effort is unavailable, and there is no top models switch for Grok Build.
+Grok Build 0.1 is xAI's fast coding model and serves light work; Grok 4.7 is the flagship and serves code, review and tests. Light uses Grok Build 0.1 everywhere, Standard adds Grok 4.7 for code, review and tests, and Top-tier also uses it for exploration and docs. Grok 4.6 and 4.5 stay available in Custom. Account access to each model varies by plan. Per-role effort is unavailable, and there is no top models switch for Grok Build.
 
 Antigravity recommendations use only its native role tiers. The CLI's Pro/Flash/Flash Lite selectors do not freeze the underlying provider model, and there is no per-role effort field. Account access and native precedence still apply; see [support](compatibility.md).
 

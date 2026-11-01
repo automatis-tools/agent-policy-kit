@@ -93,13 +93,12 @@
       "avoidModels": []
     },
     "grok": {
-      "maxConcurrent": 2,
       "code": {
         "model": "grok-4.7",
         "effort": null
       },
       "light": {
-        "model": "grok-4.7",
+        "model": "grok-build-0.1",
         "effort": null
       },
       "avoidModels": []

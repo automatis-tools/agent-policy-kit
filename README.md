@@ -56,7 +56,7 @@ Run `agent-policy show` to read existing user-level subagent settings, including
 
 Configuration commands show a short summary in an interactive terminal. Captured output remains JSON. Add `--json` to request JSON explicitly.
 
-Open an individual coding tool's details to set its maximum concurrent subagents from 1 to 32. Each tool has its own limit per session. Presets start at Light 2, Standard 3 and Top-tier 2 (Grok Build: 1, 2 and 3, because its modes share one model); a manual limit makes that tool Custom. Kimi and Antigravity treat it as guidance; Grok Build applies it as a native cap.
+Open an individual coding tool's details to set its maximum concurrent subagents from 1 to 32. Each tool has its own limit per session. Presets start at Light 2, Standard 3 and Top-tier 2; a manual limit makes that tool Custom. Kimi and Antigravity treat it as guidance; Grok Build applies it as a native cap.
 
 [Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
 

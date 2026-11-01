@@ -109,8 +109,9 @@ test('Reset form sits with the form result, not in the site header',()=>{
 
 test('tools whose presets share models get an honest mode note instead of the generic description',()=>{
  const presets=['fast','balanced','quality'].map(id=>({id,preferences:JSON.parse(fs.readFileSync(new URL(`../policies/${id}.json`,import.meta.url),'utf8'))}));
- assert.deepEqual(plain(api.presetModelSummary(presets,'grok')),{same:true,model:'grok-4.7'});
- assert.deepEqual(plain(api.presetModelSummary(presets,'codex')),{same:false,model:null});
+ for(const client of ['codex','claude','kimi','agy','grok'])assert.deepEqual(plain(api.presetModelSummary(presets,client)),{same:false,model:null},client);
+ const one={code:{model:'one-model',effort:null},light:{model:'one-model',effort:null},avoidModels:[]},shared=['a','b'].map(id=>({id,preferences:{clients:{solo:one}}}));
+ assert.deepEqual(plain(api.presetModelSummary(shared,'solo')),{same:true,model:'one-model'});
  assert.deepEqual(plain(api.presetModelSummary([],'grok')),{same:false,model:null});
  assert.match(template,/Modes change only how many subagents run at once\./);
 });

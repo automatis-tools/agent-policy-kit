@@ -726,6 +726,15 @@
           "source": "https://docs.x.ai/developers/models",
           "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
           "kind": "model"
+        },
+        {
+          "id": "grok-build-0.1",
+          "label": "Grok Build 0.1",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://docs.x.ai/developers/models",
+          "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
+          "kind": "model"
         }
       ],
       "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. Per-role effort is not exposed by the agent-file schema, so subagents use the main session effort. [subagents] max_concurrent is a native cap."

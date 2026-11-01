@@ -13,11 +13,10 @@ test('release catalog carries dated sourced native selectors and compatible effo
  assert.ok(catalog.clients.claude.models.some(m=>m.id==='claude-haiku-5-5'));
 });
 
-test('Grok Build inventory lists documented xAI models without effort and every preset uses the default',()=>{
+test('Grok Build inventory lists documented xAI models without per-role effort',()=>{
  const grok=modelCatalog().clients.grok;
- assert.equal(grok.label,'Grok Build');assert.deepEqual(grok.efforts,[]);assert.deepEqual(grok.models.map(m=>m.id),['grok-4.7','grok-4.6','grok-4.5']);
+ assert.equal(grok.label,'Grok Build');assert.deepEqual(grok.efforts,[]);assert.deepEqual(grok.models.map(m=>m.id),['grok-4.7','grok-4.6','grok-4.5','grok-build-0.1']);
  for(const model of grok.models){assert.deepEqual(model.efforts,[]);assert.equal(model.defaultEffort,null);assert.equal(model.source,'https://docs.x.ai/developers/models');assert.match(model.nativeSource,/^https:\/\/github\.com\/xai-org\/grok-build\//);}
- for(const preset of PRESETS)for(const role of Object.keys(ROLES))assert.deepEqual(rolePreference(presetPreferences(preset.id).clients.grok,role),{model:'grok-4.7',effort:null},`${preset.id} ${role}`);
  assert.ok(!('grok' in PRESETS.find(preset=>preset.id==='quality').topModels));
 });
 
@@ -87,8 +86,14 @@ test('Top-tier offers frontier models for demanding implementation and review on
  assert.notEqual(rolePreference(quality.clients.claude,'routine').model,'claude-fable-5-1');
 });
 
-test('Grok presets share one model, so its modes differ by parallel subagents only',()=>{
- const caps=Object.fromEntries(['fast','balanced','quality'].map(id=>[id,presetPreferences(id).clients.grok.maxConcurrent]));
- assert.deepEqual(caps,{fast:1,balanced:2,quality:3});
- for(const id of ['fast','balanced','quality'])for(const role of Object.keys(ROLES))assert.deepEqual(rolePreference(presetPreferences(id).clients.grok,role),{model:'grok-4.7',effort:null});
+test('Grok presets use the fast coding model for light work and Grok 4.7 for stronger roles',()=>{
+ const fast='grok-build-0.1',strong='grok-4.7',expected={
+  fast:{worker:fast,reviewer:fast,explorer:fast,tester:fast,writer:fast,routine:fast},
+  balanced:{worker:strong,reviewer:strong,explorer:fast,tester:strong,writer:fast,routine:fast},
+  quality:{worker:strong,reviewer:strong,explorer:strong,tester:strong,writer:strong,routine:fast}};
+ for(const [id,roles]of Object.entries(expected)){
+  const grok=presetPreferences(id).clients.grok;assert.equal(grok.maxConcurrent,undefined,id);
+  for(const [role,model]of Object.entries(roles))assert.deepEqual(rolePreference(grok,role),{model,effort:null},`${id} ${role}`);
+ }
+ assert.ok(modelCatalog().clients.grok.models.some(model=>model.id===fast&&model.efforts.length===0));
 });
