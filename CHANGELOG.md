@@ -2,6 +2,12 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
+## Unreleased
+
+### What changed
+
+- The configurator shows a note when Gemini is selected: APK configures Antigravity, not Gemini CLI. The README and the compatibility documentation say the same.
+
 ## 0.3.0 — 2026-11-01
 
 ### Why this release

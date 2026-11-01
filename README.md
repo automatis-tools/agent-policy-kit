@@ -18,7 +18,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 ## Good to know
 
 - Your main agent and its model stay unchanged. It still decides when to delegate.
-- APK configures the coding agent of each assistant: Codex in ChatGPT, Claude Code in Claude, Kimi Code, Antigravity for Gemini and Grok Build. Plain chats do not change.
+- APK configures the coding agent of each assistant: Codex in ChatGPT, Claude Code in Claude, Kimi Code, Antigravity for Gemini and Grok Build. Plain chats do not change, and Gemini CLI is not configured.
 - Desktop apps on macOS work too. APK finds the Codex that ChatGPT Desktop includes and the Claude Code in the Code tab of Claude Desktop. Both read the same settings as their CLIs. Claude Cowork reads its settings from your Claude account, so APK does not change Cowork.
 - No proxy and no background process. Delete the npm package after setup.
 - `npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove APK's settings and keep yours.
