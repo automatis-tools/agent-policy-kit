@@ -107,6 +107,8 @@ test('the footer offers a quiet copy button for the read-only show command',()=>
  assert.match(footer,/<span class="show-settings">Check current settings <button type="button" class="quiet-button" id="copy-show" aria-label="Copy the command that shows current settings">Copy<\/button><code id="show-command" hidden><\/code><\/span>/);
  assert.match(template,/const showCommand=`npx --yes --ignore-scripts --package \$\{RELEASE\.packageSpec\} agent-policy show`;/);
  assert.match(template,/navigator\.clipboard\.writeText\(showCommand\)/);
+ assert.match(template,/\$\('copy-show'\)\.before\(infoButton\('current settings',button=>showTip\(button,el\('strong',\{\},'Check current settings'\),el\('p',\{\},'[^']+'\),el\('pre',\{\},showCommand\)\)\)\);/);
+ assert.doesNotMatch(template,/copy-show'\)\.title=/);
 });
 
 test('Reset form sits with the form result, not in the site header',()=>{
