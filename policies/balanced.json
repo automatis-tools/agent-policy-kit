@@ -93,6 +93,7 @@
       "avoidModels": []
     },
     "grok": {
+      "maxConcurrent": 2,
       "code": {
         "model": "grok-4.7",
         "effort": null

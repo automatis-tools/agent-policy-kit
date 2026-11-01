@@ -128,6 +128,13 @@ __APK_SHARE_CODEC__
     const profile=state.profiles[client],base=effective(profile.preferences,role);
     return topModelsOn(state,client)&&topModelRoles(state,client).includes(role)?{model:profile.top,effort:base.effort}:base;
   }
+  // Tools whose presets choose identical role models differ only by parallel limits.
+  function presetModelSummary(presets, client) {
+    const choices=presets.map(preset=>{const config=preset.preferences?.clients?.[client];return config?ROLES.map(role=>effective(config,role)):null;});
+    if(!choices.length||choices.some(value=>value===null))return {same:false,model:null};
+    const first=JSON.stringify(choices[0]),same=choices.every(value=>JSON.stringify(value)===first),models=new Set(choices[0].map(choice=>choice.model));
+    return {same,model:same&&models.size===1?[...models][0]:null};
+  }
   function modeFor(state, client = state.active) {
     if (client !== 'all') {const profile=state.profiles[client];return !profile||profile.modeSelected===false?null:profile.custom?'custom':profile.presetId;}
     const modes = (Array.isArray(state.selected)?state.selected:[]).map(client => modeFor(state, client));
@@ -284,7 +291,7 @@ __APK_SHARE_CODEC__
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
   function buildCommand(config, release) {return formatExplicitCommand(config,release.version,RELEASE.roles);}
-  globalThis.APKConfigurator = Object.freeze({initialState, modeFor, topModelRoles, topModelsOn, setTopModels, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, updateConcurrency, stepConcurrency, concurrencyFor, restoreState, stepCompletion, addAll, buildConfig, encodeConfig, buildCommand});
+  globalThis.APKConfigurator = Object.freeze({initialState, modeFor, presetModelSummary, topModelRoles, topModelsOn, setTopModels, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, updateConcurrency, stepConcurrency, concurrencyFor, restoreState, stepCompletion, addAll, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
 
 (() => {
@@ -422,7 +429,9 @@ __APK_SHARE_CODEC__
  }
  function renderModeNotice(){
   const all=state.active==='all',mode=A.modeFor(state),notice=$('mode-notice');
-  const message=mode==='custom'?(all?'Open a coding tool to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`):(presets.find(p=>p.id===mode)?.description??'');
+  const shared=!all&&mode!==null&&mode!=='custom'?A.presetModelSummary(presets,state.active):{same:false,model:null};
+  const sharedModel=shared.model?RELEASE.catalog.clients[state.active].models.find(model=>model.id===shared.model)?.label??shared.model:'the same models';
+  const message=mode==='custom'?(all?'Open a coding tool to customize its models and effort.':`Custom models and effort for ${toolName(state.active)}.`):shared.same?`${toolName(state.active)} uses ${sharedModel} for every role in every mode. Modes change only how many subagents run at once.`:(presets.find(p=>p.id===mode)?.description??'');
   if(notice.textContent!==message){notice.replaceChildren();if(mode==='custom'&&all)notice.append('Open a ',el('strong',{},'coding tool'),' to customize its models and effort.');else notice.append(message);}
   notice.hidden=!message;
  }

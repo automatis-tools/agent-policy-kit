@@ -86,3 +86,9 @@ test('Top-tier offers frontier models for demanding implementation and review on
  assert.notEqual(rolePreference(quality.clients.codex,'routine').model,'gpt-6-astra');
  assert.notEqual(rolePreference(quality.clients.claude,'routine').model,'claude-fable-5-1');
 });
+
+test('Grok presets share one model, so its modes differ by parallel subagents only',()=>{
+ const caps=Object.fromEntries(['fast','balanced','quality'].map(id=>[id,presetPreferences(id).clients.grok.maxConcurrent]));
+ assert.deepEqual(caps,{fast:1,balanced:2,quality:3});
+ for(const id of ['fast','balanced','quality'])for(const role of Object.keys(ROLES))assert.deepEqual(rolePreference(presetPreferences(id).clients.grok,role),{model:'grok-4.7',effort:null});
+});

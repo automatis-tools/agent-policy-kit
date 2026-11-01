@@ -21,7 +21,7 @@ The owner uses Grok Build next to Codex, Claude Code, Kimi Code and Antigravity.
 - Role files `apk-<role>.md`; Reviewer and Code explorer are read-only through `permission_mode: plan`.
 - Models come from `[subagents.models]`, plus the `general-purpose` fallback copied from the Coder choice, matching the other tools' default subagent model.
 - Catalog: documented xAI ids `grok-4.7` (default), `grok-4.6`, `grok-4.5`. Per-role effort is unavailable, so every Grok choice has `effort: null`.
-- Presets: every role uses `grok-4.7` in Light, Standard and Top-tier, because the free plan offers only that model. Modes differ by parallelism (2/3/2). Other models remain available in Custom. No top-model switch for Grok.
+- Presets: every role uses `grok-4.7` in Light, Standard and Top-tier, because the free plan offers only that model. Modes differ only by parallel subagents: Light 1, Standard 2, Top-tier 3. The page replaces the generic mode description with a note saying so, because the generic text would be false for Grok. Other models remain available in Custom. No top-model switch for Grok.
 - Explicit command: `--grok`, `--grok-max-concurrent`, `--avoid-grok`, following the existing per-tool pattern.
 - Ownership, drift refusal, receipts and uninstall follow the existing adapters; TOML edits are surgical, like Codex.
 

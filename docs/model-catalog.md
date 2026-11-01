@@ -93,7 +93,7 @@ Anthropic's [model comparison](https://platform.claude.com/docs/en/models/overvi
 
 [Kimi's model table](https://www.kimi.com/code/docs/en/kimi-code/models.html) describes K2.8 Preview's efficient thinking and the smaller quota footprint of K3 256K. Pro Highspeed has the same capabilities as regular Pro at a quota premium, so it is optional rather than a default for either economical or quality priorities. Selected aliases must be provisioned and Pro must have thinking enabled. Roles sharing one alias share its native effort setting.
 
-Grok Build uses Grok 4.7 for every role in every preset, because the free plan offers only that model; the presets differ by parallelism only. Other Grok models stay available in Custom. Per-role effort is unavailable, and there is no top models switch for Grok Build.
+Grok Build uses Grok 4.7 for every role in every preset, because the free plan offers only that model; the presets differ only by parallel subagents: Light 1, Standard 2 and Top-tier 3, so more parallel work uses the plan faster. The page shows this instead of the generic mode description. Other Grok models stay available in Custom. Per-role effort is unavailable, and there is no top models switch for Grok Build.
 
 Antigravity recommendations use only its native role tiers. The CLI's Pro/Flash/Flash Lite selectors do not freeze the underlying provider model, and there is no per-role effort field. Account access and native precedence still apply; see [support](compatibility.md).
 

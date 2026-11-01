@@ -107,6 +107,14 @@ test('Reset form sits with the form result, not in the site header',()=>{
  assert.match(template,/<div class="setup-footer"><p class="release-status" id="release-status"><\/p><button type="button" class="reset-form" id="reset-form">Reset form<\/button><\/div><\/section>/);
 });
 
+test('tools whose presets share models get an honest mode note instead of the generic description',()=>{
+ const presets=['fast','balanced','quality'].map(id=>({id,preferences:JSON.parse(fs.readFileSync(new URL(`../policies/${id}.json`,import.meta.url),'utf8'))}));
+ assert.deepEqual(plain(api.presetModelSummary(presets,'grok')),{same:true,model:'grok-4.7'});
+ assert.deepEqual(plain(api.presetModelSummary(presets,'codex')),{same:false,model:null});
+ assert.deepEqual(plain(api.presetModelSummary([],'grok')),{same:false,model:null});
+ assert.match(template,/Modes change only how many subagents run at once\./);
+});
+
 test('empty role and tool fields share one empty-field appearance',()=>{
  const declarations=selector=>{const body=template.match(new RegExp(`(?:^|[}\\n])${selector.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\{([^}]*)\\}`))?.[1];assert.ok(body,selector);return Object.fromEntries(body.split(';').filter(Boolean).map(item=>{const at=item.indexOf(':');return [item.slice(0,at),item.slice(at+1)];}));};
  const field=declarations('.tag-box'),emptyTools=declarations('.tool-group.is-empty');
@@ -487,8 +495,9 @@ test('parallel edits are preserved when preset replacement is canceled and reset
  const state=api.initialState(preferences);api.updateConcurrency(state,'codex','5');
  const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8')),before=JSON.stringify(state);
  assert.equal(api.applyPreset(state,{id:'quality',preferences:quality}),state);assert.equal(JSON.stringify(state),before);
- const next=api.applyPreset(state,{id:'quality',preferences:quality},()=>true);for(const client of next.selected)assert.equal(next.profiles[client].maxConcurrent,2);
- assert.equal(decodedCommand(api.buildCommand(plain(api.buildConfig(next,preferences).config),release)).maxConcurrent,2);
+ const next=api.applyPreset(state,{id:'quality',preferences:quality},()=>true);for(const client of next.selected)assert.equal(next.profiles[client].maxConcurrent,quality.clients[client].maxConcurrent??quality.maxConcurrent,client);
+ const decoded=decodedCommand(api.buildCommand(plain(api.buildConfig(next,preferences).config),release));
+ for(const client of next.selected)assert.equal(decoded.clients[client].maxConcurrent??decoded.maxConcurrent,quality.clients[client].maxConcurrent??quality.maxConcurrent,client);
 });
 test('concurrency edits propagate boundary values to applicable commands and block invalid drafts',()=>{
  for(const value of [1,5,32]){const state=api.initialState(preferences);api.updateConcurrency(state,'codex',String(value));const built=plain(api.buildConfig(state,preferences));assert.deepEqual(built.errors,[]);const decoded=decodedCommand(api.buildCommand(built.config,release));assert.equal(decoded.clients.codex.maxConcurrent??decoded.maxConcurrent,value);}
