@@ -10,7 +10,7 @@ import catalog from '../models/catalog.json' with {type:'json'};
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
 import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
 
-const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
+const CLIENTS = ['codex', 'claude', 'kimi', 'agy', 'grok'];
 const LIMIT = 1024 * 1024;
 const digest = value => value === null ? null : createHash('sha256').update(value).digest('hex');
 const json = value => JSON.stringify(value, null, 2) + '\n';
@@ -156,6 +156,7 @@ function selectedAliases(preferences,selectedRoles=ROLE_IDS) {
 function tomlSettings(client,preferences,maxConcurrent,selectedRoles=ROLE_IDS) {
   const worker=rolePreference(preferences,selectedRoles[0]);
   if(client==='codex')return [[['agents','max_concurrent_threads_per_session'],maxConcurrent],[['agents','default_subagent_model'],worker.model],...(worker.effort===null?[]:[[['agents','default_subagent_reasoning_effort'],worker.effort]])];
+  if(client==='grok')return [[['subagents','max_concurrent'],maxConcurrent],...selectedRoles.map(role=>[['subagents','models','apk-'+role],rolePreference(preferences,role).model]),[['subagents','models','general-purpose'],worker.model]];
   if(client!=='kimi')return [];
   const selected=selectedAliases(preferences,selectedRoles),roles=effectiveRoles(preferences,selectedRoles);
   return [[['secondary_model','default_model'],worker.model],...selected.map(value=>[['secondary_model','models',value.model],'Use for '+roles.filter(role=>role.model===value.model).map(role=>'apk-'+role.role).join(', ')+'.']),...selected.filter(value=>value.effort!==null).map(value=>[['models',value.model,'overrides','default_effort'],value.effort])];
@@ -182,13 +183,21 @@ function scalar(op,target,type) {
   literalValue(op.before,type,true);
   return literalValue(op.after,type);
 }
-function validateTomlSnapshot(file,client,schemaVersion) {
+function validateTomlSnapshot(file,client,schemaVersion,selectedRoles=ROLE_IDS) {
   if(!Array.isArray(file.ops)||!file.ops.every(op=>object(op)&&Array.isArray(op.path)&&op.path.every(key=>typeof key==='string')&&op.path.length<=4))fail('INVALID_RECEIPT');
   if(client==='codex') {
     if(!(schemaVersion===2?[3]:[2,3]).includes(file.ops.length))fail('INVALID_RECEIPT');
     const cap=scalar(file.ops[0],['agents','max_concurrent_threads_per_session'],'number');
     if(cap<1||cap>32)fail('INVALID_RECEIPT');
     scalar(file.ops[1],['agents','default_subagent_model'],'string');if(file.ops.length===3)scalar(file.ops[2],['agents','default_subagent_reasoning_effort'],'string');
+    return;
+  }
+  if(client==='grok') {
+    if(schemaVersion!==4||file.ops.length!==selectedRoles.length+2)fail('INVALID_RECEIPT');
+    const cap=scalar(file.ops[0],['subagents','max_concurrent'],'number');
+    if(cap<1||cap>32)fail('INVALID_RECEIPT');
+    for(const[i,role]of selectedRoles.entries())scalar(file.ops[1+i],['subagents','models','apk-'+role],'string');
+    scalar(file.ops.at(-1),['subagents','models','general-purpose'],'string');
     return;
   }
   if(client!=='kimi')fail('INVALID_RECEIPT');
@@ -253,7 +262,7 @@ function validateReceipt(r,plan) {
     } else if(plan.client==='claude') {
       fields(file,['path','type','existed','ops','created']);if(file.type!=='json')fail('INVALID_RECEIPT');validateJsonSnapshot(file);
     } else {
-      fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client,r.schemaVersion);
+      fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client,r.schemaVersion,r.schemaVersion===4?r.selectedRoles:LEGACY_ROLE_IDS);
     }
   }
   return r;
@@ -372,6 +381,13 @@ export async function planInstall(options) {
       selected=resolved.preferences;resolvedAliases=resolved.changed;
       const required=kimiPrerequisite(native,selected,roleIds);if(required)return prerequisite(plan,required);
       if(selectedAliases(selected,roleIds).some(value=>value.effort!==null)&&native.secondary_model?.default_effort!==undefined&&typeof native.secondary_model.default_effort!=='string')fail('UNSUPPORTED_CONFIG');
+    }
+    if(plan.client==='grok') {
+      const subagents=native.subagents;
+      if(subagents!==undefined&&!object(subagents))fail('UNSUPPORTED_CONFIG');
+      if(subagents?.models!==undefined&&!object(subagents.models))fail('UNSUPPORTED_CONFIG');
+      const cap=subagents?.max_concurrent;
+      if(cap!==undefined&&(!Number.isSafeInteger(cap)||cap<1))fail('UNSUPPORTED_CONFIG');
     }
     if(plan.client==='codex') {
       if(native.agents&&own(native.agents,'max_threads'))fail('CODEX_CAP_ALIAS_CONFLICT');

@@ -9,7 +9,7 @@ import {EXPLICIT_FIELDS,parseExplicitOptions} from '../src/explicit.mjs';
 const template = fs.readFileSync(new URL('../site/template.html', import.meta.url), 'utf8');
 const preferences = JSON.parse(fs.readFileSync(new URL('../policies/balanced.json', import.meta.url), 'utf8'));
 // Behavior tests use fallback-only preferences; real recommendations have separate coverage.
-for(const [id,client]of Object.entries(preferences.clients)){delete client.roles;if(id!=='agy')client.code.effort='high';}
+for(const [id,client]of Object.entries(preferences.clients)){delete client.roles;if(!['agy','grok'].includes(id))client.code.effort='high';}
 const release = {version: '0.1.0', roles:ROLE_DEFINITIONS, preferences, notes: 'A release.', unreleased: true};
 const codec=fs.readFileSync(new URL('../src/explicit.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
 const shareCodec=fs.readFileSync(new URL('../src/share.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
@@ -171,7 +171,7 @@ test('All is the initial view without becoming a configuration client', () => {
   const state = api.initialState(preferences);
   assert.equal(state.active, 'all');
   assert.deepEqual(plain(api.buildConfig(state, preferences).config), preferences);
-  assert.deepEqual(plain(state.selected), ['codex', 'claude', 'kimi', 'agy']);
+  assert.deepEqual(plain(state.selected), ['codex', 'claude', 'kimi', 'agy', 'grok']);
 });
 
 test('replacing custom settings requires confirmation and preserves the selected view', () => {
@@ -235,7 +235,7 @@ test('recommendations expose six independent jobs and preserve native fallbacks'
   const state = api.initialState(preferences);
   const {config, errors} = plain(api.buildConfig(state, preferences));
   assert.deepEqual(errors, []);
-  assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy']);
+  assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy', 'grok']);
   assert.deepEqual(config, preferences);
   assert.deepEqual(Object.keys(state.jobs.codex), ROLE_IDS);
   assert.equal(config.clients.codex.roles, undefined);
@@ -246,12 +246,12 @@ test('recommendations expose six independent jobs and preserve native fallbacks'
   assert.equal(state.jobs.codex.worker.model, preferences.clients.codex.code.model);
 });
 
-test('all four tools stay configured and only changed roles produce overrides', () => {
+test('all five tools stay configured and only changed roles produce overrides', () => {
   const state = api.initialState(preferences);
   state.jobs.claude.reviewer = api.preferenceForModel(preferences.clients.claude, 'reviewer', 'opus');
   const {config, errors} = plain(api.buildConfig(state, preferences));
   assert.deepEqual(errors, []);
-  assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy']);
+  assert.deepEqual(Object.keys(config.clients), ['codex', 'claude', 'kimi', 'agy', 'grok']);
   assert.equal(config.maxConcurrent, preferences.maxConcurrent);
   assert.deepEqual(config.clients.claude.roles, {reviewer: {model: 'opus', effort: preferences.clients.claude.code.effort}});
   assert.ok(!config.clients.claude.avoidModels.includes('opus'));
@@ -330,12 +330,29 @@ test('agy accepts native tiers without invented per-role effort', () => {
   assert.equal(api.buildConfig(state, preferences).config, null);
 });
 
+test('Grok Build accepts any model identifier but never a per-role effort', () => {
+  const state = api.initialState(preferences);
+  state.jobs.grok.reviewer = {model: 'grok-4.5', effort: null};
+  state.jobs.grok.explorer = {model: 'custom-grok-model', effort: null};
+  const built = plain(api.buildConfig(state, preferences));
+  assert.deepEqual(built.errors, []);
+  assert.deepEqual(built.config.clients.grok.roles.reviewer, {model: 'grok-4.5', effort: null});
+  state.jobs.grok.reviewer.effort = 'high';
+  assert.equal(api.buildConfig(state, preferences).config, null);
+  state.jobs.grok.reviewer = {model: 'grok-4.5', effort: null};
+  state.selected = ['grok'];state.active = 'grok';
+  const command = api.buildCommand(plain(api.buildConfig(state, preferences).config), release);
+  assert.match(command, /--grok '[^']*reviewer=grok-4\.5[^']*'/);
+  assert.doesNotMatch(command, /--grok '[^']*:/);
+  equivalent(decodedCommand(command), plain(api.buildConfig(state, preferences).config));
+});
+
 test('command is version pinned, fully explicit and shell safe', () => {
   const config = plain(api.buildConfig(api.initialState(preferences), preferences).config);
   const command = api.buildCommand(config, release);
   assert.match(command, /^npx --yes --ignore-scripts --package agent-policy-kit@0\.1\.0 agent-policy setup/);
   assert.doesNotMatch(command,/--config|--preset|--release/);
-  for(const flag of ['codex','claude','kimi','antigravity'])assert.ok(command.includes('--'+flag+" '"));
+  for(const flag of ['codex','claude','kimi','antigravity','grok'])assert.ok(command.includes('--'+flag+" '"));
   equivalent(decodedCommand(command),config);
   assert.throws(() => api.buildCommand(config, {...release, version: '0.1.0;echo'}), /Invalid release/);
   assert.equal(Buffer.from(api.encodeConfig({note: 'Привіт'}), 'base64url').toString('utf8'), JSON.stringify({note: 'Привіт'}));
@@ -347,7 +364,7 @@ test('four-step builder keeps parallelism with roles and the copy action last', 
   assert.deepEqual([...template.matchAll(/class="step-number">(\d)<\/span>/g)].map(match=>match[1]),['1','2','3','4']);
   assert.match(script, /type:'radio',name:'mode'/);
   assert.match(script, /\['Role','Model','Effort'\]/);
-  assert.match(script, /agy: 'Antigravity'/);
+  assert.match(script, /agy: 'Antigravity', grok: 'Grok Build'/);
   assert.match(script, /Custom model…/);
 });
 
@@ -456,14 +473,14 @@ test('concurrency edits propagate boundary values to applicable commands and blo
 
 test('Add all fills missing roles and tools while preserving existing selection order',()=>{
  assert.deepEqual(plain(api.addAll(['reviewer'],ROLE_IDS)),['reviewer','worker','explorer','tester','writer','routine']);
- assert.deepEqual(plain(api.addAll(['claude'],['codex','claude','kimi','agy'])),['claude','codex','kimi','agy']);
- const selected=['claude','codex'];assert.deepEqual(plain(api.addAll(selected,['codex','claude','kimi','agy'])),['claude','codex','kimi','agy']);assert.deepEqual(selected,['claude','codex']);
- assert.deepEqual(plain(api.addAll(['codex','claude','kimi','agy'],['codex','claude','kimi','agy'])),['codex','claude','kimi','agy']);
+ assert.deepEqual(plain(api.addAll(['claude'],['codex','claude','kimi','agy','grok'])),['claude','codex','kimi','agy','grok']);
+ const selected=['claude','codex'];assert.deepEqual(plain(api.addAll(selected,['codex','claude','kimi','agy','grok'])),['claude','codex','kimi','agy','grok']);assert.deepEqual(selected,['claude','codex']);
+ assert.deepEqual(plain(api.addAll(['codex','claude','kimi','agy','grok'],['codex','claude','kimi','agy','grok'])),['codex','claude','kimi','agy','grok']);
 });
 test('adding all selections keeps model edits and the chosen concurrency in the generated configuration',()=>{
  const state=api.initialState(preferences);state.selected=['codex'];state.selectedRoles=['reviewer'];state.profiles.codex.maxConcurrent=7;state.jobs.codex.reviewer={model:'custom/reviewer',effort:'high'};
- state.selected=api.addAll(state.selected,['codex','claude','kimi','agy']);state.selectedRoles=api.addAll(state.selectedRoles,ROLE_IDS);
- const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);assert.equal(result.config.clients.codex.maxConcurrent??result.config.maxConcurrent,7);assert.equal(result.config.clients.codex.roles.reviewer.model,'custom/reviewer');assert.deepEqual(Object.keys(result.config.clients),['codex','claude','kimi','agy']);equivalent(decodedCommand(api.buildCommand(result.config,release)),result.config);
+ state.selected=api.addAll(state.selected,['codex','claude','kimi','agy','grok']);state.selectedRoles=api.addAll(state.selectedRoles,ROLE_IDS);
+ const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);assert.equal(result.config.clients.codex.maxConcurrent??result.config.maxConcurrent,7);assert.equal(result.config.clients.codex.roles.reviewer.model,'custom/reviewer');assert.deepEqual(Object.keys(result.config.clients),['codex','claude','kimi','agy','grok']);equivalent(decodedCommand(api.buildCommand(result.config,release)),result.config);
 });
 
 test('concurrency stepper changes one tool command at a time and respects both limits',()=>{

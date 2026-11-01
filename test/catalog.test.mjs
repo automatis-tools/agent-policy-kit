@@ -13,6 +13,14 @@ test('release catalog carries dated sourced native selectors and compatible effo
  assert.ok(catalog.clients.claude.models.some(m=>m.id==='claude-haiku-5-5'));
 });
 
+test('Grok Build inventory lists documented xAI models without effort and every preset uses the default',()=>{
+ const grok=modelCatalog().clients.grok;
+ assert.equal(grok.label,'Grok Build');assert.deepEqual(grok.efforts,[]);assert.deepEqual(grok.models.map(m=>m.id),['grok-4.7','grok-4.6','grok-4.5']);
+ for(const model of grok.models){assert.deepEqual(model.efforts,[]);assert.equal(model.defaultEffort,null);assert.equal(model.source,'https://docs.x.ai/developers/models');assert.match(model.nativeSource,/^https:\/\/github\.com\/xai-org\/grok-build\//);}
+ for(const preset of PRESETS)for(const role of Object.keys(ROLES))assert.deepEqual(rolePreference(presetPreferences(preset.id).clients.grok,role),{model:'grok-4.7',effort:null},`${preset.id} ${role}`);
+ assert.ok(!('grok' in PRESETS.find(preset=>preset.id==='quality').topModels));
+});
+
 test('current Kimi inventory includes both K3.1 Pro routes with native thinking levels',()=>{
  const models=modelCatalog().clients.kimi.models;
  assert.deepEqual(models.map(model=>model.upstreamModelId),['k3.1-pro','k3.1-pro-highspeed','k3','k3-256k','kimi-for-coding','kimi-for-coding-highspeed']);

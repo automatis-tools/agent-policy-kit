@@ -1,5 +1,5 @@
 // Pure command codec, also embedded in the offline configuration page.
-export const TOOL_FLAGS=Object.freeze({codex:'codex',claude:'claude',kimi:'kimi',antigravity:'agy'});
+export const TOOL_FLAGS=Object.freeze({codex:'codex',claude:'claude',kimi:'kimi',antigravity:'agy',grok:'grok'});
 export const EXPLICIT_FIELDS=Object.freeze(['roles','max-concurrent',...Object.keys(TOOL_FLAGS),...Object.keys(TOOL_FLAGS).map(flag=>'avoid-'+flag),...Object.keys(TOOL_FLAGS).map(flag=>flag+'-max-concurrent')]);
 const EXPLICIT_MODEL=/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
 const EXPLICIT_EFFORTS=['none','minimal','low','medium','high','xhigh','max'];
@@ -30,6 +30,7 @@ export function parseExplicitOptions(options,roleIds){
    if(at<1||!roles.includes(role)||Object.hasOwn(choices,role))invalidExplicit();
    let model=value,effort=null;
    if(client==='agy'){if(!['pro','flash','flash_lite','inherit'].includes(model))invalidExplicit();}
+   else if(client==='grok'){if(value.includes(':'))invalidExplicit();}
    else{
     const colon=value.lastIndexOf(':');if(colon<1)invalidExplicit();
     model=value.slice(0,colon);const level=value.slice(colon+1);
@@ -65,8 +66,8 @@ export function explicitOptions(config,roleCatalog){
   options[flag]=roles.map(role=>{
    const selected=preferences.roles?.[role]??preferences[kinds.get(role)];
    if(!selected||typeof selected.model!=='string'||!EXPLICIT_MODEL.test(selected.model)||(selected.effort!==null&&!EXPLICIT_EFFORTS.includes(selected.effort)))invalidExplicit();
-   if(client==='agy'&&selected.effort!==null)invalidExplicit();
-   return `${role}=${selected.model}${client==='agy'?'':':'+(selected.effort??'native')}`;
+   if(['agy','grok'].includes(client)&&selected.effort!==null)invalidExplicit();
+   return `${role}=${selected.model}${['agy','grok'].includes(client)?'':':'+(selected.effort??'native')}`;
   }).join(',');
   if(preferences.maxConcurrent!==undefined)options[flag+'-max-concurrent']=String(preferences.maxConcurrent);
   if(!Array.isArray(preferences.avoidModels)||preferences.avoidModels.some(model=>typeof model!=='string'||!EXPLICIT_MODEL.test(model)))invalidExplicit();

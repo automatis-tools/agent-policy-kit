@@ -1,7 +1,7 @@
 import catalog from '../models/catalog.json' with {type:'json'};
 import {ROLES,ROLE_IDS,selectedRoleIds} from './roles.mjs';
 export {ROLES} from './roles.mjs';
-export const CLIENTS = Object.freeze(['codex', 'claude', 'kimi', 'agy']);
+export const CLIENTS = Object.freeze(['codex', 'claude', 'kimi', 'agy', 'grok']);
 export const rolePreference=(config,role)=>config.roles?.[role]??config[ROLES[role]];
 export const NATIVE_EFFORTS=Object.freeze(Object.fromEntries(CLIENTS.map(client=>[client,Object.freeze([...catalog.clients[client].efforts])])));
 const identifier = /^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;

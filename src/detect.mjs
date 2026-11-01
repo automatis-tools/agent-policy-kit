@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-const CLIENTS = ['codex','claude','kimi','agy'];
+const CLIENTS = ['codex','claude','kimi','agy','grok'];
 const OUTPUT_LIMIT = 65536;
 const VERSION = String.raw`(\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9][A-Za-z0-9.-]{0,63})?(?:\+[A-Za-z0-9][A-Za-z0-9.-]{0,63})?)`;
 function failure(code) { return Object.assign(new Error(code),{code}); }
@@ -82,6 +82,7 @@ function identity(client,output) {
     claude:[new RegExp(String.raw`^\s*v?${VERSION}\s+\(Claude Code\)(?:\s|$)`,'im'),new RegExp(String.raw`^\s*Claude Code\s+v?${VERSION}(?:\s|$)`,'im')],
     kimi:[new RegExp(String.raw`^\s*kimi(?:\s+code(?:\s+cli)?)?(?:,?\s+version)?\s+v?${VERSION}(?:\s|$)`,'im')],
     agy:[new RegExp(String.raw`^\s*(?:Antigravity|agy)\s+v?${VERSION}(?:\s|$)`,'im')],
+    grok:[new RegExp(String.raw`^\s*grok\s+v?${VERSION}(?:\s|$)`,'im')],
   };
   for (const pattern of patterns[client]) { const match = output.match(pattern); if (match && match[1].length <= 128) return match[1]; }
   return null;

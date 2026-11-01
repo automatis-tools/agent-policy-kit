@@ -36,17 +36,17 @@ Usage: agent-policy <command> [options]
   doctor        Check owned native configuration without model calls
   show          Read current user-level native subagent configuration
 
-Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
+Options: --client codex|claude|kimi|agy|grok --home PATH --state-dir PATH
          --policy FILE | --release [--preset fast|balanced|quality] | --config BASE64URL
          --roles worker,reviewer,explorer,tester,writer,routine --max-concurrent 3
          --codex ROLE=MODEL:EFFORT,... --claude ROLE=MODEL:EFFORT,...
-         --kimi ROLE=ALIAS:EFFORT,... --antigravity ROLE=TIER,...
+         --kimi ROLE=ALIAS:EFFORT,... --antigravity ROLE=TIER,... --grok ROLE=MODEL,...
          --codex-max-concurrent N --claude-max-concurrent N
-         --kimi-max-concurrent N --antigravity-max-concurrent N
-         --avoid-codex MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-antigravity MODELS
+         --kimi-max-concurrent N --antigravity-max-concurrent N --grok-max-concurrent N
+         --avoid-codex MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-antigravity MODELS --avoid-grok MODELS
          --apply --json --help --version
 
-Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort.
+Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort. Antigravity and Grok Build take ROLE=TIER and ROLE=MODEL with no effort.
 Include every selected role for each selected tool. Per-tool concurrency overrides the shared fallback.
 Avoid lists are comma-separated.
 State defaults to AGENT_POLICY_HOME or ~/.agent-policy-kit.
@@ -149,7 +149,7 @@ async function main(){
       catch(error){configuration={status:'attention',reason:safeCode(error.code)};}
     }
     report.clients[selected]={detection,configuration,modelExecution:'not_checked',
-      concurrency:['codex','claude'].includes(selected)?'native_setting_with_client_exceptions':'instructions_only',
+      concurrency:['codex','claude','grok'].includes(selected)?'native_setting_with_client_exceptions':'instructions_only',
       models:selected==='agy'?'native_tiers':selected==='kimi'?'native_pool_with_routing_guidance':'native_role_settings'};
   }
   print(report);

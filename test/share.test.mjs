@@ -22,6 +22,14 @@ const raw=json=>'#setup='+Buffer.from(typeof json==='string'?json:JSON.stringify
 const payload=()=>({v:1,release:PACKAGE_VERSION,roles:['reviewer'],tools:[{id:'codex',mode:'balanced',base:'balanced',choices:{reviewer:{model:'gpt-6.1-sol',effort:'high'}}}],scope:'codex',maxConcurrent:3});
 const invalid=fn=>assert.throws(fn,{code:'INVALID_SHARE_LINK'});
 
+test('a Grok Build selection with the preset model round-trips and refuses a pinned effort',()=>{
+ const input=snapshot(['worker','reviewer'],['grok']);
+ const decoded=decodeFormState(encodeFormState(input,release),release);
+ assert.deepEqual(decoded.tools[0].choices.worker,{model:'grok-4.7',effort:null});
+ input.state.profiles.grok.custom=true;input.state.jobs.grok.reviewer={model:'grok-4.5',effort:null};
+ assert.deepEqual(decodeFormState(encodeFormState(input,release),release).tools[0].choices.reviewer,{model:'grok-4.5',effort:null});
+});
+
 test('empty and unrelated fragments carry no setup',()=>{
  assert.equal(encodeFormState(snapshot([],[]),release),'');
  for(const fragment of ['', '#', '#about', '#other=setup', '#setup-other=value'])assert.equal(decodeFormState(fragment,release),null);
@@ -37,7 +45,7 @@ test('a selected role/tool round-trips to the exact canonical visible payload',(
 });
 
 test('full and partial selections preserve order, cap and scope',()=>{
- for(const roles of [[],['routine'],['routine','worker','explorer','reviewer']])for(const tools of [[],['agy'],['kimi','codex','agy','claude']]){
+ for(const roles of [[],['routine'],['routine','worker','explorer','reviewer']])for(const tools of [[],['agy'],['kimi','codex','agy','grok','claude']]){
   const input=snapshot(roles,tools);input.state.maxConcurrent=32;
   if(!roles.length&&!tools.length)continue;
   const decoded=decodeFormState(encodeFormState(input,release),release);
@@ -172,7 +180,7 @@ test('generic native effort levels are accepted for drafts; Antigravity is alway
   const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer={model:'draft',effort};
   assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].choices.reviewer.effort,effort);
  }
- for(const [id,effort] of [['codex','ultra'],['claude','none'],['kimi','minimal'],['agy','high']]){const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer.effort=effort;invalid(()=>encodeFormState(input,release));}
+ for(const [id,effort] of [['codex','ultra'],['claude','none'],['kimi','minimal'],['agy','high'],['grok','high']]){const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer.effort=effort;invalid(()=>encodeFormState(input,release));}
 });
 
 test('encoding refuses accessors, symbols and prototype surprises without running getters',()=>{

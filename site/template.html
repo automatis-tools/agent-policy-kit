@@ -88,14 +88,14 @@ const RELEASE = __APK_RELEASE_DATA__;
 __APK_EXPLICIT_CODEC__
 __APK_SHARE_CODEC__
 (() => {
-  const CLIENTS = ['codex', 'claude', 'kimi', 'agy'];
+  const CLIENTS = ['codex', 'claude', 'kimi', 'agy', 'grok'];
   const ROLES = RELEASE.roles.map(role=>role.id);
   const ROLE_KINDS=Object.fromEntries(RELEASE.roles.map(role=>[role.id,role.kind]));
   const TIERS = ['pro', 'flash', 'flash_lite', 'inherit'];
   const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
-  const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'Antigravity'};
+  const LABELS = {codex: 'Codex', claude: 'Claude', kimi: 'Kimi', agy: 'Antigravity', grok: 'Grok Build'};
   const TASKS = Object.fromEntries(RELEASE.roles.map(role=>[role.id,role.name]));
-  const NOTES = {codex: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', agy: 'Native tiers only; per-task effort is unavailable.'};
+  const NOTES = {codex: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', agy: 'Native tiers only; per-task effort is unavailable.', grok: 'Per-task effort is unavailable; subagents use the main session effort.'};
   const clone = value => JSON.parse(JSON.stringify(value));
   const addAll = (selected, available) => [...selected, ...available.filter(id => !selected.includes(id))];
   function effective(config, role) {

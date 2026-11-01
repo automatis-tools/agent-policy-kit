@@ -9,8 +9,8 @@ import {ROLE_IDS,ROLE_DEFINITIONS} from '../src/roles.mjs';
 import {nativeRoles,instructionBlock} from '../src/native.mjs';
 import {explicitOptions,parseExplicitOptions,formatExplicitCommand} from '../src/explicit.mjs';
 
-const clients=['codex','claude','kimi','agy'];
-const flag={codex:'codex',claude:'claude',kimi:'kimi',agy:'antigravity'};
+const clients=['codex','claude','kimi','agy','grok'];
+const flag={codex:'codex',claude:'claude',kimi:'kimi',agy:'antigravity',grok:'grok'};
 const balanced=JSON.parse(fs.readFileSync(new URL('../policies/balanced.json',import.meta.url)));
 const one=()=>({roles:'reviewer','max-concurrent':'3',codex:'reviewer=gpt-6.1-sol:high','avoid-codex':'gpt-6-astra'});
 
@@ -18,7 +18,7 @@ test('explicit commands preserve effective role settings and guidance for every 
  let count=0;
  for(const name of ['fast','balanced','quality']){
   const preset=JSON.parse(fs.readFileSync(new URL(`../policies/${name}.json`,import.meta.url)));
-  for(let r=1;r<(1<<ROLE_IDS.length);r++)for(let c=1;c<16;c++){
+  for(let r=1;r<(1<<ROLE_IDS.length);r++)for(let c=1;c<(1<<clients.length);c++){
    const roles=ROLE_IDS.filter((_,i)=>r&(1<<i)),selected=clients.filter((_,i)=>c&(1<<i));
    const config={...preset,...(roles.length===ROLE_IDS.length?{}:{selectedRoles:roles}),clients:Object.fromEntries(selected.map(client=>[client,preset.clients[client]]))};
    const options=explicitOptions(config,ROLE_DEFINITIONS),decoded=validatePolicy(parseExplicitOptions(options,ROLE_IDS));
@@ -33,7 +33,7 @@ test('explicit commands preserve effective role settings and guidance for every 
    count++;
   }
  }
- assert.equal(count,3*((1<<ROLE_IDS.length)-1)*15);
+ assert.equal(count,3*((1<<ROLE_IDS.length)-1)*((1<<clients.length)-1));
 });
 
 test('native effort and provider IDs containing colons and @ round-trip literally',()=>{
@@ -49,6 +49,16 @@ test('explicit input rejects missing, extra, repeated, malformed or opaque choic
  const inherited=Object.assign(Object.create({roles:'reviewer','max-concurrent':'3'}),{codex:base.codex});assert.throws(()=>parseExplicitOptions(inherited,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
 
+test('Grok Build accepts role=model without effort and rejects a pinned effort or foreign flags',()=>{
+ const valid={roles:'worker,reviewer','max-concurrent':'3',grok:'worker=grok-4.7,reviewer=grok-4.6','grok-max-concurrent':'2','avoid-grok':'grok-4.5'};
+ const parsed=validatePolicy(parseExplicitOptions(valid,ROLE_IDS));
+ assert.deepEqual(rolePreference(parsed.clients.grok,'reviewer'),{model:'grok-4.6',effort:null});assert.equal(parsed.clients.grok.maxConcurrent,2);assert.deepEqual(parsed.clients.grok.avoidModels,['grok-4.5']);
+ for(const bad of ['worker=grok-4.7:high,reviewer=grok-4.6','worker=grok-4.7:native,reviewer=grok-4.6','worker=grok-4.7'])assert.throws(()=>parseExplicitOptions({...valid,grok:bad},ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+ assert.throws(()=>parseExplicitOptions({roles:'worker','max-concurrent':'3','avoid-grok':'grok-4.5'},ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+ const config={schemaVersion:1,maxConcurrent:3,selectedRoles:['worker'],clients:{grok:{code:{model:'grok-4.7',effort:null},light:{model:'grok-4.7',effort:null},avoidModels:[]}}};
+ const command=formatExplicitCommand(config,'0.1.0',ROLE_DEFINITIONS);assert.match(command,/--grok 'worker=grok-4\.7'/);assert.doesNotMatch(command,/:native/);
+ assert.throws(()=>explicitOptions({...config,clients:{grok:{...config.clients.grok,code:{model:'grok-4.7',effort:'high'}}}},ROLE_DEFINITIONS),{code:'INVALID_EXPLICIT_CONFIG'});
+});
 test('native Kimi alias consistency and Antigravity tiers remain policy requirements',()=>{
  const valid={roles:'worker,reviewer','max-concurrent':'3',kimi:'worker=native/k3:high,reviewer=native/k3:native',antigravity:'worker=pro,reviewer=flash'};
  assert.doesNotThrow(()=>validatePolicy(parseExplicitOptions(valid,ROLE_IDS)));

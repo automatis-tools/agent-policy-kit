@@ -31,7 +31,7 @@ test('packed configurator produces independent native files that survive npm and
     .filter(part => part && !part.startsWith(source))].join(path.delimiter);
   const env = { TMPDIR:scratch, PATH: cleanPath, LANG: 'C.UTF-8', HOME: freshHome, USERPROFILE: freshHome, XDG_CONFIG_HOME: path.join(freshHome, 'xdg/config'),
     XDG_DATA_HOME: path.join(freshHome, 'xdg/data'), XDG_STATE_HOME: path.join(freshHome, 'xdg/state'),
-    CODEX_HOME: path.join(freshHome, '.codex'), CLAUDE_CONFIG_DIR: path.join(freshHome, '.claude'), KIMI_CODE_HOME: path.join(freshHome, '.kimi-code'),
+    CODEX_HOME: path.join(freshHome, '.codex'), CLAUDE_CONFIG_DIR: path.join(freshHome, '.claude'), KIMI_CODE_HOME: path.join(freshHome, '.kimi-code'), GROK_HOME: path.join(freshHome, '.grok'),
     AGENT_POLICY_HOME: state, npm_config_cache: cache, npm_config_registry: 'https://registry.npmjs.org',
     npm_config_userconfig: path.join(freshHome, '.npmrc'), npm_config_globalconfig: path.join(freshHome, 'npm-global-config') };
   delete env.NODE_OPTIONS;
@@ -75,13 +75,14 @@ test('packed configurator produces independent native files that survive npm and
   const nativeBin=path.join(consumer,'native-bin');fs.mkdirSync(nativeBin);
   const identities={codex:['codex-cli 0.165.0','Usage: codex'],claude:['2.1.312 (Claude Code)','Usage: claude'],
     kimi:['2.4.0','Usage: kimi\nKimi Code CLI\nhttps://moonshotai.github.io/kimi-code/'],
-    agy:['1.4.10','Usage of agy:\n--agent --model --effort\nAvailable subcommands: agent models plugin']};
-  const dirs={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
+    agy:['1.4.10','Usage of agy:\n--agent --model --effort\nAvailable subcommands: agent models plugin'],
+    grok:['grok 1.0.70 (0123456789ab 2026-10-30) [stable]','Usage: grok']};
+  const dirs={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini',grok:'.grok'};
   const bundled=JSON.parse(fs.readFileSync(path.join(consumer,'node_modules/agent-policy-kit/policies/balanced.json'),'utf8'));
   const expected=Object.fromEntries(Object.entries(bundled.clients).map(([client,config])=>[client,Object.fromEntries(ROLE_DEFINITIONS.map(role=>[role.id,config.roles?.[role.id]??config[role.kind]]))]));
   for(const [client,[version,help]]of Object.entries(identities)) {
     const inspect=`const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const client=${JSON.stringify(client)},base=path.join(process.env.HOME,${JSON.stringify(dirs[client])});
+const client=${JSON.stringify(client)},base=client==='grok'&&process.env.GROK_HOME?process.env.GROK_HOME:path.join(process.env.HOME,${JSON.stringify(dirs[client])});
 const roles=${JSON.stringify(ROLE_IDS)},expected=${JSON.stringify(expected[client])};
 for(const [i,role]of roles.entries()){
 const file=path.join(base,client==='agy'?'config/agents':'agents','apk-'+role+(client==='codex'?'.toml':'.md'));
@@ -89,12 +90,14 @@ const body=fs.readFileSync(file,'utf8');
 assert.ok(body.includes('apk-'+role));
 if(client==='codex')assert.ok(body.includes('model = '+JSON.stringify(expected[role].model)));
 else if(client==='kimi')assert.ok(body.includes(expected[role].model));
+else if(client==='grok'){assert.match(body,new RegExp('^name: apk-'+role+'$','m'));assert.equal(/^permission_mode: plan$/m.test(body),['reviewer','explorer'].includes(role));assert.ok(!/^(model|effort):/m.test(body));}
 else assert.equal(JSON.parse(body.match(/^model: (.+)$/m)[1]),expected[role].model);
 assert.ok(!body.includes('node_modules')&&!body.includes('agent-policy.mjs'));
 }
 const instructions=fs.readFileSync(path.join(base,client==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');assert.ok(instructions.includes('apk-worker'));
 if(client==='claude'){const config=JSON.parse(fs.readFileSync(path.join(base,'settings.json')));assert.equal(config.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'3');assert.equal(config.model,'opus');}
 if(client==='codex')assert.match(fs.readFileSync(path.join(base,'config.toml'),'utf8'),/max_concurrent_threads_per_session\\s*=\\s*3/);
+if(client==='grok'){const config=fs.readFileSync(path.join(base,'config.toml'),'utf8');assert.match(config,/max_concurrent\\s*=\\s*3/);assert.match(config,/\\[subagents\\.models\\]/);for(const role of roles)assert.match(config,new RegExp('apk-'+role+'\\\\s*=\\\\s*'+JSON.stringify(expected[role].model)));assert.match(config,new RegExp('general-purpose\\\\s*=\\\\s*'+JSON.stringify(expected.worker.model)));assert.ok(config.includes('USER_GROK_SETTING'));}
 console.log(JSON.stringify({client,roles:roles.length,configuration:'readable',evidence:'standalone_consumer_fixture'}));`;
     fs.writeFileSync(path.join(nativeBin,client),`#!/usr/bin/env node\nif(process.argv.includes('--inspect-native')){${inspect}}else console.log(process.argv.includes('--version')?${JSON.stringify(version)}:${JSON.stringify(help)});\n`,{mode:0o755});
   }
@@ -167,6 +170,9 @@ event="PreToolUse"
 command="echo user_hook"
 `;
   put(kimiConfig,kimiOriginal);
+  const grokOriginal='# user grok settings\nUSER_GROK_SETTING = true\n[subagents]\nenabled = true\n';
+  put(path.join(freshHome,'.grok/config.toml'),grokOriginal);
+  put(path.join(freshHome,'.grok/agents/user-agent.md'),'---\nname: user-agent\ndescription: User owned\n---\nUser prompt.\n');
   const nativePaths=[];
   for(const [client,dir]of Object.entries(dirs)) {
     const instructions=path.join(freshHome,dir,client==='claude'?'CLAUDE.md':'AGENTS.md');put(instructions,'User instruction before setup.\n');nativePaths.push(instructions);
@@ -175,7 +181,7 @@ command="echo user_hook"
   parse(cli(['init','--policy',path.join(state,'policy.json')]));
   const plan=parse(cli(['setup']));assert.equal(plan.status,'planned');assert.equal(JSON.stringify(plan).includes('PRIVATE_'),false);
   assert.equal(fs.existsSync(path.join(state,'installations')),false,'plan-only must not write receipts');
-  const applied=parse(cli(['setup','--apply']));assert.equal(applied.status,'configured');assert.equal(applied.results.filter(r=>r.status==='configured').length,4);
+  const applied=parse(cli(['setup','--apply']));assert.equal(applied.status,'configured');assert.equal(applied.results.filter(r=>r.status==='configured').length,5);
   const repeated=parse(cli(['setup','--apply']));assert.ok(repeated.results.every(r=>r.status==='unchanged'));
   const doctor=parse(cli(['doctor']));assert.equal(doctor.mode,'configuration_only');
   for(const client of Object.keys(dirs)){assert.equal(doctor.clients[client].configuration.status,'verified');assert.equal(doctor.clients[client].modelExecution,'not_checked');}
@@ -198,6 +204,8 @@ command="echo user_hook"
   // Surgical TOML restoration may change assignment spacing/trailing blank lines.
   const layout=text=>text.split('\n').map(line=>line.replace(/\s*=\s*/,'=')).filter(line=>line.trim()).join('\n');
   assert.equal(layout(fs.readFileSync(kimiConfig,'utf8')),layout(kimiOriginal));
+  assert.equal(layout(fs.readFileSync(path.join(freshHome,'.grok/config.toml'),'utf8')),layout(grokOriginal));
+  assert.ok(fs.existsSync(path.join(freshHome,'.grok/agents/user-agent.md')));
   for(const file of nativePaths.filter(f=>f.includes('apk-')))assert.equal(fs.existsSync(file),false);
   // Execute the actual expanded page command through a shell and npx + local tarball.
   const page=fs.readFileSync(path.join(installedRoot,'site/index.html'),'utf8'),context=vm.createContext({TextEncoder,btoa});
@@ -215,6 +223,7 @@ command="echo user_hook"
   const subset=parse(isolated('/bin/sh',['-c',localCommand],{env:{...env,npm_config_offline:'true'}}));
   assert.equal(subset.status,'configured');assert.equal(subset.results.find(result=>result.client==='kimi').status,'not_selected');
   assert.equal(subset.results.find(result=>result.client==='agy').status,'not_selected');
+  assert.equal(subset.results.find(result=>result.client==='grok').status,'not_selected');
   for(const client of ['codex','claude'])for(const role of ROLE_IDS)assert.equal(fs.existsSync(path.join(freshHome,dirs[client],'agents',`apk-${role}.${client==='codex'?'toml':'md'}`)),['reviewer','explorer'].includes(role));
   assert.match(fs.readFileSync(path.join(freshHome,'.codex/agents/apk-reviewer.toml'),'utf8'),/model_reasoning_effort = "max"/);
   assert.match(fs.readFileSync(codexConfig,'utf8'),/max_concurrent_threads_per_session\s*=\s*5/);

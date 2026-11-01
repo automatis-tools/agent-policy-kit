@@ -1,4 +1,4 @@
-const LABELS={codex:'Codex',claude:'Claude Code',kimi:'Kimi',agy:'Antigravity'};
+const LABELS={codex:'Codex',claude:'Claude Code',kimi:'Kimi',agy:'Antigravity',grok:'Grok Build'};
 const label=client=>LABELS[client]??'Tool';
 const code=value=>typeof value==='string'&&/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(value)?value:'OPERATION_FAILED';
 const preset=value=>['fast','balanced','quality'].includes(value)?' · '+value[0].toUpperCase()+value.slice(1):'';
@@ -9,6 +9,8 @@ const NOTES={
  'kimi-model-pool-routing-guidance':'Kimi: the parent selects the model alias for each role.',
  'agy-concurrency-guidance-only':'Antigravity: the concurrency limit is guidance.',
  'agy-per-role-effort-unsupported':'Antigravity: native tiers do not support per-role effort.',
+ 'grok-per-role-effort-unsupported':'Grok Build: native agent settings do not support per-role effort.',
+ 'grok-native-precedence-limits':'Project and explicit client settings can override these defaults.',
  'kimi-catalog-alias-resolved':'Kimi: an existing matching model alias was selected.',
 };
 const REASONS={
