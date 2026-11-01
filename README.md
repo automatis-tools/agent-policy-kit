@@ -19,7 +19,7 @@ flowchart LR
 
 ## Choose your setup
 
-Open the [configuration page](https://agent-policy-kit.trymenow.io/v/0.1.0/) in your browser. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. The page address saves your visible choices for sharing. APK creates only the selected roles in installed, selected tools.
+Open the [configuration page](https://agent-policy-kit.trymenow.io/v/0.2.0/) in your browser. Choose roles and coding tools, keep a preset or adjust each role, then copy the fully expanded setup command. The page address saves your visible choices for sharing. APK creates only the selected roles in installed, selected tools.
 
 The [bundled page](site/index.html) also works offline. APK has no proxy, background process or runtime during your normal coding sessions. You can remove the npm package afterward.
 
@@ -43,7 +43,7 @@ See the [exact preset choices and rationale](docs/model-catalog.md#how-the-prese
 ## Use a specific release's defaults
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --apply
+npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy setup --release --apply
 ```
 
 Omit --apply to preview. Each version includes its own presets, instructions and configuration page. [Release notes](CHANGELOG.md) explain what changed and why; [release usage](docs/releases.md) covers upgrade and downgrade.
@@ -60,7 +60,7 @@ Open an individual coding tool's details to set its maximum concurrent subagents
 
 [Model catalog](docs/model-catalog.md) · [Support](docs/compatibility.md) · [Model updates](docs/model-updates.md) · [Privacy](docs/privacy.md) · [Verification](docs/verification.md)
 
-Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.1.0. MIT licensed.
+Node.js 22.x (22.13+) or 24+; macOS/Linux. Version 0.2.0. MIT licensed.
 
 ## Related projects
 
