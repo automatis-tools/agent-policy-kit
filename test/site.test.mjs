@@ -65,6 +65,7 @@ function equivalent(decoded,expected){
  assert.deepEqual(Object.keys(decoded.clients),Object.keys(expected.clients));
  for(const client of Object.keys(expected.clients)){
   assert.deepEqual(decoded.clients[client].avoidModels,expected.clients[client].avoidModels);
+  assert.equal(decoded.clients[client].maxConcurrent??decoded.maxConcurrent,expected.clients[client].maxConcurrent??expected.maxConcurrent);
   for(const role of expected.selectedRoles??ROLE_IDS)assert.deepEqual(rolePreference(decoded.clients[client],role),expected.clients[client].roles?.[role]??expected.clients[client][ROLE_DEFINITIONS.find(r=>r.id===role).kind]);
  }
 }
@@ -127,7 +128,7 @@ test('an individual preset changes only that tool and All reports mixed modes',(
  let prompts=0;const next=api.applyPreset(state,preset,()=>{prompts++;return true;});assert.equal(prompts,1);
  assert.equal(next.active,'kimi');assert.equal(api.modeFor(next),'quality');assert.equal(api.modeFor(next,'all'),'custom');
  for(const client of ['codex','claude','agy']){assert.deepEqual(plain(next.jobs[client]),plain(state.jobs[client]));assert.deepEqual(plain(next.profiles[client]),plain(state.profiles[client]));assert.equal(api.modeFor(next,client),'balanced');}
- const config=plain(api.buildConfig(next,preferences).config);assert.deepEqual(config.clients.kimi,quality.clients.kimi);
+ const config=plain(api.buildConfig(next,preferences).config);assert.deepEqual(config.clients.kimi,{...quality.clients.kimi,maxConcurrent:2});
  for(const client of ['codex','claude','agy'])assert.deepEqual(config.clients[client],preferences.clients[client]);
  assert.equal(next.maxConcurrent,state.maxConcurrent);assert.equal(JSON.stringify(state),before);
  next.active='all';const reset=api.applyPreset(next,{id:'balanced',preferences},()=>true);
@@ -234,7 +235,7 @@ test('bad input cannot leave a usable configuration', () => {
     assert.ok(invalid.errors.length, model);
   }
   for (const maxConcurrent of ['', '1.2', 'NaN', '0', '33']) {
-    const state = api.initialState(preferences); state.maxConcurrent = maxConcurrent;
+    const state = api.initialState(preferences); state.profiles.codex.maxConcurrent = maxConcurrent===''?'':Number(maxConcurrent);
     assert.equal(api.buildConfig(state, preferences).config, null, maxConcurrent);
   }
   for(const selected of [[],null,'codex',{},['codex','codex'],['invented']]){
@@ -365,16 +366,16 @@ test('custom Google dated IDs and native effort stay visible in the command',()=
  assert.deepEqual(decodedCommand(command).clients.claude.roles.worker,{model,effort:null});
 });
 
-test('the shared concurrency choice survives all-tool and individual model preset changes',()=>{
- const state=api.initialState(preferences);state.maxConcurrent=5;
- const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
- const next=api.applyPreset(state,{id:'quality',preferences:quality},()=>{throw new Error('An independent cap is not a model edit');});
- assert.equal(next.maxConcurrent,5);assert.equal(decodedCommand(api.buildCommand(plain(api.buildConfig(next,preferences).config),release)).maxConcurrent,5);
- next.active='codex';assert.equal(api.applyPreset(next,{id:'balanced',preferences},()=>true).maxConcurrent,5);
+test('parallel edits are preserved when preset replacement is canceled and reset only after confirmation',()=>{
+ const state=api.initialState(preferences);api.updateConcurrency(state,'codex','5');
+ const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8')),before=JSON.stringify(state);
+ assert.equal(api.applyPreset(state,{id:'quality',preferences:quality}),state);assert.equal(JSON.stringify(state),before);
+ const next=api.applyPreset(state,{id:'quality',preferences:quality},()=>true);for(const client of next.selected)assert.equal(next.profiles[client].maxConcurrent,2);
+ assert.equal(decodedCommand(api.buildCommand(plain(api.buildConfig(next,preferences).config),release)).maxConcurrent,2);
 });
 test('concurrency edits propagate boundary values to applicable commands and block invalid drafts',()=>{
- for(const value of [1,5,32]){const state=api.initialState(preferences);api.updateConcurrency(state,String(value));const built=plain(api.buildConfig(state,preferences));assert.deepEqual(built.errors,[]);assert.equal(decodedCommand(api.buildCommand(built.config,release)).maxConcurrent,value);}
- for(const value of ['', '0','33','1.5']){const state=api.initialState(preferences);api.updateConcurrency(state,value);const built=plain(api.buildConfig(state,preferences));assert.equal(built.config,null);assert.match(built.errors[0],/whole number.*1.*32/);}
+ for(const value of [1,5,32]){const state=api.initialState(preferences);api.updateConcurrency(state,'codex',String(value));const built=plain(api.buildConfig(state,preferences));assert.deepEqual(built.errors,[]);const decoded=decodedCommand(api.buildCommand(built.config,release));assert.equal(decoded.clients.codex.maxConcurrent??decoded.maxConcurrent,value);}
+ for(const value of ['', '0','33','1.5']){const state=api.initialState(preferences);api.updateConcurrency(state,'codex',value);const built=plain(api.buildConfig(state,preferences));assert.equal(built.config,null);assert.match(built.errors[0],/whole number.*1.*32/);}
 });
 
 test('Add all fills missing roles and tools while preserving existing selection order',()=>{
@@ -384,24 +385,40 @@ test('Add all fills missing roles and tools while preserving existing selection 
  assert.deepEqual(plain(api.addAll(['codex','claude','kimi','agy'],['codex','claude','kimi','agy'])),['codex','claude','kimi','agy']);
 });
 test('adding all selections keeps model edits and the chosen concurrency in the generated configuration',()=>{
- const state=api.initialState(preferences);state.selected=['codex'];state.selectedRoles=['reviewer'];state.maxConcurrent=7;state.jobs.codex.reviewer={model:'custom/reviewer',effort:'high'};
+ const state=api.initialState(preferences);state.selected=['codex'];state.selectedRoles=['reviewer'];state.profiles.codex.maxConcurrent=7;state.jobs.codex.reviewer={model:'custom/reviewer',effort:'high'};
  state.selected=api.addAll(state.selected,['codex','claude','kimi','agy']);state.selectedRoles=api.addAll(state.selectedRoles,ROLE_IDS);
- const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);assert.equal(result.config.maxConcurrent,7);assert.equal(result.config.clients.codex.roles.reviewer.model,'custom/reviewer');assert.deepEqual(Object.keys(result.config.clients),['codex','claude','kimi','agy']);equivalent(decodedCommand(api.buildCommand(result.config,release)),result.config);
+ const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);assert.equal(result.config.clients.codex.maxConcurrent??result.config.maxConcurrent,7);assert.equal(result.config.clients.codex.roles.reviewer.model,'custom/reviewer');assert.deepEqual(Object.keys(result.config.clients),['codex','claude','kimi','agy']);equivalent(decodedCommand(api.buildCommand(result.config,release)),result.config);
 });
 
-test('concurrency stepper changes the generated command one step at a time and respects both limits',()=>{
- const state=api.initialState(preferences);state.maxConcurrent=3;
- api.stepConcurrency(state,1);assert.equal(decodedCommand(api.buildCommand(plain(api.buildConfig(state,preferences).config),release)).maxConcurrent,4);
- api.stepConcurrency(state,-1);assert.equal(state.maxConcurrent,3);
- state.maxConcurrent=1;api.stepConcurrency(state,-1);assert.equal(state.maxConcurrent,1);
- state.maxConcurrent=32;api.stepConcurrency(state,1);assert.equal(state.maxConcurrent,32);
- for(const draft of ['', '1.5','NaN']){api.updateConcurrency(state,draft);api.stepConcurrency(state,1);assert.equal(state.maxConcurrent,1);assert.ok(api.buildConfig(state,preferences).config);}
+test('concurrency stepper changes one tool command at a time and respects both limits',()=>{
+ const state=api.initialState(preferences);
+ api.stepConcurrency(state,'codex',1);const decoded=decodedCommand(api.buildCommand(plain(api.buildConfig(state,preferences).config),release));assert.equal(decoded.clients.codex.maxConcurrent,4);
+ api.stepConcurrency(state,'codex',-1);assert.equal(state.profiles.codex.maxConcurrent,3);
+ state.profiles.codex.maxConcurrent=1;api.stepConcurrency(state,'codex',-1);assert.equal(state.profiles.codex.maxConcurrent,1);
+ state.profiles.codex.maxConcurrent=32;api.stepConcurrency(state,'codex',1);assert.equal(state.profiles.codex.maxConcurrent,32);
+ for(const draft of ['', '1.5','NaN']){api.updateConcurrency(state,'codex',draft);api.stepConcurrency(state,'codex',1);assert.equal(state.profiles.codex.maxConcurrent,1);assert.ok(api.buildConfig(state,preferences).config);}
+ assert.equal(state.profiles.claude.maxConcurrent,3);
 });
 
-test('inline parallel limit invalidates the role step and copy without invalidating model settings',()=>{
+test('a bad parallel limit invalidates tool details and copy but leaves role selection complete',()=>{
  const empty=api.initialState(preferences,'balanced',{empty:true});assert.deepEqual(plain(api.stepCompletion(empty,preferences)),[false,false,false,false]);
  const state=api.initialState(preferences);assert.deepEqual(plain(api.stepCompletion(state,preferences)),[true,true,true,false]);
- state.maxConcurrent='';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[false,true,true,false]);
- state.maxConcurrent=5;assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,true]);
+ state.profiles.codex.maxConcurrent='';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false]);
+ state.profiles.codex.maxConcurrent=5;assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,true,true]);
  state.jobs.codex.worker.model='invalid model';assert.deepEqual(plain(api.stepCompletion(state,preferences,undefined,true)),[true,true,false,false]);
+});
+
+test('parallel limits belong to individual tool profiles and preset selection restores only that tool',()=>{
+ const state=api.initialState(preferences);state.active='codex';api.updateConcurrency(state,'codex','5');assert.equal(state.profiles.codex.maxConcurrent,5);assert.equal(state.profiles.claude.maxConcurrent,3);assert.equal(api.modeFor(state,'codex'),'custom');
+ const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));const next=api.applyPreset(state,{id:'quality',preferences:quality},()=>true);assert.equal(next.profiles.codex.maxConcurrent,2);assert.equal(next.profiles.claude.maxConcurrent,3);assert.equal(state.profiles.codex.maxConcurrent,5);
+});
+test('mixed limits reach explicit commands and invalid limits on unselected tools do not block the setup',()=>{
+ const state=api.initialState(preferences);state.selected=['codex','claude'];api.updateConcurrency(state,'codex','5');api.updateConcurrency(state,'claude','2');const result=plain(api.buildConfig(state,preferences));assert.deepEqual(result.errors,[]);const decoded=decodedCommand(api.buildCommand(result.config,release));assert.equal(decoded.clients.codex.maxConcurrent??decoded.maxConcurrent,5);assert.equal(decoded.clients.claude.maxConcurrent??decoded.maxConcurrent,2);
+ api.updateConcurrency(state,'codex','');assert.equal(api.buildConfig(state,preferences).config,null);state.selected=['claude'];assert.ok(api.buildConfig(state,preferences).config);
+});
+test('restoring old scalar links preserves their count while v2 restores distinct tool counts',()=>{
+ const presets=['fast','balanced','quality'].map(id=>({id,preferences:JSON.parse(fs.readFileSync(new URL(`../policies/${id}.json`,import.meta.url),'utf8'))}));
+ const common={release:'0.1.0',roles:['reviewer'],scope:'all',tools:[{id:'codex',mode:'balanced',base:'balanced',choices:{reviewer:{model:'gpt-6.1-sol',effort:'high'}}},{id:'claude',mode:'balanced',base:'balanced',choices:{reviewer:{model:'sonnet',effort:'high'}}}]};
+ const old=api.restoreState({...common,v:1,maxConcurrent:7},preferences,presets);assert.equal(old.profiles.codex.maxConcurrent,7);assert.equal(old.profiles.claude.maxConcurrent,7);assert.equal(api.modeFor(old,'codex'),'custom');
+ const modern=api.restoreState({...common,v:2,tools:common.tools.map((t,i)=>({...t,mode:'custom',maxConcurrent:i?2:5}))},preferences,presets);assert.equal(modern.profiles.codex.maxConcurrent,5);assert.equal(modern.profiles.claude.maxConcurrent,2);assert.equal(modern.jobs.codex.reviewer.model,'gpt-6.1-sol');
 });

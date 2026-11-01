@@ -74,3 +74,10 @@ test('new role fallback kinds agree between explicit commands and native generat
  assert.deepEqual(rolePreference(decoded.clients.codex,'writer'),config.clients.codex.light);
  assert.deepEqual(nativeRoles('codex',decoded.clients.codex),nativeRoles('codex',config.clients.codex));
 });
+
+test('explicit per-tool concurrency overrides round-trip without changing the shared fallback',()=>{
+ const options={...one(),'codex-max-concurrent':'5',claude:'reviewer=sonnet:high','claude-max-concurrent':'2'};
+ const policy=validatePolicy(parseExplicitOptions(options,ROLE_IDS));assert.equal(policy.maxConcurrent,3);assert.equal(policy.clients.codex.maxConcurrent,5);assert.equal(policy.clients.claude.maxConcurrent,2);
+ const encoded=explicitOptions(policy,ROLE_DEFINITIONS);assert.equal(encoded['codex-max-concurrent'],'5');assert.equal(encoded['claude-max-concurrent'],'2');assert.deepEqual(validatePolicy(parseExplicitOptions(encoded,ROLE_IDS)),policy);
+ for(const bad of [{...one(),'kimi-max-concurrent':'2'},{...one(),'codex-max-concurrent':'0'},{...one(),'codex-max-concurrent':'33'},{...one(),'codex-max-concurrent':'1.5'},{...one(),'codex-max-concurrent':'02'}])assert.throws(()=>parseExplicitOptions(bad,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+});

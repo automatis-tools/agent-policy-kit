@@ -41,11 +41,14 @@ Options: --client codex|claude|kimi|agy --home PATH --state-dir PATH
          --roles worker,reviewer,explorer,tester,writer,routine --max-concurrent 3
          --codex ROLE=MODEL:EFFORT,... --claude ROLE=MODEL:EFFORT,...
          --kimi ROLE=ALIAS:EFFORT,... --antigravity ROLE=TIER,...
+         --codex-max-concurrent N --claude-max-concurrent N
+         --kimi-max-concurrent N --antigravity-max-concurrent N
          --avoid-codex MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-antigravity MODELS
          --apply --json --help --version
 
 Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort.
-Include every selected role for each selected tool. Avoid lists are comma-separated.
+Include every selected role for each selected tool. Per-tool concurrency overrides the shared fallback.
+Avoid lists are comma-separated.
 State defaults to AGENT_POLICY_HOME or ~/.agent-policy-kit.
 Terminal output is readable text; captured output is JSON. --json always prints JSON.
 This configurator exits after setup. Native files work without the package.`);}

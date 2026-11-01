@@ -92,3 +92,8 @@ test('show reads native subagents without an APK installation and --json preserv
 test('show reports an incomplete read with a nonzero exit while preserving readable clients',t=>{
  const home=fixture(t);fs.mkdirSync(path.join(home,'.claude'),{recursive:true});fs.writeFileSync(path.join(home,'.claude/settings.json'),'{bad');const got=cli(home,['show','--json']);assert.equal(got.status,3);assert.equal(JSON.parse(got.stdout).clients.claude.status,'attention');assert.equal(JSON.parse(got.stdout).clients.codex.status,'not_configured');
 });
+
+test('per-tool limit flags reject orphan and duplicate overrides before writing',t=>{
+ const home=fixture(t),base=['setup','--roles','reviewer','--max-concurrent','3','--codex','reviewer=gpt-6.1-sol:high','--apply'];
+ for(const [suffix,error]of [[['--claude-max-concurrent','2'],'INVALID_EXPLICIT_CONFIG'],[['--codex-max-concurrent','2','--codex-max-concurrent','3'],'DUPLICATE_OPTION']]){const got=cli(home,[...base,...suffix]);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,error);assert.deepEqual(fs.readdirSync(home),[]);}
+});

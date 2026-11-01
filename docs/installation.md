@@ -19,3 +19,5 @@ Kimi requires provisioned model entries. A missing preferred catalog alias may r
 Explicit release/custom replacement has no physical uninstall gap. Old ownership is verified, desired files are rendered over the original user baseline, and rollback protects the installed release. Doctor inspects actual applied version/source/preset without needing current presets or canonical preferences.
 
 After success the npm package can be removed. Native clients may need fresh sessions; no kit launcher is needed. Reinvoke a compatible APK for owned uninstall. Keep private receipts/backups if future removal is desired. [Recovery](recovery.md) handles drift or interrupted transactions without overwriting later user edits.
+
+The configuration page keeps per-tool limits in individual tool details. Fast starts at 2, Balanced at 3 and Quality at 2. A manual limit marks only that tool Custom. Explicit commands can use --TOOL-max-concurrent overrides alongside the shared --max-concurrent fallback. Preset selection restores its cap as well as its models and effort.

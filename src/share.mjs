@@ -57,9 +57,11 @@ function shareChoice(choice,id,metadata){
  return {model:choice.model,effort:choice.effort};
 }
 function sharePayload(payload,release,metadata){
- shareRecord(payload,['v','release','roles','tools','scope','maxConcurrent']);
- if(payload.v!==1||typeof payload.release!=='string'||payload.release.length>128||!SHARE_VERSION.test(payload.release))invalidShare();
- if(!Number.isInteger(payload.maxConcurrent)||payload.maxConcurrent<1||payload.maxConcurrent>32)invalidShare();
+ shareRecord(payload);const legacy=payload.v===1;
+ if(!legacy&&payload.v!==2)invalidShare();
+ shareRecord(payload,legacy?['v','release','roles','tools','scope','maxConcurrent']:['v','release','roles','tools','scope']);
+ if(typeof payload.release!=='string'||payload.release.length>128||!SHARE_VERSION.test(payload.release))invalidShare();
+ if(legacy&&(!Number.isInteger(payload.maxConcurrent)||payload.maxConcurrent<1||payload.maxConcurrent>32))invalidShare();
  if(payload.release!==release.version){
   // Validate the wire shape without imposing today's models or preset values on
   // an older release. Invalid links must never turn into navigation.
@@ -68,7 +70,7 @@ function sharePayload(payload,release,metadata){
   const roles=shareList(payload.roles,payload.roles),ids=[];
   if(!Array.isArray(payload.tools)||payload.tools.length>32)invalidShare();
   for(const tool of payload.tools){
-   shareRecord(tool,['id','mode','base','choices']);if(!identifier(tool.id)||ids.includes(tool.id)||!identifier(tool.base)||(tool.mode!==null&&!identifier(tool.mode)))invalidShare();ids.push(tool.id);
+   shareRecord(tool,legacy?['id','mode','base','choices']:['id','mode','base','choices','maxConcurrent']);if(!legacy&&(!Number.isInteger(tool.maxConcurrent)||tool.maxConcurrent<1||tool.maxConcurrent>32))invalidShare();if(!identifier(tool.id)||ids.includes(tool.id)||!identifier(tool.base)||(tool.mode!==null&&!identifier(tool.mode)))invalidShare();ids.push(tool.id);
    shareRecord(tool.choices,roles);for(const role of roles){const choice=shareRecord(tool.choices[role],['model','effort']);if(typeof choice.model!=='string'||choice.model.length>128||(choice.effort!==null&&(typeof choice.effort!=='string'||choice.effort.length>32)))invalidShare();}
   }
   if(payload.scope!==null&&(typeof payload.scope!=='string'||(payload.scope==='all'?ids.length<2:!ids.includes(payload.scope))))invalidShare();
@@ -78,14 +80,15 @@ function sharePayload(payload,release,metadata){
  if(!Array.isArray(payload.tools)||payload.tools.length>metadata.clients.length)invalidShare();
  const selected=[];
  const tools=payload.tools.map(tool=>{
-  shareRecord(tool,['id','mode','base','choices']);
+  shareRecord(tool,legacy?['id','mode','base','choices']:['id','mode','base','choices','maxConcurrent']);if(!legacy&&(!Number.isInteger(tool.maxConcurrent)||tool.maxConcurrent<1||tool.maxConcurrent>32))invalidShare();
   const {id,mode,base}=tool;
   if(!metadata.clients.includes(id)||selected.includes(id)||!metadata.presets.has(base)||(mode!==null&&mode!=='custom'&&!metadata.presets.has(mode)))invalidShare();
   selected.push(id);shareRecord(tool.choices,roles);
   const choices=Object.fromEntries(roles.map(role=>[role,shareChoice(tool.choices[role],id,metadata)]));
   if(mode!==null&&mode!=='custom'){
    if(mode!==base)invalidShare();
-   const clients=metadata.presets.get(mode).preferences.clients;
+   const preset=metadata.presets.get(mode).preferences,clients=preset.clients;
+   if(!legacy&&tool.maxConcurrent!==(clients[id]?.maxConcurrent??preset.maxConcurrent))invalidShare();
    if(!Object.hasOwn(clients,id))invalidShare();
    const preferences=shareRecord(clients[id]);
    for(const role of roles){
@@ -94,11 +97,11 @@ function sharePayload(payload,release,metadata){
     if(choice.model!==choices[role].model||choice.effort!==choices[role].effort)invalidShare();
    }
   }
-  return {id,mode,base,choices};
+  return {id,mode,base,choices,...(legacy?{}:{maxConcurrent:tool.maxConcurrent})};
  });
  const scope=payload.scope;
  if(scope!==null&&(typeof scope!=='string'||(scope==='all'?tools.length<2:!selected.includes(scope))))invalidShare();
- return {v:1,release:payload.release,roles,tools,scope,maxConcurrent:payload.maxConcurrent};
+ return {v:payload.v,release:payload.release,roles,tools,scope,...(legacy?{maxConcurrent:payload.maxConcurrent}:{})};
 }
 function shareBase64(bytes){return btoa(Array.from(bytes,byte=>String.fromCharCode(byte)).join('')).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');}
 function shareJson(text){
@@ -124,15 +127,16 @@ export function encodeFormState(snapshot,release){
   shareData(snapshot);shareRecord(snapshot);
   const metadata=shareRelease(release),state=shareRecord(snapshot.state),profiles=shareRecord(state.profiles),jobs=shareRecord(state.jobs);
   const roles=shareList(snapshot.helpers,[...metadata.roles.keys()]),selected=shareList(snapshot.pickedTools,metadata.clients);
+  const modern=Object.values(profiles).some(profile=>Object.hasOwn(profile,'maxConcurrent'));
   const tools=selected.map(id=>{
    if(!Object.hasOwn(profiles,id)||!Object.hasOwn(jobs,id))invalidShare();
    const profile=shareRecord(profiles[id]),choices=shareRecord(jobs[id]);
    if(typeof profile.custom!=='boolean'||(profile.modeSelected!==undefined&&typeof profile.modeSelected!=='boolean'))invalidShare();
-   return {id,mode:profile.modeSelected===false?null:profile.custom?'custom':profile.presetId,base:profile.presetId,choices:Object.fromEntries(roles.map(role=>{
+   return {id,...(modern?{maxConcurrent:Object.hasOwn(profile,'maxConcurrent')?profile.maxConcurrent:state.maxConcurrent}:{}),mode:profile.modeSelected===false?null:profile.custom?'custom':profile.presetId,base:profile.presetId,choices:Object.fromEntries(roles.map(role=>{
     if(!Object.hasOwn(choices,role))invalidShare();return [role,shareChoice(choices[role],id,metadata)];
    }))};
   });
-  const payload=sharePayload({v:1,release:release.version,roles,tools,scope:snapshot.selectedScope,maxConcurrent:state.maxConcurrent},release,metadata);
+  const payload=sharePayload({v:modern?2:1,release:release.version,roles,tools,scope:snapshot.selectedScope,...(modern?{}:{maxConcurrent:state.maxConcurrent})},release,metadata);
   if(!roles.length&&!tools.length)return '';
   const bytes=new TextEncoder().encode(JSON.stringify(payload));if(bytes.length>SHARE_BYTES)invalidShare();
   const token=shareBase64(bytes);if(token.length>SHARE_TOKEN)invalidShare();return '#setup='+token;

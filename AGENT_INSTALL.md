@@ -36,6 +36,8 @@ agent-policy setup \
 
 Use --codex, --claude, --kimi and/or --antigravity to select tools. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Antigravity accepts role=tier without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
 
+Optional --codex-max-concurrent, --claude-max-concurrent, --kimi-max-concurrent and --antigravity-max-concurrent override --max-concurrent for their selected tool. They accept whole numbers from 1 to 32 and require the corresponding tool argument. JSON preferences can instead set clients[tool].maxConcurrent. Omitted overrides use the top-level fallback.
+
 Explicit arguments are setup/install-only and cannot combine with --client, --release, --preset, --policy or --config. Duplicate flags and incomplete role maps fail before writes. Omit --apply to plan first. Explicit commands allow deliberate owned replacement and record custom source with no named preset provenance. The native files do not retain a dependency on the codec or package.
 
 Other supported inputs remain available:

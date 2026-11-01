@@ -514,3 +514,14 @@ test('K3.1 Pro requires compatible thinking even when every role leaves effort u
   const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.thinking.enabled,true);assert.equal(native.models['native-pro'].overrides,undefined);assert.equal(native.default_model,'main');
  }
 });
+
+test('each client writes its own parallel limit and removal restores original settings',async t=>{
+ const f=await fixture(t);const policy=behaviorPolicy();for(const [client,value]of Object.entries({codex:5,claude:2,kimi:4,agy:6}))policy.clients[client].maxConcurrent=value;
+ await fs.writeFile(f.policyPath,JSON.stringify(policy));await put(path.join(f.home,'.kimi-code/config.toml'),modelConfig);
+ for(const client of ['codex','claude','kimi','agy'])await applyInstall(await planInstall({...f,client}));
+ assert.equal(parseToml(await fs.readFile(path.join(f.home,'.codex/config.toml'),'utf8')).agents.max_concurrent_threads_per_session,5);
+ assert.equal(JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'),'utf8')).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'2');
+ assert.match(await fs.readFile(path.join(f.home,'.kimi-code/AGENTS.md'),'utf8'),/at most 4 subagents/);assert.match(await fs.readFile(path.join(f.home,'.gemini/AGENTS.md'),'utf8'),/at most 6 subagents/);
+ for(const client of ['codex','claude','kimi','agy'])await uninstall({...f,client,apply:true});
+ assert.deepEqual(parseToml(await fs.readFile(path.join(f.home,'.kimi-code/config.toml'),'utf8')),parseToml(modelConfig));
+});

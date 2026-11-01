@@ -44,7 +44,7 @@ These are starting recommendations for different priorities, reviewed on 2026-10
 - **Balanced:** stronger implementation, review and test creation, with lighter fact gathering and mechanical work. Kimi uses K3 256K for code to keep its quota footprint below the full-context K3 variant; larger-context choices remain editable.
 - **Quality first:** demanding implementation, review and tests get frontier models and deeper supported reasoning. Exploration, documentation and mechanical steps use choices suited to those roles rather than automatically selecting the largest model everywhere. Kimi keeps one effort per shared alias; Pro max is reserved for code/review/tests, while K3 handles exploration and docs at high effort.
 
-No preset bans any model. An unselected model remains available in Custom. Explicit personal avoid lists are still supported in user policy/CLI input. The shared concurrency ceiling of three is a modest operational default, not a claim that a particular parallelism level improves quality; native enforcement varies by client.
+No preset bans any model. An unselected model remains available in Custom. Explicit personal avoid lists are still supported in user policy/CLI input. Parallelism defaults are Fast 2, Balanced 3 and Quality 2 for each tool. They bound simultaneous delegation rather than starting tasks or measuring quality. Fast keeps short work bounded. Balanced allows three independent responsibilities to overlap. Quality limits concurrent long-running work on heavier models. These are product defaults, not benchmark results. Each tool can override its limit in its details. Native enforcement varies by client.
 
 ### Fast & economical
 
