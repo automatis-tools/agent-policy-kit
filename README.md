@@ -39,10 +39,12 @@ The copied command ends with `--apply`. Remove that last line to preview the cha
 
 ```sh
 # Preview: shows what each coding tool would get. Writes nothing.
-npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy setup --release --preset balanced
+npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 \
+  agent-policy setup --release --preset balanced
 
 # Apply: the same command plus --apply.
-npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy setup --release --preset balanced --apply
+npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 \
+  agent-policy setup --release --preset balanced --apply
 ```
 
 Without the configurator, `--preset fast` selects Light, `balanced` Standard and `quality` Top-tier.
