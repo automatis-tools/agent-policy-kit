@@ -69,6 +69,12 @@
         "model": "kimi-code/kimi-for-coding",
         "effort": "low"
       },
+      "roles": {
+        "writer": {
+          "model": "kimi-code/k3-256k",
+          "effort": "high"
+        }
+      },
       "avoidModels": []
     },
     "agy": {
@@ -100,6 +106,12 @@
       "light": {
         "model": "grok-build-0.1",
         "effort": null
+      },
+      "roles": {
+        "writer": {
+          "model": "grok-4.7",
+          "effort": null
+        }
       },
       "avoidModels": []
     }

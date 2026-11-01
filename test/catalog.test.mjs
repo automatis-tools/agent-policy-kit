@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {modelCatalog,presetPreferences,PRESETS,bundledReleaseInfo} from '../src/release.mjs';
 import {validatePolicy,rolePreference,ROLES} from '../src/policy.mjs';
@@ -89,11 +90,33 @@ test('Top-tier offers frontier models for demanding implementation and review on
 test('Grok presets use the fast coding model for light work and Grok 4.7 for stronger roles',()=>{
  const fast='grok-build-0.1',strong='grok-4.7',expected={
   fast:{worker:fast,reviewer:fast,explorer:fast,tester:fast,writer:fast,routine:fast},
-  balanced:{worker:strong,reviewer:strong,explorer:fast,tester:strong,writer:fast,routine:fast},
+  balanced:{worker:strong,reviewer:strong,explorer:fast,tester:strong,writer:strong,routine:fast},
   quality:{worker:strong,reviewer:strong,explorer:strong,tester:strong,writer:strong,routine:fast}};
  for(const [id,roles]of Object.entries(expected)){
   const grok=presetPreferences(id).clients.grok;assert.equal(grok.maxConcurrent,undefined,id);
   for(const [role,model]of Object.entries(roles))assert.deepEqual(rolePreference(grok,role),{model,effort:null},`${id} ${role}`);
  }
  assert.ok(modelCatalog().clients.grok.models.some(model=>model.id===fast&&model.efforts.length===0));
+});
+
+test('docs preset tables match the preset data in every cell',()=>{
+ const doc=fs.readFileSync(new URL('../docs/model-catalog.md',import.meta.url),'utf8').split('\n'),catalog=modelCatalog().clients;
+ const roleIds={'Coder':'worker','Reviewer':'reviewer','Code explorer':'explorer','Test writer':'tester','Docs writer':'writer','Task runner':'routine'};
+ const norm=value=>value.replace(/GPT-6(?:\.1)? /,'').replace('K3 · 256K','K3 256K').replace(/\s+/g,' ').trim();
+ for(const preset of PRESETS){
+  const start=doc.indexOf('### '+preset.label),preferences=presetPreferences(preset.id);assert.ok(start>0,preset.label);
+  const header=doc.slice(start).find(line=>line.startsWith('| Role |')).split('|').slice(2,-1).map(title=>title.trim());
+  const clients=header.map(title=>Object.keys(catalog).find(id=>title===catalog[id].label||title.startsWith(catalog[id].label+' ')));
+  assert.deepEqual([...clients].sort(),Object.keys(preferences.clients).sort(),preset.label);
+  let rows=0;
+  for(const line of doc.slice(start+1)){
+   if(line.startsWith('#'))break;
+   const match=line.match(/^\| (Coder|Reviewer|Code explorer|Test writer|Docs writer|Task runner) \|(.*)\|$/);if(!match)continue;rows++;
+   match[2].split('|').map(cell=>cell.trim()).forEach((cell,index)=>{
+    const client=clients[index],choice=rolePreference(preferences.clients[client],roleIds[match[1]]),label=catalog[client].models.find(model=>model.id===choice.model).label;
+    assert.equal(norm(cell),norm(label+(choice.effort?' · '+choice.effort:'')),`${preset.label} ${match[1]} ${client}`);
+   });
+  }
+  assert.equal(rows,6,preset.label);
+ }
 });
