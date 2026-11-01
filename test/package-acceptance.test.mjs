@@ -73,11 +73,13 @@ test('packed configurator produces independent native files that survive npm and
 
   // Identity + native-file consumer fixtures, never actual vendor/model execution.
   const nativeBin=path.join(consumer,'native-bin');fs.mkdirSync(nativeBin);
-  const identities={codex:['codex-cli 0.165.0','Usage: codex'],claude:['2.1.312 (Claude Code)','Usage: claude'],
+  const identities={chatgpt:['codex-cli 0.165.0','Usage: codex'],claude:['2.1.312 (Claude Code)','Usage: claude'],
     kimi:['2.4.0','Usage: kimi\nKimi Code CLI\nhttps://moonshotai.github.io/kimi-code/'],
-    agy:['1.4.10','Usage of agy:\n--agent --model --effort\nAvailable subcommands: agent models plugin'],
+    gemini:['1.4.10','Usage of agy:\n--agent --model --effort\nAvailable subcommands: agent models plugin'],
     grok:['grok 1.0.70 (0123456789ab 2026-10-30) [stable]','Usage: grok']};
-  const dirs={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini',grok:'.grok'};
+  const dirs={chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
+  // Each assistant's executable keeps its native name.
+  const executables={chatgpt:'codex',claude:'claude',kimi:'kimi',gemini:'agy',grok:'grok'};
   const bundled=JSON.parse(fs.readFileSync(path.join(consumer,'node_modules/agent-policy-kit/policies/balanced.json'),'utf8'));
   const expected=Object.fromEntries(Object.entries(bundled.clients).map(([client,config])=>[client,Object.fromEntries(ROLE_DEFINITIONS.map(role=>[role.id,config.roles?.[role.id]??config[role.kind]]))]));
   for(const [client,[version,help]]of Object.entries(identities)) {
@@ -85,10 +87,10 @@ test('packed configurator produces independent native files that survive npm and
 const client=${JSON.stringify(client)},base=client==='grok'&&process.env.GROK_HOME?process.env.GROK_HOME:path.join(process.env.HOME,${JSON.stringify(dirs[client])});
 const roles=${JSON.stringify(ROLE_IDS)},expected=${JSON.stringify(expected[client])};
 for(const [i,role]of roles.entries()){
-const file=path.join(base,client==='agy'?'config/agents':'agents','apk-'+role+(client==='codex'?'.toml':'.md'));
+const file=path.join(base,client==='gemini'?'config/agents':'agents','apk-'+role+(client==='chatgpt'?'.toml':'.md'));
 const body=fs.readFileSync(file,'utf8');
 assert.ok(body.includes('apk-'+role));
-if(client==='codex')assert.ok(body.includes('model = '+JSON.stringify(expected[role].model)));
+if(client==='chatgpt')assert.ok(body.includes('model = '+JSON.stringify(expected[role].model)));
 else if(client==='kimi')assert.ok(body.includes(expected[role].model));
 else if(client==='grok'){assert.match(body,new RegExp('^name: apk-'+role+'$','m'));assert.equal(/^permission_mode: plan$/m.test(body),['reviewer','explorer'].includes(role));assert.ok(!/^(model|effort):/m.test(body));}
 else assert.equal(JSON.parse(body.match(/^model: (.+)$/m)[1]),expected[role].model);
@@ -96,19 +98,19 @@ assert.ok(!body.includes('node_modules')&&!body.includes('agent-policy.mjs'));
 }
 const instructions=fs.readFileSync(path.join(base,client==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');assert.ok(instructions.includes('apk-worker'));
 if(client==='claude'){const config=JSON.parse(fs.readFileSync(path.join(base,'settings.json')));assert.equal(config.env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'3');assert.equal(config.model,'opus');}
-if(client==='codex')assert.match(fs.readFileSync(path.join(base,'config.toml'),'utf8'),/max_concurrent_threads_per_session\\s*=\\s*3/);
+if(client==='chatgpt')assert.match(fs.readFileSync(path.join(base,'config.toml'),'utf8'),/max_concurrent_threads_per_session\\s*=\\s*3/);
 if(client==='grok'){const config=fs.readFileSync(path.join(base,'config.toml'),'utf8');assert.match(config,/max_concurrent\\s*=\\s*${bundled.clients.grok.maxConcurrent??bundled.maxConcurrent}/);assert.match(config,/\\[subagents\\.models\\]/);for(const role of roles)assert.match(config,new RegExp('apk-'+role+'\\\\s*=\\\\s*'+JSON.stringify(expected[role].model)));assert.match(config,new RegExp('general-purpose\\\\s*=\\\\s*'+JSON.stringify(expected.worker.model)));assert.ok(config.includes('USER_GROK_SETTING'));}
 console.log(JSON.stringify({client,roles:roles.length,configuration:'readable',evidence:'standalone_consumer_fixture'}));`;
-    fs.writeFileSync(path.join(nativeBin,client),`#!/usr/bin/env node\nif(process.argv.includes('--inspect-native')){${inspect}}else console.log(process.argv.includes('--version')?${JSON.stringify(version)}:${JSON.stringify(help)});\n`,{mode:0o755});
+    fs.writeFileSync(path.join(nativeBin,executables[client]),`#!/usr/bin/env node\nif(process.argv.includes('--inspect-native')){${inspect}}else console.log(process.argv.includes('--version')?${JSON.stringify(version)}:${JSON.stringify(help)});\n`,{mode:0o755});
   }
   env.PATH=[nativeBin,path.dirname(process.execPath),'/usr/bin','/bin'].join(path.delimiter);
   function put(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
   const inspectHome=path.join(consumer,'existing native profile');fs.mkdirSync(inspectHome);
   put(path.join(inspectHome,'.codex/config.toml'),'[agents]\nmax_concurrent_threads_per_session=5\n');
   put(path.join(inspectHome,'.codex/agents/existing.toml'),'name="existing"\nmodel="fixture/manual"\n');
-  const inspected=parse(cli(['show','--client','codex','--home',inspectHome,'--json']));
-  assert.equal(inspected.clients.codex.concurrency.value,5);
-  assert.equal(inspected.clients.codex.roles[0].model,'fixture/manual');
+  const inspected=parse(cli(['show','--client','chatgpt','--home',inspectHome,'--json']));
+  assert.equal(inspected.clients.chatgpt.concurrency.value,5);
+  assert.equal(inspected.clients.chatgpt.roles[0].model,'fixture/manual');
   assert.equal(fs.existsSync(path.join(inspectHome,'.agent-policy-kit')),false);
   const prerequisiteHome=path.join(consumer,'unprovisioned');fs.mkdirSync(prerequisiteHome);
   const missing=cli(['install','--client','kimi','--home',prerequisiteHome,'--state-dir',path.join(prerequisiteHome,'.policy'),'--apply']);
@@ -122,16 +124,16 @@ console.log(JSON.stringify({client,roles:roles.length,configuration:'readable',e
   const failureMarker=path.join(consumer,'late-failure-observed'),preloader=path.join(consumer,'disk-failure.mjs');
   fs.writeFileSync(preloader,`import fs from 'node:fs/promises';import {syncBuiltinESMExports} from 'node:module';
 const rename=fs.rename;let failed=false;
-fs.rename=async(from,to)=>{if(to===${JSON.stringify(path.join(faultState,'installations/codex.json'))}&&!failed){
+fs.rename=async(from,to)=>{if(to===${JSON.stringify(path.join(faultState,'installations/chatgpt.json'))}&&!failed){
 failed=true;await fs.access(${JSON.stringify(path.join(faultHome,'.codex/agents/apk-worker.toml'))});
 await fs.writeFile(${JSON.stringify(failureMarker)},'committed-files-observed');throw Object.assign(new Error('late fault'),{code:'EIO'});}return rename(from,to);};syncBuiltinESMExports();`);
-  const failed=isolated(bin,['install','--client','codex','--home',faultHome,'--state-dir',faultState,'--apply'],{env:{...env,NODE_OPTIONS:`--import=${pathToFileURL(preloader).href}`}});
+  const failed=isolated(bin,['install','--client','chatgpt','--home',faultHome,'--state-dir',faultState,'--apply'],{env:{...env,NODE_OPTIONS:`--import=${pathToFileURL(preloader).href}`}});
   assert.notEqual(failed.status,0);assert.equal(fs.readFileSync(failureMarker,'utf8'),'committed-files-observed');
   assert.equal(fs.readFileSync(path.join(faultHome,'.codex/config.toml'),'utf8'),originalConfig);
   assert.equal(fs.existsSync(path.join(faultHome,'.codex/agents/apk-worker.toml')),false);
-  assert.equal(fs.existsSync(path.join(faultState,'installations/codex.json')),false);
-  assert.equal(parse(cli(['install','--client','codex','--home',faultHome,'--state-dir',faultState,'--apply'])).results[0].status,'configured');
-  assert.equal(parse(cli(['uninstall','--client','codex','--home',faultHome,'--state-dir',faultState,'--apply'])).status,'applied');
+  assert.equal(fs.existsSync(path.join(faultState,'installations/chatgpt.json')),false);
+  assert.equal(parse(cli(['install','--client','chatgpt','--home',faultHome,'--state-dir',faultState,'--apply'])).results[0].status,'configured');
+  assert.equal(parse(cli(['uninstall','--client','chatgpt','--home',faultHome,'--state-dir',faultState,'--apply'])).status,'applied');
 
   const userHooks=JSON.stringify({hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'echo user_hook'}]}]}});
   const codexConfig=path.join(freshHome,'.codex/config.toml'),claudeConfig=path.join(freshHome,'.claude/settings.json'),kimiConfig=path.join(freshHome,'.kimi-code/config.toml');
@@ -176,7 +178,7 @@ command="echo user_hook"
   const nativePaths=[];
   for(const [client,dir]of Object.entries(dirs)) {
     const instructions=path.join(freshHome,dir,client==='claude'?'CLAUDE.md':'AGENTS.md');put(instructions,'User instruction before setup.\n');nativePaths.push(instructions);
-    for(const role of ROLE_IDS)nativePaths.push(path.join(freshHome,dir,client==='agy'?'config/agents':'agents',`apk-${role}.${client==='codex'?'toml':'md'}`));
+    for(const role of ROLE_IDS)nativePaths.push(path.join(freshHome,dir,client==='gemini'?'config/agents':'agents',`apk-${role}.${client==='chatgpt'?'toml':'md'}`));
   }
   parse(cli(['init','--policy',path.join(state,'policy.json')]));
   const plan=parse(cli(['setup']));assert.equal(plan.status,'planned');assert.equal(JSON.stringify(plan).includes('PRIVATE_'),false);
@@ -197,7 +199,7 @@ command="echo user_hook"
   // Unrelated later settings survive; changed owned roles fail removal without edits.
   const settings=JSON.parse(fs.readFileSync(claudeConfig));settings.theme='dark';fs.writeFileSync(claudeConfig,JSON.stringify(settings));
   const codexRole=path.join(freshHome,'.codex/agents/apk-worker.toml'),beforeRole=fs.readFileSync(codexRole,'utf8');fs.appendFileSync(codexRole,'# owned drift\n');
-  const drift=cli(['uninstall','--client','codex','--apply']);assert.equal(drift.status,3);assert.equal(JSON.parse(drift.stdout).results[0].error,'OWNED_DRIFT');
+  const drift=cli(['uninstall','--client','chatgpt','--apply']);assert.equal(drift.status,3);assert.equal(JSON.parse(drift.stdout).results[0].error,'OWNED_DRIFT');
   assert.match(fs.readFileSync(codexRole,'utf8'),/owned drift/);fs.writeFileSync(codexRole,beforeRole);
   const removed=parse(cli(['uninstall','--apply']));assert.equal(removed.status,'completed');
   const after=JSON.parse(fs.readFileSync(claudeConfig));assert.equal(after.theme,'dark');assert.equal(after.env.USER_TOKEN,'PRIVATE_CREDENTIAL');assert.equal(after.model,'opus');
@@ -211,8 +213,8 @@ command="echo user_hook"
   const page=fs.readFileSync(path.join(installedRoot,'site/index.html'),'utf8'),context=vm.createContext({TextEncoder,btoa});
   vm.runInContext(page.match(/<script>([\s\S]*?)<\/script>/)[1],context);
   const pageRelease=vm.runInContext('RELEASE',context),api=context.APKConfigurator,selection=api.initialState(pageRelease.preferences);
-  selection.selected=['codex','claude'];selection.selectedRoles=['reviewer','explorer'];selection.jobs.codex.reviewer.effort='max';
-  api.updateConcurrency(selection,'codex','5');api.updateConcurrency(selection,'claude','2');
+  selection.selected=['chatgpt','claude'];selection.selectedRoles=['reviewer','explorer'];selection.jobs.chatgpt.reviewer.effort='max';
+  api.updateConcurrency(selection,'chatgpt','5');api.updateConcurrency(selection,'claude','2');
   const built=api.buildConfig(selection,pageRelease.preferences);assert.deepEqual(Array.from(built.errors),[]);
   const generated=api.buildCommand(built.config,pageRelease);
   assert.ok(generated.startsWith(`npx --yes --ignore-scripts --package agent-policy-kit@${packed[0].version} agent-policy setup`));
@@ -222,17 +224,17 @@ command="echo user_hook"
   const kimiBeforeSubset=fs.readFileSync(kimiConfig,'utf8');
   const subset=parse(isolated('/bin/sh',['-c',localCommand],{env:{...env,npm_config_offline:'true'}}));
   assert.equal(subset.status,'configured');assert.equal(subset.results.find(result=>result.client==='kimi').status,'not_selected');
-  assert.equal(subset.results.find(result=>result.client==='agy').status,'not_selected');
+  assert.equal(subset.results.find(result=>result.client==='gemini').status,'not_selected');
   assert.equal(subset.results.find(result=>result.client==='grok').status,'not_selected');
-  for(const client of ['codex','claude'])for(const role of ROLE_IDS)assert.equal(fs.existsSync(path.join(freshHome,dirs[client],'agents',`apk-${role}.${client==='codex'?'toml':'md'}`)),['reviewer','explorer'].includes(role));
+  for(const client of ['chatgpt','claude'])for(const role of ROLE_IDS)assert.equal(fs.existsSync(path.join(freshHome,dirs[client],'agents',`apk-${role}.${client==='chatgpt'?'toml':'md'}`)),['reviewer','explorer'].includes(role));
   assert.match(fs.readFileSync(path.join(freshHome,'.codex/agents/apk-reviewer.toml'),'utf8'),/model_reasoning_effort = "max"/);
   assert.match(fs.readFileSync(codexConfig,'utf8'),/max_concurrent_threads_per_session\s*=\s*5/);
   assert.equal(JSON.parse(fs.readFileSync(claudeConfig,'utf8')).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'2');
   const parallelRead=cli(['show','--json']);assert.equal(parallelRead.status,3,'the preserved user-role fixture has unsupported frontmatter');
-  const parallelReport=JSON.parse(parallelRead.stdout);assert.ok(parallelReport.clients.claude.warnings.includes('UNSUPPORTED_ROLE_FORMAT'));assert.equal(parallelReport.clients.codex.concurrency.value,5);assert.equal(parallelReport.clients.claude.concurrency.value,2);
+  const parallelReport=JSON.parse(parallelRead.stdout);assert.ok(parallelReport.clients.claude.warnings.includes('UNSUPPORTED_ROLE_FORMAT'));assert.equal(parallelReport.clients.chatgpt.concurrency.value,5);assert.equal(parallelReport.clients.claude.concurrency.value,2);
   assert.equal(fs.readFileSync(kimiConfig,'utf8'),kimiBeforeSubset);
-  const subsetDoctor=parse(cli(['doctor']));for(const client of ['codex','claude'])assert.equal(subsetDoctor.clients[client].configuration.status,'verified');
-  const subsetReceipt=path.join(state,'installations/codex.json'),subsetSnapshot=JSON.parse(fs.readFileSync(subsetReceipt));
+  const subsetDoctor=parse(cli(['doctor']));for(const client of ['chatgpt','claude'])assert.equal(subsetDoctor.clients[client].configuration.status,'verified');
+  const subsetReceipt=path.join(state,'installations/chatgpt.json'),subsetSnapshot=JSON.parse(fs.readFileSync(subsetReceipt));
   assert.equal(subsetSnapshot.schemaVersion,4);assert.deepEqual(subsetSnapshot.selectedRoles,['reviewer','explorer']);
 
   // A late replacement failure must restore an owned role that was already removed.
@@ -244,7 +246,7 @@ command="echo user_hook"
 fs.rename=async(from,to)=>{if(to===${JSON.stringify(subsetReceipt)}&&!failed){failed=true;
 try{await fs.access(${JSON.stringify(explorer)});throw new Error('role was not removed');}catch(error){if(error.code!=='ENOENT')throw error;}
 await fs.writeFile(${JSON.stringify(reductionMarker)},'removed role observed');throw Object.assign(new Error('late reduction fault'),{code:'EIO'});}return rename(from,to);};syncBuiltinESMExports();`);
-  const reductionFailure=isolated(bin,['setup','--client','codex','--config',reducedPayload,'--apply'],{env:{...env,NODE_OPTIONS:`--import=${pathToFileURL(reductionFault).href}`}});
+  const reductionFailure=isolated(bin,['setup','--client','chatgpt','--config',reducedPayload,'--apply'],{env:{...env,NODE_OPTIONS:`--import=${pathToFileURL(reductionFault).href}`}});
   assert.equal(reductionFailure.status,3);assert.equal(fs.readFileSync(reductionMarker,'utf8'),'removed role observed');
   for(const [file,text]of ownedBefore)assert.equal(fs.readFileSync(file,'utf8'),text,'failed subset replacement must restore the prior installation');
   parse(cli(['setup','--config',reducedPayload,'--apply']));assert.equal(fs.existsSync(explorer),false);
@@ -262,7 +264,7 @@ await fs.writeFile(${JSON.stringify(reductionMarker)},'removed role observed');t
   fs.rmSync(state,{recursive:true,force:true});
   for(const [file,text]of saved)assert.equal(fs.readFileSync(file,'utf8'),text);
   for(const client of Object.keys(dirs)) {
-    const consumed=parse(isolated(path.join(nativeBin,client),['--inspect-native']));
+    const consumed=parse(isolated(path.join(nativeBin,executables[client]),['--inspect-native']));
     assert.equal(consumed.roles,ROLE_IDS.length);assert.equal(consumed.configuration,'readable');assert.equal(consumed.evidence,'standalone_consumer_fixture');
   }
 });

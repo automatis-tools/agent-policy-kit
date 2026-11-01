@@ -130,7 +130,7 @@ test('show reports roles, the fallback model and the native cap from an isolated
  assert.equal(c.apk.status,'not_checked');
  const own=await readConfiguration({home:f.home,client:'grok',env:{},stateDir:f.stateDir});
  assert.equal(own.clients.grok.apk.status,'verified');assert.deepEqual(own.clients.grok.warnings,['UNSUPPORTED_ROLE_EFFORT']);assert.equal(own.clients.grok.roles.find(r=>r.name==='mine').effort,null);
- const text=formatResult('show',own);assert.match(text,/Grok Build/);assert.match(text,/Max concurrent: 3 \(native setting\)/);assert.match(text,/apk-reviewer\s+grok-4\.5 · native default/);
+ const text=formatResult('show',own);assert.match(text,/\bGrok\b/);assert.match(text,/Max concurrent: 3 \(native setting\)/);assert.match(text,/apk-reviewer\s+grok-4\.5 · native default/);
 });
 
 test('show refuses unsafe native values without echoing them',async t=>{
@@ -149,6 +149,6 @@ test('a nonstandard GROK_HOME is a prerequisite for automatic setup and not a co
  const done=await setupDetected({...f,apply:true,client:'grok'});
  assert.equal(done.status,'configured');assert.ok(done.requiredActions.some(a=>a.code==='grok-per-role-effort-unsupported'));
  assert.equal((await setupDetected({...f,apply:true,client:'grok'})).results[0].status,'unchanged');
- assert.match(formatResult('setup',done,{apply:true}),/Grok Build\s+Configuration applied/);
- assert.match(formatResult('setup',done,{apply:true}),/Grok Build: native agent settings do not support per-role effort/);
+ assert.match(formatResult('setup',done,{apply:true}),/Grok\s+Configuration applied/);
+ assert.match(formatResult('setup',done,{apply:true}),/Grok: native agent settings do not support per-role effort/);
 });

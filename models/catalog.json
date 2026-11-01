@@ -3,8 +3,8 @@
   "reviewedAt": "2026-10-30",
   "scope": "Documented/native coding-tool selectors at this release; account access and custom deployment IDs vary.",
   "clients": {
-    "codex": {
-      "label": "Codex",
+    "chatgpt": {
+      "label": "ChatGPT",
       "efforts": [
         "none",
         "minimal",
@@ -265,7 +265,7 @@
       "note": "Efforts and defaults follow the bundled Codex CLI 0.166.0 catalog. API capabilities are separate apiEfforts/apiDefaultEffort metadata. Ultra is a delegating execution mode, recorded separately and not offered as ordinary subagent effort. An API-supported level absent from the native catalog is unverified for manual per-role configuration, not proven runtime-rejected."
     },
     "claude": {
-      "label": "Claude Code",
+      "label": "Claude",
       "efforts": [
         "low",
         "medium",
@@ -655,8 +655,8 @@
       "observedClientVersion": "2.4.0",
       "observation": "Kimi Code CLI 2.4.0: all six documented preferred aliases and native effort/default capabilities corroborated through whitelisted provisioned metadata; no credentials or custom account aliases retained."
     },
-    "agy": {
-      "label": "Antigravity",
+    "gemini": {
+      "label": "Gemini",
       "efforts": [],
       "observedClientVersion": "1.4.10",
       "models": [
@@ -696,7 +696,7 @@
       "note": "Native per-subagent selectors are tiers, not the session model inventory. CLI 1.4.10 parser explicitly accepts inherit/flash_lite/flash/pro, including Flash Lite absent from the shared docs App table. Per-role effort is not exposed by the agent-file schema."
     },
     "grok": {
-      "label": "Grok Build",
+      "label": "Grok",
       "efforts": [],
       "observedClientVersion": "1.0.70",
       "models": [

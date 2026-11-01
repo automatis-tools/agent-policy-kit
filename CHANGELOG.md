@@ -4,8 +4,19 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## Unreleased
 
+### Breaking change
+
+AI assistants now have general names: ChatGPT, Claude, Kimi, Gemini and Grok. APK still configures their coding agents: Codex, Claude Code, Kimi Code, Antigravity and Grok Build. Two technical IDs changed, and there is no migration:
+
+- `codex` is now `chatgpt`: `--chatgpt`, `--chatgpt-max-concurrent`, `--avoid-chatgpt`, `--client chatgpt` and the `clients.chatgpt` policy key.
+- `agy` is now `gemini`: `--gemini`, `--gemini-max-concurrent`, `--avoid-gemini`, `--client gemini` and the `clients.gemini` policy key.
+- Warning and error codes follow the new IDs, for example `chatgpt-native-precedence-limits` and `CHATGPT_CAP_ALIAS_CONFLICT`.
+
+Before you use this version, remove the APK settings for these two assistants with the version that created them: `npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy uninstall --apply`. This version does not read the old `codex` and `agy` installation receipts, so its setup refuses the existing `apk-*` files as unowned. Policy files and share links that use the old IDs are refused too. Claude, Kimi and Grok keep their IDs.
+
 ### What changed
 
+- The configurator calls the second step "AI assistants" and shows the general names. Readable CLI output uses the same names.
 - On macOS, setup finds the Codex that ChatGPT Desktop includes and the Claude Code in the Code tab of Claude Desktop, also when no CLI is on PATH. Both apps read the same settings as their CLIs. A CLI on PATH or in a conventional location still has priority. Detect output reports these clients with `origin: "desktop_app"`. Claude Cowork reads its settings from the Claude account, so APK does not configure it.
 
 ## 0.2.0 — 2026-11-01

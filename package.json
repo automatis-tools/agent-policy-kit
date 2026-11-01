@@ -1,7 +1,7 @@
 {
   "name": "agent-policy-kit",
   "version": "0.2.0",
-  "description": "Configure native subagent settings across coding tools, then exit",
+  "description": "Configure native subagent settings across AI assistants, then exit",
   "type": "module",
   "license": "MIT",
   "author": {
@@ -9,10 +9,14 @@
     "url": "https://www.linkedin.com/in/nick-maximenko/"
   },
   "keywords": [
+    "chatgpt",
     "codex",
+    "claude",
     "claude-code",
     "kimi",
+    "gemini",
     "antigravity",
+    "grok",
     "grok-build",
     "subagents",
     "configuration",

@@ -1,7 +1,7 @@
 import catalog from '../models/catalog.json' with {type:'json'};
 import {ROLES,ROLE_IDS,selectedRoleIds} from './roles.mjs';
 export {ROLES} from './roles.mjs';
-export const CLIENTS = Object.freeze(['codex', 'claude', 'kimi', 'agy', 'grok']);
+export const CLIENTS = Object.freeze(['chatgpt', 'claude', 'kimi', 'gemini', 'grok']);
 export const rolePreference=(config,role)=>config.roles?.[role]??config[ROLES[role]];
 export const NATIVE_EFFORTS=Object.freeze(Object.fromEntries(CLIENTS.map(client=>[client,Object.freeze([...catalog.clients[client].efforts])])));
 const identifier = /^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
@@ -27,7 +27,7 @@ export function validatePolicy(value) {
     for (const selected of [config.code,config.light,...Object.values(config.roles??{})]) {
       object(selected,['model','effort']); model(selected.model);
       if (client === 'kimi' && selected.model === 'primary') invalid();
-      if(client==='agy'&&!['pro','flash','flash_lite','inherit'].includes(selected.model))invalid();
+      if(client==='gemini'&&!['pro','flash','flash_lite','inherit'].includes(selected.model))invalid();
       if(selected.effort!==null){
         if(!NATIVE_EFFORTS[client].includes(selected.effort))invalid();
         const known=catalog.clients[client].models.find(model=>model.id===selected.model);

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "maxConcurrent": 2,
   "clients": {
-    "codex": {
+    "chatgpt": {
       "code": {
         "model": "gpt-6-luna",
         "effort": "medium"
@@ -55,7 +55,7 @@
       },
       "avoidModels": []
     },
-    "agy": {
+    "gemini": {
       "code": {
         "model": "flash",
         "effort": null

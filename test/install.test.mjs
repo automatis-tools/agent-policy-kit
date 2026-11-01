@@ -8,10 +8,10 @@ import { planInstall, applyInstall, uninstall, summarizePlan, inspectConfigurati
 const legacyRoles=['worker','reviewer','explorer','routine'];
 // Installer ownership and recovery fixtures stay independent of public recommendations.
 function behaviorPolicy() {
-  return {schemaVersion:1,maxConcurrent:3,selectedRoles:legacyRoles,clients:Object.fromEntries(Object.entries({codex:['gpt-6.1-sol','gpt-6-luna'],claude:['sonnet','haiku'],kimi:['kimi-code/k3','kimi-code/kimi-for-coding'],agy:['pro','flash']}).map(([client,[code,light]])=>[client,{code:{model:code,effort:client==='agy'?null:'high'},light:{model:light,effort:client==='agy'?null:client==='kimi'?'low':'high'},avoidModels:[]}]))};
+  return {schemaVersion:1,maxConcurrent:3,selectedRoles:legacyRoles,clients:Object.fromEntries(Object.entries({chatgpt:['gpt-6.1-sol','gpt-6-luna'],claude:['sonnet','haiku'],kimi:['kimi-code/k3','kimi-code/kimi-for-coding'],gemini:['pro','flash']}).map(([client,[code,light]])=>[client,{code:{model:code,effort:client==='gemini'?null:'high'},light:{model:light,effort:client==='gemini'?null:client==='kimi'?'low':'high'},avoidModels:[]}]))};
 }
 
-async function fixture(t, client = 'codex') {
+async function fixture(t, client = 'chatgpt') {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'policy-install-')));
   t.after(() => fs.rm(root, {recursive:true, force:true}));
   const home = path.join(root, "home with ' quote");
@@ -23,7 +23,7 @@ async function fixture(t, client = 'codex') {
 async function put(p, s) { await fs.mkdir(path.dirname(p), {recursive:true}); await fs.writeFile(p, s); }
 
 import { parseToml } from '../src/toml.mjs';
-const directories = {codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
+const directories = {chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini'};
 const modelConfig = `default_model = "main"
 [providers.fixture]
 type = "kimi"
@@ -40,11 +40,11 @@ max_context_size = 262144
 support_efforts = ["low", "high"]
 `;
 async function provision(f) { await put(path.join(f.home,'.kimi-code/config.toml'),modelConfig); }
-function rolePath(f, role) { return path.join(f.home,directories[f.client],f.client==='agy'?'config/agents':'agents',`apk-${role}.${f.client==='codex'?'toml':'md'}`); }
+function rolePath(f, role) { return path.join(f.home,directories[f.client],f.client==='gemini'?'config/agents':'agents',`apk-${role}.${f.client==='chatgpt'?'toml':'md'}`); }
 function instructionPath(f) { return path.join(f.home,directories[f.client],f.client==='claude'?'CLAUDE.md':'AGENTS.md'); }
 
 test('all four clients generate standalone native roles and no runtime files',async t=>{
- for(const client of ['codex','claude','kimi','agy']) {
+ for(const client of ['chatgpt','claude','kimi','gemini']) {
   const f=await fixture(t,client); if(client==='kimi')await provision(f);
   const policy=JSON.parse(await fs.readFile(f.policyPath));
   const plan=await planInstall(f); assert.equal(plan.status,'planned');
@@ -55,7 +55,7 @@ test('all four clients generate standalone native roles and no runtime files',as
    const content=await fs.readFile(rolePath(f,role),'utf8');
    const selected=policy.clients[client][['worker','reviewer'].includes(role)?'code':'light'];
    assert.match(content,new RegExp('apk-'+role));
-   if(client==='codex') { const native=parseToml(content); assert.equal(native.name,'apk-'+role); assert.equal(native.model,selected.model); assert.equal(native.model_reasoning_effort,selected.effort); assert.ok(native.description&&native.developer_instructions); }
+   if(client==='chatgpt') { const native=parseToml(content); assert.equal(native.name,'apk-'+role); assert.equal(native.model,selected.model); assert.equal(native.model_reasoning_effort,selected.effort); assert.ok(native.description&&native.developer_instructions); }
    else if(client==='kimi') { assert.ok(!/^model:/m.test(content)); assert.ok(content.includes(selected.model)); }
    else { assert.equal(JSON.parse(content.match(/^model: (.+)$/m)[1]),selected.model); if(client==='claude')assert.ok(content.includes('effort: '+selected.effort));else assert.ok(!/^effort:/m.test(content)); }
    for(const forbidden of [f.packageRoot,f.nodePath,f.stateDir,'agent-policy.mjs','hook','launcher','plugin']) assert.ok(!content.includes(forbidden),forbidden);
@@ -118,11 +118,11 @@ test('Kimi missing aliases or unsupported effort are explicit prerequisites with
 
 test('malformed configs, duplicate keys, native scalar mismatches and cap aliases refuse planning',async t=>{
  const f=await fixture(t,'claude'),target=path.join(f.home,'.claude/settings.json');await put(target,'{"env":{},"env":{}}');await assert.rejects(planInstall(f),{code:'INVALID_JSON'});await put(target,'{"env":[]}');await assert.rejects(planInstall(f),{code:'UNSUPPORTED_CONFIG'});
- const codex=await fixture(t),native=path.join(codex.home,'.codex/config.toml');await put(native,'[broken');await assert.rejects(planInstall(codex),{code:'INVALID_TOML'});await put(native,'[agents]\nmax_threads = 9\n');await assert.rejects(planInstall(codex),{code:'CODEX_CAP_ALIAS_CONFLICT'});
+ const codex=await fixture(t),native=path.join(codex.home,'.codex/config.toml');await put(native,'[broken');await assert.rejects(planInstall(codex),{code:'INVALID_TOML'});await put(native,'[agents]\nmax_threads = 9\n');await assert.rejects(planInstall(codex),{code:'CHATGPT_CAP_ALIAS_CONFLICT'});
 });
 
 test('legacy runtime receipts and forged restoration values are rejected explicitly',async t=>{
- const f=await fixture(t);const receipt=path.join(f.stateDir,'installations/codex.json');await put(receipt,JSON.stringify({schemaVersion:1,client:'codex',packageRoot:'/old/runtime'}));await assert.rejects(planInstall(f),{code:'LEGACY_RUNTIME_RECEIPT'});await assert.rejects(uninstall(f),{code:'LEGACY_RUNTIME_RECEIPT'});await fs.rm(receipt);
+ const f=await fixture(t);const receipt=path.join(f.stateDir,'installations/chatgpt.json');await put(receipt,JSON.stringify({schemaVersion:1,client:'chatgpt',packageRoot:'/old/runtime'}));await assert.rejects(planInstall(f),{code:'LEGACY_RUNTIME_RECEIPT'});await assert.rejects(uninstall(f),{code:'LEGACY_RUNTIME_RECEIPT'});await fs.rm(receipt);
  await applyInstall(await planInstall(f));const record=JSON.parse(await fs.readFile(receipt));record.files.find(v=>v.type==='toml').ops[0].before='9\nmodel = "FORGED"';await fs.writeFile(receipt,JSON.stringify(record));await assert.rejects(uninstall({...f,apply:true}),{code:'INVALID_RECEIPT'});
 });
 
@@ -143,7 +143,7 @@ test('private backups and receipts stay private even when input config permissio
   const f = await fixture(t);
   await put(path.join(f.home,'.codex/config.toml'),'model = "private"\n');
   await applyInstall(await planInstall(f));
-  assert.equal((await fs.stat(path.join(f.stateDir,'installations/codex.json'))).mode & 0o777,0o600);
+  assert.equal((await fs.stat(path.join(f.stateDir,'installations/chatgpt.json'))).mode & 0o777,0o600);
   const transactions = await fs.readdir(path.join(f.stateDir,'backups'));
   assert.equal(transactions.length,1);
   const backupDir = path.join(f.stateDir,'backups',transactions[0]);
@@ -198,7 +198,7 @@ test('symlink ancestors of supplied home and external state roots are refused', 
 test('missing policy clients and native scalar type mismatches fail during read-only planning', async t => {
   const f = await fixture(t);
   const policy = JSON.parse(await fs.readFile(f.policyPath));
-  delete policy.clients.codex;
+  delete policy.clients.chatgpt;
   await fs.writeFile(f.policyPath,JSON.stringify(policy));
   await assert.rejects(planInstall(f),{code:'INVALID_POLICY'});
   await fs.writeFile(f.policyPath,JSON.stringify(behaviorPolicy()));
@@ -249,7 +249,7 @@ test('apply rejects stale unchanged native config and shared policy dependencies
     else await fs.writeFile(dependency === 'shared-policy' ? path.join(f.stateDir,'policy.json') : f.policyPath,'{}\n');
     await assert.rejects(applyInstall(plan),{code:'STALE_PLAN'});
     await assert.rejects(fs.stat(path.join(f.home,'.codex/agents/apk-worker.toml')),{code:'ENOENT'});
-    await assert.rejects(fs.stat(path.join(f.stateDir,'installations/codex.json')),{code:'ENOENT'});
+    await assert.rejects(fs.stat(path.join(f.stateDir,'installations/chatgpt.json')),{code:'ENOENT'});
   }
 });
 
@@ -274,14 +274,14 @@ test('unchanged dependencies are rechecked after staging and after the last comm
     await put(native,original);
     const preloader = path.join(f.root,'dependency-preloader.mjs');
     const entry = path.join(f.root,'dependency-transaction.mjs');
-    const trigger = during === 'staging' ? path.join(f.stateDir,'pending.json') : path.join(f.stateDir,'installations/codex.json');
+    const trigger = during === 'staging' ? path.join(f.stateDir,'pending.json') : path.join(f.stateDir,'installations/chatgpt.json');
     await fs.writeFile(preloader,`import fs from 'node:fs/promises'; import {syncBuiltinESMExports} from 'node:module'; const method = ${JSON.stringify(during === 'staging' ? 'open' : 'rename')}; const original = fs[method]; let changed = false; fs[method] = async (...args) => { const result = await original(...args); if (!changed && args[${during === 'staging' ? '0' : '1'}] === ${JSON.stringify(trigger)}) { changed = true; await fs.writeFile(${JSON.stringify(native)},${JSON.stringify(original.replace('= 3','= 999'))}); } return result; }; syncBuiltinESMExports();\n`);
     await fs.writeFile(entry,`import {planInstall,applyInstall} from ${JSON.stringify(new URL('../src/install.mjs',import.meta.url).href)}; try { await applyInstall(await planInstall(${JSON.stringify(f)})); console.log('WRONGLY_APPLIED'); } catch(e) { console.log(e.code); }\n`);
     const result = await run(process.execPath,['--import',preloader,entry]);
     assert.equal(result.stdout.trim(),'STALE_PLAN');
     assert.match(await fs.readFile(native,'utf8'),/= 999/);
     await assert.rejects(fs.stat(path.join(f.home,'.codex/agents/apk-worker.toml')),{code:'ENOENT'});
-    await assert.rejects(fs.stat(path.join(f.stateDir,'installations/codex.json')),{code:'ENOENT'});
+    await assert.rejects(fs.stat(path.join(f.stateDir,'installations/chatgpt.json')),{code:'ENOENT'});
   }
 });
 
@@ -352,7 +352,7 @@ test('failed recovery-journal recreation retains a private lock pointing to the 
 
 test('malformed receipt collections and scalar restoration input refuse without leaking implementation errors',async t=>{
  for(const mutation of [r=>{r.files={};},r=>{r.files[0].ops=[null];},r=>{r.files[0].ops[0].before='9\n[agents.extra]\nx = 1';}]) {
-  const f=await fixture(t);await applyInstall(await planInstall(f));const target=path.join(f.stateDir,'installations/codex.json'),record=JSON.parse(await fs.readFile(target));mutation(record);await fs.writeFile(target,JSON.stringify(record));await assert.rejects(uninstall({...f,apply:true}),{code:'INVALID_RECEIPT'});
+  const f=await fixture(t);await applyInstall(await planInstall(f));const target=path.join(f.stateDir,'installations/chatgpt.json'),record=JSON.parse(await fs.readFile(target));mutation(record);await fs.writeFile(target,JSON.stringify(record));await assert.rejects(uninstall({...f,apply:true}),{code:'INVALID_RECEIPT'});
  }
 });
 
@@ -427,18 +427,18 @@ for(const value of ['custom:','null','true'])test(`Claude native role model ${JS
 });
 
 test('native routing preferences keep delegation optional and preserve disabled Codex agents',async t=>{
- for(const client of ['codex','claude','kimi','agy']) {
+ for(const client of ['chatgpt','claude','kimi','gemini']) {
   const f=await fixture(t,client);if(client==='kimi')await provision(f);
-  const config=path.join(f.home,'.codex/config.toml'),original='model = "main"\n[agents]\nenabled = false\n';if(client==='codex')await put(config,original);
+  const config=path.join(f.home,'.codex/config.toml'),original='model = "main"\n[agents]\nenabled = false\n';if(client==='chatgpt')await put(config,original);
   await applyInstall(await planInstall(f));const instructions=await fs.readFile(instructionPath(f),'utf8');assert.match(instructions,/preferences apply only if you choose to delegate to subagents/);assert.match(instructions,/do not require delegation or change how you handle work directly/);assert.match(instructions,/When delegating, use apk-worker/);
-  if(client==='codex'){const native=parseToml(await fs.readFile(config,'utf8'));assert.equal(native.agents.enabled,false);assert.equal(native.model,'main');assert.equal(native.features,undefined);await uninstall({...f,apply:true});assert.equal((await fs.readFile(config,'utf8')).trim(),original.trim());}
+  if(client==='chatgpt'){const native=parseToml(await fs.readFile(config,'utf8'));assert.equal(native.agents.enabled,false);assert.equal(native.model,'main');assert.equal(native.features,undefined);await uninstall({...f,apply:true});assert.equal((await fs.readFile(config,'utf8')).trim(),original.trim());}
  }
 });
 
 async function useRoles(f,roles) {const p=JSON.parse(await fs.readFile(f.policyPath));p.clients[f.client].roles=roles;await fs.writeFile(f.policyPath,JSON.stringify(p));return p.clients[f.client];}
-for(const client of ['codex','claude','agy'])test(`${client} native role overrides independently select worker reviewer search and routine`,async t=>{
- const f=await fixture(t,client),roles=client==='agy'?{worker:{model:'flash',effort:null},reviewer:{model:'pro',effort:null},explorer:{model:'flash',effort:null},routine:{model:'pro',effort:null}}:{worker:{model:'worker-selected',effort:'medium'},reviewer:{model:'reviewer-selected',effort:'high'},explorer:{model:'search-selected',effort:'low'},routine:{model:'routine-selected',effort:'medium'}};await useRoles(f,roles);await applyInstall(await planInstall(f));for(const [role,selected]of Object.entries(roles)){const text=await fs.readFile(rolePath(f,role),'utf8');if(client==='codex'){const native=parseToml(text);assert.equal(native.model,selected.model);assert.equal(native.model_reasoning_effort,selected.effort);}else{assert.equal(JSON.parse(text.match(/^model: (.+)$/m)[1]),selected.model);if(client==='claude')assert.match(text,new RegExp('^effort: '+selected.effort+'$','m'));}}
- if(client==='codex'){const native=parseToml(await fs.readFile(path.join(f.home,'.codex/config.toml'),'utf8'));assert.equal(native.agents.default_subagent_model,roles.worker.model);assert.equal(native.agents.default_subagent_reasoning_effort,roles.worker.effort);}if(client==='claude')assert.equal(JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'))).env.CLAUDE_CODE_SUBAGENT_MODEL,roles.worker.model);
+for(const client of ['chatgpt','claude','gemini'])test(`${client} native role overrides independently select worker reviewer search and routine`,async t=>{
+ const f=await fixture(t,client),roles=client==='gemini'?{worker:{model:'flash',effort:null},reviewer:{model:'pro',effort:null},explorer:{model:'flash',effort:null},routine:{model:'pro',effort:null}}:{worker:{model:'worker-selected',effort:'medium'},reviewer:{model:'reviewer-selected',effort:'high'},explorer:{model:'search-selected',effort:'low'},routine:{model:'routine-selected',effort:'medium'}};await useRoles(f,roles);await applyInstall(await planInstall(f));for(const [role,selected]of Object.entries(roles)){const text=await fs.readFile(rolePath(f,role),'utf8');if(client==='chatgpt'){const native=parseToml(text);assert.equal(native.model,selected.model);assert.equal(native.model_reasoning_effort,selected.effort);}else{assert.equal(JSON.parse(text.match(/^model: (.+)$/m)[1]),selected.model);if(client==='claude')assert.match(text,new RegExp('^effort: '+selected.effort+'$','m'));}}
+ if(client==='chatgpt'){const native=parseToml(await fs.readFile(path.join(f.home,'.codex/config.toml'),'utf8'));assert.equal(native.agents.default_subagent_model,roles.worker.model);assert.equal(native.agents.default_subagent_reasoning_effort,roles.worker.effort);}if(client==='claude')assert.equal(JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'))).env.CLAUDE_CODE_SUBAGENT_MODEL,roles.worker.model);
 });
 function extraKimi(alias){return `\n[models."${alias}"]\nprovider = "fixture"\nmodel = "${alias}"\nmax_context_size = 262144\nsupport_efforts = ["low", "high", "max"]\n`;}
 for(const count of [3,4])test(`Kimi ${count} effective role aliases compile paired bounded pool ownership and explicit routing`,async t=>{
@@ -451,11 +451,11 @@ test('Kimi effective reviewer main alias preserves main effort and conflicting e
  const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');await put(target,modelConfig.replace('default_model = "main"','default_model = "review-main"')+extraKimi('review-main')+'default_effort = "max"\n');await useRoles(f,{reviewer:{model:'review-main',effort:'high'}});const plan=await planInstall(f);assert.equal(plan.status,'prerequisite');assert.deepEqual(plan.warnings,['kimi-main-effort-conflict']);assert.equal(plan.changes.length,0);await useRoles(f,{reviewer:{model:'kimi-code/k3',effort:'low'}});await assert.rejects(planInstall(f),{code:'INVALID_POLICY'});await assert.rejects(fs.stat(f.stateDir),{code:'ENOENT'});
 });
 
-for(const client of ['codex','claude'])test(`${client} native default effort omits role pins and preserves original native defaults`,async t=>{
- const f=await fixture(t,client),target=path.join(f.home,client==='codex'?'.codex/config.toml':'.claude/settings.json'),original=client==='codex'?'model = "main"\n[agents]\ndefault_subagent_reasoning_effort = "xhigh"\n':JSON.stringify({model:'main',effortLevel:'max'});await put(target,original);await useRoles(f,Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:client==='codex'?'gpt-6.1-sol':'sonnet',effort:null}])));await applyInstall(await planInstall(f));for(const role of ['worker','reviewer','explorer','routine']){const body=await fs.readFile(rolePath(f,role),'utf8');assert.doesNotMatch(body,client==='codex'?/^model_reasoning_effort\s*=/m:/^effort:/m);}if(client==='codex'){const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.agents.default_subagent_reasoning_effort,'xhigh');const record=JSON.parse(await fs.readFile(path.join(f.stateDir,'installations/codex.json')));assert.equal(record.files.find(file=>file.type==='toml').ops.length,2);}else assert.equal(JSON.parse(await fs.readFile(target)).effortLevel,'max');assert.equal((await inspectConfiguration(f)).status,'verified');await uninstall({...f,apply:true});if(client==='codex')assert.equal((await fs.readFile(target,'utf8')).trim(),original.trim());else assert.deepEqual(JSON.parse(await fs.readFile(target)),JSON.parse(original));
+for(const client of ['chatgpt','claude'])test(`${client} native default effort omits role pins and preserves original native defaults`,async t=>{
+ const f=await fixture(t,client),target=path.join(f.home,client==='chatgpt'?'.codex/config.toml':'.claude/settings.json'),original=client==='chatgpt'?'model = "main"\n[agents]\ndefault_subagent_reasoning_effort = "xhigh"\n':JSON.stringify({model:'main',effortLevel:'max'});await put(target,original);await useRoles(f,Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:client==='chatgpt'?'gpt-6.1-sol':'sonnet',effort:null}])));await applyInstall(await planInstall(f));for(const role of ['worker','reviewer','explorer','routine']){const body=await fs.readFile(rolePath(f,role),'utf8');assert.doesNotMatch(body,client==='chatgpt'?/^model_reasoning_effort\s*=/m:/^effort:/m);}if(client==='chatgpt'){const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.agents.default_subagent_reasoning_effort,'xhigh');const record=JSON.parse(await fs.readFile(path.join(f.stateDir,'installations/chatgpt.json')));assert.equal(record.files.find(file=>file.type==='toml').ops.length,2);}else assert.equal(JSON.parse(await fs.readFile(target)).effortLevel,'max');assert.equal((await inspectConfiguration(f)).status,'verified');await uninstall({...f,apply:true});if(client==='chatgpt')assert.equal((await fs.readFile(target,'utf8')).trim(),original.trim());else assert.deepEqual(JSON.parse(await fs.readFile(target)),JSON.parse(original));
 });
-for(const[client,effort]of [['codex','none'],['codex','minimal'],['codex','xhigh'],['codex','max'],['claude','xhigh'],['claude','max']])test(`${client} preserves native explicit effort ${effort}`,async t=>{
- const f=await fixture(t,client);await useRoles(f,{worker:{model:client==='codex'?(['none','minimal'].includes(effort)?'native-compatible-model':'gpt-6.1-sol'):'sonnet',effort}});await applyInstall(await planInstall(f));const body=await fs.readFile(rolePath(f,'worker'),'utf8');if(client==='codex')assert.equal(parseToml(body).model_reasoning_effort,effort);else assert.match(body,new RegExp('^effort: '+effort+'$','m'));
+for(const[client,effort]of [['chatgpt','none'],['chatgpt','minimal'],['chatgpt','xhigh'],['chatgpt','max'],['claude','xhigh'],['claude','max']])test(`${client} preserves native explicit effort ${effort}`,async t=>{
+ const f=await fixture(t,client);await useRoles(f,{worker:{model:client==='chatgpt'?(['none','minimal'].includes(effort)?'native-compatible-model':'gpt-6.1-sol'):'sonnet',effort}});await applyInstall(await planInstall(f));const body=await fs.readFile(rolePath(f,'worker'),'utf8');if(client==='chatgpt')assert.equal(parseToml(body).model_reasoning_effort,effort);else assert.match(body,new RegExp('^effort: '+effort+'$','m'));
 });
 test('Kimi all native-default aliases keep section effort and do not require thinking support metadata',async t=>{
  const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml'),original=modelConfig.replaceAll('support_efforts = ["low", "high"]\n','')+'[thinking]\nenabled = false\n[secondary_model]\ndefault_effort = "max"\n';await put(target,original);await useRoles(f,Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:role==='worker'||role==='reviewer'?'kimi-code/k3':'kimi-code/kimi-for-coding',effort:null}])));const plan=await planInstall(f);assert.equal(plan.status,'planned');await applyInstall(plan);const native=parseToml(await fs.readFile(target,'utf8'));assert.equal(native.secondary_model.default_effort,'max');assert.equal(native.thinking.enabled,false);assert.equal(native.models['kimi-code/k3'].overrides,undefined);const record=JSON.parse(await fs.readFile(path.join(f.stateDir,'installations/kimi.json'))),ops=record.files.find(file=>file.type==='toml').ops;assert.ok(ops.every(op=>op.kind!=='removed'&&op.path.at(-1)!=='default_effort'));for(const role of ['worker','reviewer','explorer','routine'])assert.match(await fs.readFile(rolePath(f,role),'utf8'),/Requested effort: native default/);assert.doesNotMatch(await fs.readFile(instructionPath(f),'utf8'),/effort null/);assert.equal((await inspectConfiguration(f)).status,'verified');await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(target,'utf8')),parseToml(original));
@@ -479,7 +479,7 @@ for(const reason of ['ambiguous','avoided','effort-conflict','main-effort'])test
 });
 
 test('Kimi custom provisioned effort xhigh and agy flash_lite are preserved as native requests',async t=>{
- const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');await put(target,modelConfig+extraKimi('compatible-alias').replace('["low", "high", "max"]','["low", "high", "xhigh", "max"]'));await useRoles(f,Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:'compatible-alias',effort:'xhigh'}])));await applyInstall(await planInstall(f));assert.equal(parseToml(await fs.readFile(target,'utf8')).models['compatible-alias'].overrides.default_effort,'xhigh');const agy=await fixture(t,'agy');await useRoles(agy,{worker:{model:'flash_lite',effort:null}});await applyInstall(await planInstall(agy));assert.equal(JSON.parse((await fs.readFile(rolePath(agy,'worker'),'utf8')).match(/^model: (.+)$/m)[1]),'flash_lite');
+ const f=await fixture(t,'kimi'),target=path.join(f.home,'.kimi-code/config.toml');await put(target,modelConfig+extraKimi('compatible-alias').replace('["low", "high", "max"]','["low", "high", "xhigh", "max"]'));await useRoles(f,Object.fromEntries(['worker','reviewer','explorer','routine'].map(role=>[role,{model:'compatible-alias',effort:'xhigh'}])));await applyInstall(await planInstall(f));assert.equal(parseToml(await fs.readFile(target,'utf8')).models['compatible-alias'].overrides.default_effort,'xhigh');const agy=await fixture(t,'gemini');await useRoles(agy,{worker:{model:'flash_lite',effort:null}});await applyInstall(await planInstall(agy));assert.equal(JSON.parse((await fs.readFile(rolePath(agy,'worker'),'utf8')).match(/^model: (.+)$/m)[1]),'flash_lite');
 });
 
 test('native Kimi aliases containing at-signs retain bounded snapshot ownership',async t=>{
@@ -516,12 +516,12 @@ test('K3.1 Pro requires compatible thinking even when every role leaves effort u
 });
 
 test('each client writes its own parallel limit and removal restores original settings',async t=>{
- const f=await fixture(t);const policy=behaviorPolicy();for(const [client,value]of Object.entries({codex:5,claude:2,kimi:4,agy:6}))policy.clients[client].maxConcurrent=value;
+ const f=await fixture(t);const policy=behaviorPolicy();for(const [client,value]of Object.entries({chatgpt:5,claude:2,kimi:4,gemini:6}))policy.clients[client].maxConcurrent=value;
  await fs.writeFile(f.policyPath,JSON.stringify(policy));await put(path.join(f.home,'.kimi-code/config.toml'),modelConfig);
- for(const client of ['codex','claude','kimi','agy'])await applyInstall(await planInstall({...f,client}));
+ for(const client of ['chatgpt','claude','kimi','gemini'])await applyInstall(await planInstall({...f,client}));
  assert.equal(parseToml(await fs.readFile(path.join(f.home,'.codex/config.toml'),'utf8')).agents.max_concurrent_threads_per_session,5);
  assert.equal(JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'),'utf8')).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'2');
  assert.match(await fs.readFile(path.join(f.home,'.kimi-code/AGENTS.md'),'utf8'),/at most 4 subagents/);assert.match(await fs.readFile(path.join(f.home,'.gemini/AGENTS.md'),'utf8'),/at most 6 subagents/);
- for(const client of ['codex','claude','kimi','agy'])await uninstall({...f,client,apply:true});
+ for(const client of ['chatgpt','claude','kimi','gemini'])await uninstall({...f,client,apply:true});
  assert.deepEqual(parseToml(await fs.readFile(path.join(f.home,'.kimi-code/config.toml'),'utf8')),parseToml(modelConfig));
 });

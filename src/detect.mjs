@@ -4,7 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-const CLIENTS = ['codex','claude','kimi','agy','grok'];
+const CLIENTS = ['chatgpt','claude','kimi','gemini','grok'];
+// Each tool's own executable keeps its native name: ChatGPT runs Codex, and Gemini runs Antigravity (agy).
+const EXECUTABLES = {chatgpt:'codex',claude:'claude',kimi:'kimi',gemini:'agy',grok:'grok'};
 const OUTPUT_LIMIT = 65536;
 const VERSION = String.raw`(\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9][A-Za-z0-9.-]{0,63})?(?:\+[A-Za-z0-9][A-Za-z0-9.-]{0,63})?)`;
 function failure(code) { return Object.assign(new Error(code),{code}); }
@@ -32,7 +34,7 @@ function newerFirst(a,b) {
 }
 async function desktopCandidates(client,{hostHome,platform,systemApplications}) {
   if (platform !== 'darwin') return [];
-  if (client === 'codex') return [systemApplications,path.join(hostHome,'Applications')].map(dir=>path.join(dir,CHATGPT_CODEX));
+  if (client === 'chatgpt') return [systemApplications,path.join(hostHome,'Applications')].map(dir=>path.join(dir,CHATGPT_CODEX));
   if (client !== 'claude') return [];
   const base = path.join(hostHome,CLAUDE_DESKTOP), files = [];
   for (const version of (await directories(base)).filter(name=>DESKTOP_VERSION.test(name)).sort(newerFirst)) {
@@ -50,7 +52,8 @@ async function candidates(client,settings) {
 }
 function cliCandidates(client,{env,hostHome}) {
   const dirs = typeof env.PATH === 'string' ? env.PATH.split(path.delimiter) : [];
-  const names = process.platform === 'win32' ? [client + '.exe',client] : [client];
+  const executable = EXECUTABLES[client];
+  const names = process.platform === 'win32' ? [executable + '.exe',executable] : [executable];
   const result = [];
   for (const dir of dirs) {
     // Never search the working directory through empty/relative PATH segments.
@@ -59,7 +62,7 @@ function cliCandidates(client,{env,hostHome}) {
   }
   const conventional = client === 'kimi' ? ['.kimi-code/bin/kimi']
     : client === 'claude' ? ['.local/bin/claude','.claude/local/claude']
-    : [`.local/bin/${client}`];
+    : [`.local/bin/${executable}`];
   for (const relative of conventional) result.push({file:path.join(hostHome,relative),origin:'known_location'});
   return result;
 }
@@ -114,10 +117,10 @@ function probe(executable,arg,{env,timeoutMs}) {
 }
 function identity(client,output) {
   const patterns = {
-    codex:[new RegExp(String.raw`^\s*codex(?:-cli)?\s+v?${VERSION}(?:\s|$)`,'im')],
+    chatgpt:[new RegExp(String.raw`^\s*codex(?:-cli)?\s+v?${VERSION}(?:\s|$)`,'im')],
     claude:[new RegExp(String.raw`^\s*v?${VERSION}\s+\(Claude Code\)(?:\s|$)`,'im'),new RegExp(String.raw`^\s*Claude Code\s+v?${VERSION}(?:\s|$)`,'im')],
     kimi:[new RegExp(String.raw`^\s*kimi(?:\s+code(?:\s+cli)?)?(?:,?\s+version)?\s+v?${VERSION}(?:\s|$)`,'im')],
-    agy:[new RegExp(String.raw`^\s*(?:Antigravity|agy)\s+v?${VERSION}(?:\s|$)`,'im')],
+    gemini:[new RegExp(String.raw`^\s*(?:Antigravity|agy)\s+v?${VERSION}(?:\s|$)`,'im')],
     grok:[new RegExp(String.raw`^\s*grok\s+v?${VERSION}(?:\s|$)`,'im')],
   };
   for (const pattern of patterns[client]) { const match = output.match(pattern); if (match && match[1].length <= 128) return match[1]; }
@@ -128,7 +131,7 @@ async function verify(client,executable,opts) {
   if (version.status !== 'ok') return {status:version.status};
   const branded = identity(client,version.output);
   if (branded) return {status:'detected',version:branded};
-  if (client !== 'kimi' && client !== 'agy') return {status:'invalid'};
+  if (client !== 'kimi' && client !== 'gemini') return {status:'invalid'};
   const number = version.output.match(new RegExp(String.raw`^\s*v?${VERSION}(?:\s|$)`));
   if (!number || number[1].length > 128) return {status:'invalid'};
   const help = await probe(executable,'--help',opts);

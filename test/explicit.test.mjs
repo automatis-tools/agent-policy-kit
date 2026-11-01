@@ -9,10 +9,10 @@ import {ROLE_IDS,ROLE_DEFINITIONS} from '../src/roles.mjs';
 import {nativeRoles,instructionBlock} from '../src/native.mjs';
 import {explicitOptions,parseExplicitOptions,formatExplicitCommand} from '../src/explicit.mjs';
 
-const clients=['codex','claude','kimi','agy','grok'];
-const flag={codex:'codex',claude:'claude',kimi:'kimi',agy:'antigravity',grok:'grok'};
+const clients=['chatgpt','claude','kimi','gemini','grok'];
+const flag={chatgpt:'chatgpt',claude:'claude',kimi:'kimi',gemini:'gemini',grok:'grok'};
 const balanced=JSON.parse(fs.readFileSync(new URL('../policies/balanced.json',import.meta.url)));
-const one=()=>({roles:'reviewer','max-concurrent':'3',codex:'reviewer=gpt-6.1-sol:high','avoid-codex':'gpt-6-astra'});
+const one=()=>({roles:'reviewer','max-concurrent':'3',chatgpt:'reviewer=gpt-6.1-sol:high','avoid-chatgpt':'gpt-6-astra'});
 
 test('explicit commands preserve effective role settings and guidance for every preset/subset',()=>{
  let count=0;
@@ -37,16 +37,16 @@ test('explicit commands preserve effective role settings and guidance for every 
 });
 
 test('native effort and provider IDs containing colons and @ round-trip literally',()=>{
- const model='provider:model@20261030[1m]',options={...one(),codex:`reviewer=${model}:native`};
- const policy=validatePolicy(parseExplicitOptions(options,ROLE_IDS));assert.equal(policy.clients.codex.roles.reviewer.model,model);assert.equal(policy.clients.codex.roles.reviewer.effort,null);
+ const model='provider:model@20261030[1m]',options={...one(),chatgpt:`reviewer=${model}:native`};
+ const policy=validatePolicy(parseExplicitOptions(options,ROLE_IDS));assert.equal(policy.clients.chatgpt.roles.reviewer.model,model);assert.equal(policy.clients.chatgpt.roles.reviewer.effort,null);
  const command=formatExplicitCommand(policy,'0.1.0',ROLE_DEFINITIONS);assert.ok(command.includes(`reviewer=${model}:native`));assert.ok(command.includes('--max-concurrent 3'));
  assert.throws(()=>formatExplicitCommand(policy,'0.1.0;echo',ROLE_DEFINITIONS),/Invalid release/);
 });
 
 test('explicit input rejects missing, extra, repeated, malformed or opaque choices',()=>{
  const base=one();
- for(const options of [{...base,roles:''},{...base,roles:'reviewer,reviewer'},{...base,roles:'invented'},{...base,'max-concurrent':'0'},{...base,'max-concurrent':'33'},{...base,'max-concurrent':'03'},{...base,codex:'reviewer=only-model'},{...base,codex:'reviewer=model:ultra'},{...base,codex:'reviewer=model:high,reviewer=model:high'},{...base,codex:'worker=model:high'},{...base,codex:'balanced'},{...base,codex:'reviewer=$(id):high'},{...base,codex:'reviewer=model;id:high'},{...base,'avoid-codex':''},{...base,'avoid-kimi':'model'},{roles:'reviewer','max-concurrent':'3'},{...base,unknown:'value'},{...base,codex:'x'.repeat(66000)}])assert.throws(()=>parseExplicitOptions(options,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
- const inherited=Object.assign(Object.create({roles:'reviewer','max-concurrent':'3'}),{codex:base.codex});assert.throws(()=>parseExplicitOptions(inherited,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+ for(const options of [{...base,roles:''},{...base,roles:'reviewer,reviewer'},{...base,roles:'invented'},{...base,'max-concurrent':'0'},{...base,'max-concurrent':'33'},{...base,'max-concurrent':'03'},{...base,chatgpt:'reviewer=only-model'},{...base,chatgpt:'reviewer=model:ultra'},{...base,chatgpt:'reviewer=model:high,reviewer=model:high'},{...base,chatgpt:'worker=model:high'},{...base,chatgpt:'balanced'},{...base,chatgpt:'reviewer=$(id):high'},{...base,chatgpt:'reviewer=model;id:high'},{...base,'avoid-chatgpt':''},{...base,'avoid-kimi':'model'},{roles:'reviewer','max-concurrent':'3'},{...base,unknown:'value'},{...base,chatgpt:'x'.repeat(66000)}])assert.throws(()=>parseExplicitOptions(options,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+ const inherited=Object.assign(Object.create({roles:'reviewer','max-concurrent':'3'}),{chatgpt:base.chatgpt});assert.throws(()=>parseExplicitOptions(inherited,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
 
 test('Grok Build accepts role=model without effort and rejects a pinned effort or foreign flags',()=>{
@@ -60,36 +60,36 @@ test('Grok Build accepts role=model without effort and rejects a pinned effort o
  assert.throws(()=>explicitOptions({...config,clients:{grok:{...config.clients.grok,code:{model:'grok-4.7',effort:'high'}}}},ROLE_DEFINITIONS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
 test('native Kimi alias consistency and Antigravity tiers remain policy requirements',()=>{
- const valid={roles:'worker,reviewer','max-concurrent':'3',kimi:'worker=native/k3:high,reviewer=native/k3:native',antigravity:'worker=pro,reviewer=flash'};
+ const valid={roles:'worker,reviewer','max-concurrent':'3',kimi:'worker=native/k3:high,reviewer=native/k3:native',gemini:'worker=pro,reviewer=flash'};
  assert.doesNotThrow(()=>validatePolicy(parseExplicitOptions(valid,ROLE_IDS)));
  assert.throws(()=>validatePolicy(parseExplicitOptions({...valid,kimi:'worker=native/k3:high,reviewer=native/k3:low'},ROLE_IDS)),{code:'INVALID_POLICY'});
- assert.throws(()=>parseExplicitOptions({...valid,antigravity:'worker=pro:high,reviewer=flash'},ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+ assert.throws(()=>parseExplicitOptions({...valid,gemini:'worker=pro:high,reviewer=flash'},ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
 
 test('the visible multiline command passes literal per-tool arguments through a real shell',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'apk-explicit-shell-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  const output=path.join(root,'arguments.json'),fake=path.join(root,'npx');
  fs.writeFileSync(fake,`#!${process.execPath}\nrequire('node:fs').writeFileSync(process.env.APK_TEST_ARGUMENTS,JSON.stringify(process.argv.slice(2)));\n`,{mode:0o700});
- const policy={...balanced,selectedRoles:['reviewer'],clients:{codex:{code:{model:'provider:model@2026[1m]',effort:null},light:{model:'provider:model@2026[1m]',effort:null},avoidModels:['gpt-6-astra']}}};
+ const policy={...balanced,selectedRoles:['reviewer'],clients:{chatgpt:{code:{model:'provider:model@2026[1m]',effort:null},light:{model:'provider:model@2026[1m]',effort:null},avoidModels:['gpt-6-astra']}}};
  fs.writeFileSync(path.join(root,'reviewer=provider:model@20261:native'),'glob trap');
  const command=formatExplicitCommand(policy,'0.1.0',ROLE_DEFINITIONS);
  const run=spawnSync('/bin/sh',['-c',command],{cwd:root,env:{...process.env,PATH:root+path.delimiter+process.env.PATH,APK_TEST_ARGUMENTS:output},encoding:'utf8'});assert.equal(run.status,0,run.stderr);
- const args=JSON.parse(fs.readFileSync(output));assert.equal(args[args.indexOf('--codex')+1],'reviewer=provider:model@2026[1m]:native');assert.equal(args[args.indexOf('--roles')+1],'reviewer');assert.equal(args.at(-1),'--apply');assert.ok(command.includes(' \\\n'));
+ const args=JSON.parse(fs.readFileSync(output));assert.equal(args[args.indexOf('--chatgpt')+1],'reviewer=provider:model@2026[1m]:native');assert.equal(args[args.indexOf('--roles')+1],'reviewer');assert.equal(args.at(-1),'--apply');assert.ok(command.includes(' \\\n'));
 });
 
 test('new role fallback kinds agree between explicit commands and native generation',()=>{
- const config={schemaVersion:1,maxConcurrent:3,clients:{codex:{code:{model:'gpt-6.1-sol',effort:'medium'},light:{model:'gpt-6-luna',effort:'low'},avoidModels:[]}}};
+ const config={schemaVersion:1,maxConcurrent:3,clients:{chatgpt:{code:{model:'gpt-6.1-sol',effort:'medium'},light:{model:'gpt-6-luna',effort:'low'},avoidModels:[]}}};
  const decoded=validatePolicy(parseExplicitOptions(explicitOptions(config,ROLE_DEFINITIONS),ROLE_IDS));
- assert.deepEqual(rolePreference(decoded.clients.codex,'tester'),config.clients.codex.code);
- assert.deepEqual(rolePreference(decoded.clients.codex,'writer'),config.clients.codex.light);
- assert.deepEqual(nativeRoles('codex',decoded.clients.codex),nativeRoles('codex',config.clients.codex));
+ assert.deepEqual(rolePreference(decoded.clients.chatgpt,'tester'),config.clients.chatgpt.code);
+ assert.deepEqual(rolePreference(decoded.clients.chatgpt,'writer'),config.clients.chatgpt.light);
+ assert.deepEqual(nativeRoles('chatgpt',decoded.clients.chatgpt),nativeRoles('chatgpt',config.clients.chatgpt));
 });
 
 test('explicit per-tool concurrency overrides round-trip without changing the shared fallback',()=>{
- const options={...one(),'codex-max-concurrent':'5',claude:'reviewer=sonnet:high','claude-max-concurrent':'2'};
- const policy=validatePolicy(parseExplicitOptions(options,ROLE_IDS));assert.equal(policy.maxConcurrent,3);assert.equal(policy.clients.codex.maxConcurrent,5);assert.equal(policy.clients.claude.maxConcurrent,2);
- const encoded=explicitOptions(policy,ROLE_DEFINITIONS);assert.equal(encoded['codex-max-concurrent'],'5');assert.equal(encoded['claude-max-concurrent'],'2');assert.deepEqual(validatePolicy(parseExplicitOptions(encoded,ROLE_IDS)),policy);
- for(const bad of [{...one(),'kimi-max-concurrent':'2'},{...one(),'codex-max-concurrent':'0'},{...one(),'codex-max-concurrent':'33'},{...one(),'codex-max-concurrent':'1.5'},{...one(),'codex-max-concurrent':'02'}])assert.throws(()=>parseExplicitOptions(bad,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+ const options={...one(),'chatgpt-max-concurrent':'5',claude:'reviewer=sonnet:high','claude-max-concurrent':'2'};
+ const policy=validatePolicy(parseExplicitOptions(options,ROLE_IDS));assert.equal(policy.maxConcurrent,3);assert.equal(policy.clients.chatgpt.maxConcurrent,5);assert.equal(policy.clients.claude.maxConcurrent,2);
+ const encoded=explicitOptions(policy,ROLE_DEFINITIONS);assert.equal(encoded['chatgpt-max-concurrent'],'5');assert.equal(encoded['claude-max-concurrent'],'2');assert.deepEqual(validatePolicy(parseExplicitOptions(encoded,ROLE_IDS)),policy);
+ for(const bad of [{...one(),'kimi-max-concurrent':'2'},{...one(),'chatgpt-max-concurrent':'0'},{...one(),'chatgpt-max-concurrent':'33'},{...one(),'chatgpt-max-concurrent':'1.5'},{...one(),'chatgpt-max-concurrent':'02'}])assert.throws(()=>parseExplicitOptions(bad,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
 
 test('Grok custom model ids may contain colons, while effort-like suffixes stay rejected',()=>{

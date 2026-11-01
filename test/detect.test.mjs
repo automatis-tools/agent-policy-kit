@@ -43,9 +43,9 @@ test('PATH detection validates branded versions and keeps path details internal'
   const f = await fixture(t);
   const file = path.join(f.bin,'codex');
   await executable(file,'console.log("codex-cli 0.165.0");');
-  const result = await resolveClient('codex',f);
-  assert.deepEqual(result,{client:'codex',status:'detected',version:'0.165.0',origin:'path',executable:file});
-  assert.deepEqual(summarizeDetection([result]),[{client:'codex',status:'detected',version:'0.165.0',origin:'path'}]);
+  const result = await resolveClient('chatgpt',f);
+  assert.deepEqual(result,{client:'chatgpt',status:'detected',version:'0.165.0',origin:'path',executable:file});
+  assert.deepEqual(summarizeDetection([result]),[{client:'chatgpt',status:'detected',version:'0.165.0',origin:'path'}]);
   assert.ok(!JSON.stringify(summarizeDetection([result])).includes(f.root));
 });
 
@@ -76,14 +76,14 @@ test('invalid earlier candidates never hide a later real client',async t=>{
   const f = await fixture(t);
   await executable(path.join(f.bin,'codex'),'console.log("other-product 9.9.9 SECRET");');
   await executable(path.join(f.hostHome,'.local/bin/codex'),'console.log("codex-cli 0.165.0");');
-  const result = await resolveClient('codex',f);
+  const result = await resolveClient('chatgpt',f);
   assert.equal(result.status,'detected'); assert.equal(result.origin,'known_location');
 });
 
 test('unbranded versions require native Kimi or Antigravity help identity',async t=>{
   const f = await fixture(t);
   await executable(path.join(f.bin,'agy'),'if (process.argv[2] === "--version") console.log("1.4.10\\ncommit-string\\narm64"); else console.log("Antigravity\\nUsage: agy [options] [paths...]");');
-  assert.equal((await resolveClient('agy',f)).status,'detected');
+  assert.equal((await resolveClient('gemini',f)).status,'detected');
   await executable(path.join(f.bin,'kimi'),'if (process.argv[2] === "--version") console.log("2.4.0"); else console.log("Unrelated tool SECRET");');
   assert.equal((await resolveClient('kimi',f)).status,'invalid');
 });
@@ -91,7 +91,7 @@ test('unbranded versions require native Kimi or Antigravity help identity',async
 test('timeout, excessive output, failed exits and non-executable files fail without raw output',async t=>{
   const f = await fixture(t);
   await executable(path.join(f.bin,'codex'),'setInterval(()=>{},1000);');
-  const timeout = await resolveClient('codex',{...f,timeoutMs:50});
+  const timeout = await resolveClient('chatgpt',{...f,timeoutMs:50});
   assert.equal(timeout.status,'timeout');
   await executable(path.join(f.bin,'claude'),'console.log("SECRET".repeat(20000));');
   assert.equal((await resolveClient('claude',f)).status,'invalid');
@@ -99,7 +99,7 @@ test('timeout, excessive output, failed exits and non-executable files fail with
   assert.equal((await resolveClient('kimi',f)).status,'invalid');
   await executable(path.join(f.bin,'agy'),'console.log("Antigravity 1.4.10");');
   await fs.chmod(path.join(f.bin,'agy'),0o600);
-  assert.equal((await resolveClient('agy',f)).status,'invalid');
+  assert.equal((await resolveClient('gemini',f)).status,'invalid');
   assert.ok(!JSON.stringify(summarizeDetection([timeout])).includes('SECRET'));
 });
 
@@ -108,8 +108,8 @@ test('relative PATH entries and shell metacharacters cannot invoke a command she
   const hostile = path.join(f.root,'bin; touch INJECTION');
   await fs.mkdir(hostile);
   await executable(path.join(hostile,'codex'),'console.log("codex-cli 0.165.0");');
-  assert.equal((await resolveClient('codex',{...f,env:{PATH:hostile}})).status,'detected');
-  assert.equal((await resolveClient('codex',{...f,env:{PATH:'.'+path.delimiter}})).status,'not_found');
+  assert.equal((await resolveClient('chatgpt',{...f,env:{PATH:hostile}})).status,'detected');
+  assert.equal((await resolveClient('chatgpt',{...f,env:{PATH:'.'+path.delimiter}})).status,'not_found');
   await assert.rejects(fs.stat(path.join(f.root,'INJECTION')),{code:'ENOENT'});
 });
 
@@ -117,20 +117,20 @@ test('current native Kimi and agy help signatures identify bare-semver executabl
   const f = await fixture(t);
   await executable(path.join(f.bin,'kimi'),'if (process.argv[2] === "--version") console.log("2.4.0"); else console.log("The Starting Point for Next-Gen Agents\\nKimi Code\\nkimi provider\\nhttps://moonshotai.github.io/kimi-code/");');
   await executable(path.join(f.bin,'agy'),'if (process.argv[2] === "--version") console.log("1.4.10"); else console.log("Usage of agy:\\n--agent --model --effort\\nAvailable subcommands:\\nagent agents models plugin");');
-  for (const client of ['kimi','agy']) assert.equal((await resolveClient(client,f)).status,'detected');
+  for (const client of ['kimi','gemini']) assert.equal((await resolveClient(client,f)).status,'detected');
 });
 
 test('detection summaries allowlist all fields instead of echoing supplied paths or errors',()=>{
-  const summary = summarizeDetection([{client:'codex',status:'detected',version:'/private/SECRET',origin:'/private/SECRET',executable:'/private/SECRET',stdout:'SECRET',error:'SECRET'}]);
+  const summary = summarizeDetection([{client:'chatgpt',status:'detected',version:'/private/SECRET',origin:'/private/SECRET',executable:'/private/SECRET',stdout:'SECRET',error:'SECRET'}]);
   assert.ok(!JSON.stringify(summary).includes('SECRET'));
-  assert.deepEqual(summary,[{client:'codex',status:'invalid',version:null,origin:null}]);
+  assert.deepEqual(summary,[{client:'chatgpt',status:'invalid',version:null,origin:null}]);
 });
 
 test('timed-out earlier candidates still allow a verified conventional fallback',async t=>{
   const f = await fixture(t);
   await executable(path.join(f.bin,'codex'),'setInterval(()=>{},1000);');
   await executable(path.join(f.hostHome,'.local/bin/codex'),'console.log("codex-cli 0.165.0");');
-  const result = await untilProbeReady(timeoutMs=>resolveClient('codex',{...f,timeoutMs}),result=>result.status !== 'timeout');
+  const result = await untilProbeReady(timeoutMs=>resolveClient('chatgpt',{...f,timeoutMs}),result=>result.status !== 'timeout');
   assert.equal(result.status,'detected'); assert.equal(result.origin,'known_location');
 });
 
@@ -143,7 +143,7 @@ test('legacy Claude native host location is checked without consulting configura
 test('oversized semver metadata cannot disagree with the sanitized detected status',async t=>{
   const f = await fixture(t);
   await executable(path.join(f.bin,'codex'),`console.log(${JSON.stringify('codex-cli 1.2.3-'+ 'a'.repeat(64)+'+'+'b'.repeat(64))});`);
-  assert.equal((await resolveClient('codex',f)).status,'invalid');
+  assert.equal((await resolveClient('chatgpt',f)).status,'invalid');
 });
 
 import { spawn } from 'node:child_process';
@@ -157,7 +157,7 @@ test('each POSIX probe cleans its own descendants on timeout, overflow and compl
     // The timeout case is ready once the descendant exists before the timer fires. Completion and
     // overflow are ready once they end the probe themselves; both happen after the pid is written.
     const ready=mode==='timeout'?()=>fs.access(pidFile).then(()=>true,()=>false):result=>result.status!=='timeout';
-    const result=await untilProbeReady(timeoutMs=>resolveClient('codex',{...f,timeoutMs}),ready);
+    const result=await untilProbeReady(timeoutMs=>resolveClient('chatgpt',{...f,timeoutMs}),ready);
     const pid=Number(await fs.readFile(pidFile,'utf8'));
     t.after(()=>{try{process.kill(pid,'SIGKILL');}catch{}});
     assert.equal(result.status,mode==='timeout'?'timeout':mode==='complete'?'detected':'invalid');
@@ -170,12 +170,12 @@ test('ChatGPT Desktop bundled Codex is detected when PATH lacks the CLI',async t
   const f = await fixture(t);
   const file = path.join(f.systemApplications,CHATGPT_CODEX);
   await executable(file,'console.log("codex-cli 0.166.0-alpha.5.1");');
-  const result = await resolveClient('codex',f);
-  assert.deepEqual(result,{client:'codex',status:'detected',version:'0.166.0-alpha.5.1',origin:'desktop_app',executable:file});
-  assert.deepEqual(summarizeDetection([result]),[{client:'codex',status:'detected',version:'0.166.0-alpha.5.1',origin:'desktop_app'}]);
+  const result = await resolveClient('chatgpt',f);
+  assert.deepEqual(result,{client:'chatgpt',status:'detected',version:'0.166.0-alpha.5.1',origin:'desktop_app',executable:file});
+  assert.deepEqual(summarizeDetection([result]),[{client:'chatgpt',status:'detected',version:'0.166.0-alpha.5.1',origin:'desktop_app'}]);
   await fs.rm(path.join(f.systemApplications,'ChatGPT.app'),{recursive:true});
   await executable(path.join(f.hostHome,'Applications',CHATGPT_CODEX),'console.log("codex-cli 0.166.0");');
-  const user = await resolveClient('codex',f);
+  const user = await resolveClient('chatgpt',f);
   assert.equal(user.status,'detected'); assert.equal(user.origin,'desktop_app');
 });
 
@@ -202,7 +202,7 @@ test('standalone CLIs take precedence over desktop app bundles',async t=>{
   await executable(path.join(f.bin,'codex'),'console.log("codex-cli 0.165.0");');
   await executable(claudeDesktop(f.hostHome,'2.1.309','b'),'console.log("2.1.309 (Claude Code)");');
   await executable(path.join(f.hostHome,'.local/bin/claude'),'console.log("2.1.312 (Claude Code)");');
-  assert.equal((await resolveClient('codex',f)).origin,'path');
+  assert.equal((await resolveClient('chatgpt',f)).origin,'path');
   assert.equal((await resolveClient('claude',f)).origin,'known_location');
 });
 
@@ -210,20 +210,20 @@ test('desktop app bundles are ignored outside macOS',async t=>{
   const f = await fixture(t);
   await executable(path.join(f.systemApplications,CHATGPT_CODEX),'console.log("codex-cli 0.166.0");');
   await executable(claudeDesktop(f.hostHome,'2.1.309','b'),'console.log("2.1.309 (Claude Code)");');
-  for (const client of ['codex','claude']) assert.equal((await resolveClient(client,{...f,platform:'linux'})).status,'not_found');
+  for (const client of ['chatgpt','claude']) assert.equal((await resolveClient(client,{...f,platform:'linux'})).status,'not_found');
 });
 
 test('desktop detection options are validated',async t=>{
   const f = await fixture(t);
-  await assert.rejects(resolveClient('codex',{...f,systemApplications:'relative/Applications'}),{code:'INVALID_DETECTION_OPTIONS'});
-  await assert.rejects(resolveClient('codex',{...f,platform:42}),{code:'INVALID_DETECTION_OPTIONS'});
+  await assert.rejects(resolveClient('chatgpt',{...f,systemApplications:'relative/Applications'}),{code:'INVALID_DETECTION_OPTIONS'});
+  await assert.rejects(resolveClient('chatgpt',{...f,platform:42}),{code:'INVALID_DETECTION_OPTIONS'});
 });
 
 test('AGENT_POLICY_APPLICATIONS_DIR replaces /Applications for the ChatGPT Desktop bundle',async t=>{
   const f = await fixture(t);
   const {systemApplications,...rest} = f, apps = path.join(f.root,'other apps');
   await executable(path.join(apps,CHATGPT_CODEX),'console.log("codex-cli 0.166.0");');
-  const result = await resolveClient('codex',{...rest,env:{...f.env,AGENT_POLICY_APPLICATIONS_DIR:apps}});
+  const result = await resolveClient('chatgpt',{...rest,env:{...f.env,AGENT_POLICY_APPLICATIONS_DIR:apps}});
   assert.equal(result.status,'detected'); assert.equal(result.origin,'desktop_app');
-  await assert.rejects(resolveClient('codex',{...rest,env:{...f.env,AGENT_POLICY_APPLICATIONS_DIR:'relative'}}),{code:'INVALID_DETECTION_OPTIONS'});
+  await assert.rejects(resolveClient('chatgpt',{...rest,env:{...f.env,AGENT_POLICY_APPLICATIONS_DIR:'relative'}}),{code:'INVALID_DETECTION_OPTIONS'});
 });

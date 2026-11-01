@@ -4,13 +4,13 @@ import fs from 'node:fs';
 import {validatePolicy,rolePreference} from '../src/policy.mjs';
 import {ROLE_IDS} from '../src/roles.mjs';
 
-const preferences = () => ({schemaVersion:1,maxConcurrent:3,clients:{codex:{
+const preferences = () => ({schemaVersion:1,maxConcurrent:3,clients:{chatgpt:{
   code:{model:'gpt-6.1-sol',effort:'high'},light:{model:'gpt-6-luna',effort:'high'},avoidModels:['gpt-6-astra'],
 }}});
 test('shared preferences express code/light models and one concurrency target without runtime modes', () => {
   const source=preferences(), parsed=validatePolicy(source);
-  assert.deepEqual(parsed,source); assert.ok(Object.isFrozen(parsed.clients.codex.code));
-  source.clients.codex.code.model='changed'; assert.equal(parsed.clients.codex.code.model,'gpt-6.1-sol');
+  assert.deepEqual(parsed,source); assert.ok(Object.isFrozen(parsed.clients.chatgpt.code));
+  source.clients.chatgpt.code.model='changed'; assert.equal(parsed.clients.chatgpt.code.model,'gpt-6.1-sol');
 });
 test('legacy runtime policy and unknown fields are rejected', () => {
   for (const patch of [{mode:'enforce'},{hooks:[]},{audit:{}},{runtime:'proxy'}]) assert.throws(()=>validatePolicy({...preferences(),...patch}));
@@ -18,15 +18,15 @@ test('legacy runtime policy and unknown fields are rejected', () => {
   assert.throws(()=>validatePolicy({...preferences(),maxConcurrent:33}));
 });
 test('invalid model efforts, contradictory preferences and untrusted objects fail safely', () => {
-  const bad=preferences(); bad.clients.codex.code.effort='ultra';assert.throws(()=>validatePolicy(bad));
-  bad.clients.codex.code.effort='high';bad.clients.codex.avoidModels.push('gpt-6.1-sol');assert.throws(()=>validatePolicy(bad));
-  const accessors=preferences();Object.defineProperty(accessors.clients.codex.code,'model',{get(){throw new Error('private');},enumerable:true});
+  const bad=preferences(); bad.clients.chatgpt.code.effort='ultra';assert.throws(()=>validatePolicy(bad));
+  bad.clients.chatgpt.code.effort='high';bad.clients.chatgpt.avoidModels.push('gpt-6.1-sol');assert.throws(()=>validatePolicy(bad));
+  const accessors=preferences();Object.defineProperty(accessors.clients.chatgpt.code,'model',{get(){throw new Error('private');},enumerable:true});
   assert.throws(()=>validatePolicy(accessors), e=>!e.message.includes('private'));
 });
 test('agy preferences use native tiers without fabricated per-role effort', () => {
-  const p=preferences();p.clients.agy={code:{model:'pro',effort:null},light:{model:'flash',effort:null},avoidModels:[]};
-  assert.equal(validatePolicy(p).clients.agy.code.model,'pro');
-  p.clients.agy.code.effort='high';assert.throws(()=>validatePolicy(p));
+  const p=preferences();p.clients.gemini={code:{model:'pro',effort:null},light:{model:'flash',effort:null},avoidModels:[]};
+  assert.equal(validatePolicy(p).clients.gemini.code.model,'pro');
+  p.clients.gemini.code.effort='high';assert.throws(()=>validatePolicy(p));
 });
 test('grok preferences accept any model identifier without per-role effort', () => {
   const p=preferences();p.clients.grok={code:{model:'grok-4.7',effort:null},light:{model:'grok-4.5',effort:null},avoidModels:[]};
@@ -40,12 +40,12 @@ test('the bundled preset uses the same shared preference contract', () => {
 });
 
 test('individual task choices override recommendations without changing other roles',()=>{
-  const p=preferences();p.clients.codex.roles={reviewer:{model:'review-model',effort:'medium'}};
-  const config=validatePolicy(p).clients.codex;
+  const p=preferences();p.clients.chatgpt.roles={reviewer:{model:'review-model',effort:'medium'}};
+  const config=validatePolicy(p).clients.chatgpt;
   assert.equal(rolePreference(config,'reviewer').model,'review-model');
   assert.equal(rolePreference(config,'worker').model,'gpt-6.1-sol');
   assert.equal(rolePreference(config,'explorer').model,'gpt-6-luna');
-  assert.throws(()=>validatePolicy({...p,clients:{codex:{...p.clients.codex,roles:{unknown:{model:'x',effort:'high'}}}}}));
+  assert.throws(()=>validatePolicy({...p,clients:{chatgpt:{...p.clients.chatgpt,roles:{unknown:{model:'x',effort:'high'}}}}}));
 });
 test('Kimi effort consistency concerns effective task choices rather than unused recommendations',()=>{
   const client={code:{model:'native/k3',effort:'high'},light:{model:'native/light',effort:'low'},avoidModels:[],
@@ -56,9 +56,9 @@ test('Kimi effort consistency concerns effective task choices rather than unused
 });
 
 test('native-default effort and documented expanded levels remain model-specific',()=>{
-  const p=preferences();p.clients.codex.code.effort='max';assert.doesNotThrow(()=>validatePolicy(p));
-  p.clients.codex.code.effort='none';assert.throws(()=>validatePolicy(p));
-  p.clients.codex.code.effort=null;assert.equal(validatePolicy(p).clients.codex.code.effort,null);
+  const p=preferences();p.clients.chatgpt.code.effort='max';assert.doesNotThrow(()=>validatePolicy(p));
+  p.clients.chatgpt.code.effort='none';assert.throws(()=>validatePolicy(p));
+  p.clients.chatgpt.code.effort=null;assert.equal(validatePolicy(p).clients.chatgpt.code.effort,null);
   p.clients.claude={code:{model:'claude-haiku-4-5-20251001',effort:null},light:{model:'haiku',effort:'max'},avoidModels:[]};
   assert.doesNotThrow(()=>validatePolicy(p));p.clients.claude.code.effort='high';assert.throws(()=>validatePolicy(p));
 });
@@ -91,7 +91,7 @@ test('published role schema accepts every runtime catalog subset including five 
 });
 
 test('client parallel limits override the shared fallback and reject invalid pins',()=>{
- const p=preferences();p.clients.codex.maxConcurrent=5;assert.equal(validatePolicy(p).clients.codex.maxConcurrent,5);
- for(const value of [0,33,1.5,'3',null]){p.clients.codex.maxConcurrent=value;assert.throws(()=>validatePolicy(p),{code:'INVALID_POLICY'});}
- delete p.clients.codex.maxConcurrent;assert.equal(validatePolicy(p).maxConcurrent,3);
+ const p=preferences();p.clients.chatgpt.maxConcurrent=5;assert.equal(validatePolicy(p).clients.chatgpt.maxConcurrent,5);
+ for(const value of [0,33,1.5,'3',null]){p.clients.chatgpt.maxConcurrent=value;assert.throws(()=>validatePolicy(p),{code:'INVALID_POLICY'});}
+ delete p.clients.chatgpt.maxConcurrent;assert.equal(validatePolicy(p).maxConcurrent,3);
 });

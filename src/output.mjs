@@ -1,17 +1,17 @@
 import {PRESETS} from './release.mjs';
-const LABELS={codex:'Codex',claude:'Claude Code',kimi:'Kimi',agy:'Antigravity',grok:'Grok Build'};
+const LABELS={chatgpt:'ChatGPT',claude:'Claude',kimi:'Kimi',gemini:'Gemini',grok:'Grok'};
 const label=client=>LABELS[client]??'Tool';
 const code=value=>typeof value==='string'&&/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(value)?value:'OPERATION_FAILED';
 const PRESET_LABELS=Object.fromEntries(PRESETS.map(entry=>[entry.id,entry.label]));
 const preset=value=>Object.hasOwn(PRESET_LABELS,value)?' · '+PRESET_LABELS[value]:'';
 const NOTES={
- 'codex-native-precedence-limits':'Project and explicit client settings can override these defaults.',
+ 'chatgpt-native-precedence-limits':'Project and explicit client settings can override these defaults.',
  'claude-native-precedence-limits':'Project and explicit client settings can override these defaults.',
  'kimi-concurrency-guidance-only':'Kimi: the concurrency limit is guidance.',
  'kimi-model-pool-routing-guidance':'Kimi: the parent selects the model alias for each role.',
- 'agy-concurrency-guidance-only':'Antigravity: the concurrency limit is guidance.',
- 'agy-per-role-effort-unsupported':'Antigravity: native tiers do not support per-role effort.',
- 'grok-per-role-effort-unsupported':'Grok Build: native agent settings do not support per-role effort.',
+ 'gemini-concurrency-guidance-only':'Gemini: the concurrency limit is guidance.',
+ 'gemini-per-role-effort-unsupported':'Gemini: native tiers do not support per-role effort.',
+ 'grok-per-role-effort-unsupported':'Grok: native agent settings do not support per-role effort.',
  'grok-native-precedence-limits':'Project and explicit client settings can override these defaults.',
  'kimi-catalog-alias-resolved':'Kimi: an existing matching model alias was selected.',
 };

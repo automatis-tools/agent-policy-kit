@@ -31,7 +31,7 @@ test('missing native CLIs create no configuration, even from ephemeral npm paths
   assert.deepEqual(fs.readdirSync(home),['.claude']);
 });
 test('selected missing client is not configured',t=>{
-  const home=fixture(t),got=cli(home,['install','--client','codex','--apply']);
+  const home=fixture(t),got=cli(home,['install','--client','chatgpt','--apply']);
   assert.equal(got.status,3);assert.equal(JSON.parse(got.stdout).status,'no_clients');assert.deepEqual(fs.readdirSync(home),[]);
 });
 test('receipt-based uninstall needs neither preferences nor native executable',t=>{
@@ -39,10 +39,10 @@ test('receipt-based uninstall needs neither preferences nor native executable',t
   const got=cli(home,['uninstall','--apply']);assert.equal(got.status,0);assert.equal(JSON.parse(got.stdout).status,'not_installed');
 });
 test('doctor separates native configuration from model execution',t=>{
-  const got=cli(fixture(t),['doctor','--client','agy']);assert.equal(got.status,0);
+  const got=cli(fixture(t),['doctor','--client','gemini']);assert.equal(got.status,0);
   const report=JSON.parse(got.stdout);assert.equal(report.mode,'configuration_only');
-  assert.equal(report.clients.agy.configuration.status,'not_configured');
-  assert.equal(report.clients.agy.modelExecution,'not_checked');
+  assert.equal(report.clients.gemini.configuration.status,'not_configured');
+  assert.equal(report.clients.gemini.modelExecution,'not_checked');
 });
 test('removed runtime commands reject before reading corrupt preferences or private input',t=>{
   const home=fixture(t),state=path.join(home,'.agent-policy-kit');fs.mkdirSync(state);fs.writeFileSync(path.join(state,'policy.json'),'{broken');
@@ -52,10 +52,10 @@ test('removed runtime commands reject before reading corrupt preferences or priv
   }
 });
 
-const nativeHomes={codex:['CODEX_HOME','.codex','codex-cli 0.165.0'],claude:['CLAUDE_CONFIG_DIR','.claude','2.1.312 (Claude Code)'],kimi:['KIMI_CODE_HOME','.kimi-code','kimi 2.4.0']};
+const nativeHomes={chatgpt:['CODEX_HOME','.codex','codex-cli 0.165.0'],claude:['CLAUDE_CONFIG_DIR','.claude','2.1.312 (Claude Code)'],kimi:['KIMI_CODE_HOME','.kimi-code','kimi 2.4.0']};
 const provisionedKimi='[providers.fixture]\ntype = "kimi"\n[models."kimi-code/k3-256k"]\nprovider = "fixture"\nmodel = "k3-256k"\nmax_context_size = 1048576\nsupport_efforts = ["high"]\n[models."kimi-code/kimi-for-coding"]\nprovider = "fixture"\nmodel = "kimi-for-coding"\nmax_context_size = 262144\nsupport_efforts = ["low", "high"]\n';
 function nativeBinary(home,client) {
- const directory=path.join(home,'fixture-bin');fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,client),`#!${process.execPath}\nconsole.log(${JSON.stringify(nativeHomes[client][2])});\n`,{mode:0o700});return directory;
+ const directory=path.join(home,'fixture-bin');fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,client==='chatgpt'?'codex':client),`#!${process.execPath}\nconsole.log(${JSON.stringify(nativeHomes[client][2])});\n`,{mode:0o700});return directory;
 }
 for(const [client,[variable,directory]]of Object.entries(nativeHomes))test(`CLI ${client} active home override refuses dormant setup and doctor verification`,t=>{
  const home=fixture(t),active=path.join(home,'active-profile'),config=path.join(active,client==='claude'?'settings.json':'config.toml');fs.mkdirSync(active);fs.writeFileSync(config,'PRIVATE_ACTIVE_SENTINEL');
@@ -74,27 +74,27 @@ for(const [client,[variable,directory]]of Object.entries(nativeHomes))test(`CLI 
 });
 
 test('external preference updates coordinate the retained canonical file after owned removal',t=>{
- const home=fixture(t),policy=path.join(home,'custom.json'),state=path.join(home,'.agent-policy-kit'),env={PATH:nativeBinary(home,'codex')};
+ const home=fixture(t),policy=path.join(home,'custom.json'),state=path.join(home,'.agent-policy-kit'),env={PATH:nativeBinary(home,'chatgpt')};
  assert.equal(cli(home,['init','--policy',policy],undefined,env).status,0);
- assert.equal(cli(home,['install','--client','codex','--policy',policy,'--apply'],undefined,env).status,0);
- assert.equal(cli(home,['uninstall','--client','codex','--apply'],undefined,env).status,0);
+ assert.equal(cli(home,['install','--client','chatgpt','--policy',policy,'--apply'],undefined,env).status,0);
+ assert.equal(cli(home,['uninstall','--client','chatgpt','--apply'],undefined,env).status,0);
  const canonical=path.join(state,'policy.json');assert.equal(fs.existsSync(canonical),true);assert.deepEqual(fs.readdirSync(path.join(state,'installations')),[]);assert.equal(fs.existsSync(path.join(state,'pending.json')),false);assert.equal(fs.existsSync(path.join(state,'.install.lock')),false);
  const replacement=JSON.parse(fs.readFileSync(policy));replacement.maxConcurrent=2;fs.writeFileSync(policy,JSON.stringify(replacement));
- const conflict=cli(home,['setup','--client','codex','--policy',policy,'--apply'],undefined,env);assert.equal(conflict.status,3);assert.equal(JSON.parse(conflict.stdout).results[0].error,'POLICY_CONFLICT');
+ const conflict=cli(home,['setup','--client','chatgpt','--policy',policy,'--apply'],undefined,env);assert.equal(conflict.status,3);assert.equal(JSON.parse(conflict.stdout).results[0].error,'POLICY_CONFLICT');
  fs.writeFileSync(canonical,JSON.stringify(replacement));
- assert.equal(cli(home,['setup','--client','codex','--policy',policy,'--apply'],undefined,env).status,0);
- const report=JSON.parse(cli(home,['doctor','--client','codex','--policy',policy],undefined,env).stdout);assert.equal(report.clients.codex.configuration.status,'verified');assert.match(fs.readFileSync(path.join(home,'.codex/config.toml'),'utf8'),/max_concurrent_threads_per_session = 2/);
+ assert.equal(cli(home,['setup','--client','chatgpt','--policy',policy,'--apply'],undefined,env).status,0);
+ const report=JSON.parse(cli(home,['doctor','--client','chatgpt','--policy',policy],undefined,env).stdout);assert.equal(report.clients.chatgpt.configuration.status,'verified');assert.match(fs.readFileSync(path.join(home,'.codex/config.toml'),'utf8'),/max_concurrent_threads_per_session = 2/);
 });
 
 test('show reads native subagents without an APK installation and --json preserves machine output',t=>{
  const home=fixture(t);fs.mkdirSync(path.join(home,'.codex/agents'),{recursive:true});fs.writeFileSync(path.join(home,'.codex/config.toml'),'[agents]\nmax_concurrent_threads_per_session=5\n');fs.writeFileSync(path.join(home,'.codex/agents/manual.toml'),'name="manual"\nmodel="custom/existing"\n');
- const got=cli(home,['show','--client','codex','--json']);assert.equal(got.status,0);const report=JSON.parse(got.stdout);assert.equal(report.clients.codex.concurrency.value,5);assert.equal(report.clients.codex.roles[0].model,'custom/existing');assert.equal(fs.existsSync(path.join(home,'.agent-policy-kit')),false);
+ const got=cli(home,['show','--client','chatgpt','--json']);assert.equal(got.status,0);const report=JSON.parse(got.stdout);assert.equal(report.clients.chatgpt.concurrency.value,5);assert.equal(report.clients.chatgpt.roles[0].model,'custom/existing');assert.equal(fs.existsSync(path.join(home,'.agent-policy-kit')),false);
 });
 test('show reports an incomplete read with a nonzero exit while preserving readable clients',t=>{
- const home=fixture(t);fs.mkdirSync(path.join(home,'.claude'),{recursive:true});fs.writeFileSync(path.join(home,'.claude/settings.json'),'{bad');const got=cli(home,['show','--json']);assert.equal(got.status,3);assert.equal(JSON.parse(got.stdout).clients.claude.status,'attention');assert.equal(JSON.parse(got.stdout).clients.codex.status,'not_configured');
+ const home=fixture(t);fs.mkdirSync(path.join(home,'.claude'),{recursive:true});fs.writeFileSync(path.join(home,'.claude/settings.json'),'{bad');const got=cli(home,['show','--json']);assert.equal(got.status,3);assert.equal(JSON.parse(got.stdout).clients.claude.status,'attention');assert.equal(JSON.parse(got.stdout).clients.chatgpt.status,'not_configured');
 });
 
 test('per-tool limit flags reject orphan and duplicate overrides before writing',t=>{
- const home=fixture(t),base=['setup','--roles','reviewer','--max-concurrent','3','--codex','reviewer=gpt-6.1-sol:high','--apply'];
- for(const [suffix,error]of [[['--claude-max-concurrent','2'],'INVALID_EXPLICIT_CONFIG'],[['--codex-max-concurrent','2','--codex-max-concurrent','3'],'DUPLICATE_OPTION']]){const got=cli(home,[...base,...suffix]);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,error);assert.deepEqual(fs.readdirSync(home),[]);}
+ const home=fixture(t),base=['setup','--roles','reviewer','--max-concurrent','3','--chatgpt','reviewer=gpt-6.1-sol:high','--apply'];
+ for(const [suffix,error]of [[['--claude-max-concurrent','2'],'INVALID_EXPLICIT_CONFIG'],[['--chatgpt-max-concurrent','2','--chatgpt-max-concurrent','3'],'DUPLICATE_OPTION']]){const got=cli(home,[...base,...suffix]);assert.equal(got.status,1);assert.equal(JSON.parse(got.stdout).error,error);assert.deepEqual(fs.readdirSync(home),[]);}
 });

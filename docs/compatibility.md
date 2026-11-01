@@ -1,12 +1,12 @@
 # Native configuration support
 
-| Client | Written native configuration | Limits |
+| AI assistant | Written native configuration | Limits |
 |---|---|---|
-| Codex | User role TOMLs, native subagent defaults/concurrency, routing instructions | Higher-priority project/explicit settings still follow Codex rules |
-| Claude Code | User role Markdown with model/effort, native default/concurrency env, routing instructions | Force settings and native execution-path exceptions can override the intended mapping |
-| Kimi Code | User role Markdown, existing secondary-model pool, per-alias effort, routing instructions | Model-role selection and max concurrency are guidance; provisioned aliases/capabilities are required |
-| Antigravity | User role Markdown with Pro/Flash/Flash Lite/inherit tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
-| Grok Build | User role Markdown (read-only roles use permission_mode plan), per-role models and a general-purpose fallback in config.toml, native max_concurrent, routing instructions | No documented per-role effort; subagents use the main session effort. Higher-priority project/explicit settings still follow Grok Build rules |
+| ChatGPT (Codex) | User role TOMLs, native subagent defaults/concurrency, routing instructions | Higher-priority project/explicit settings still follow Codex rules |
+| Claude (Claude Code) | User role Markdown with model/effort, native default/concurrency env, routing instructions | Force settings and native execution-path exceptions can override the intended mapping |
+| Kimi (Kimi Code) | User role Markdown, existing secondary-model pool, per-alias effort, routing instructions | Model-role selection and max concurrency are guidance; provisioned aliases/capabilities are required |
+| Gemini (Antigravity) | User role Markdown with Pro/Flash/Flash Lite/inherit tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
+| Grok (Grok Build) | User role Markdown (read-only roles use permission_mode plan), per-role models and a general-purpose fallback in config.toml, native max_concurrent, routing instructions | No documented per-role effort; subagents use the main session effort. Higher-priority project/explicit settings still follow Grok Build rules |
 
 These are preferences implemented through native features. APK does not participate in later agent operation and does not enforce policy on every request. avoidModels is guidance. No hook, wrapper or proxy is installed to bypass native limits.
 

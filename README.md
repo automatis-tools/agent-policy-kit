@@ -2,7 +2,7 @@
 
 Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-maximenko/).
 
-**Stop subagents from burning your plan limits.** APK gives each subagent role a model that fits the task and your plan in Codex, Claude Code, Kimi, Antigravity and Grok Build. One command, then it exits.
+**Stop subagents from burning your plan limits.** APK gives each subagent role a model that fits the task and your plan in ChatGPT, Claude, Kimi, Gemini and Grok. One command, then it exits.
 
 ![One weekly limit: 5.3 h vs 25 h of work](docs/assets/subagent-limits.svg)
 
@@ -10,7 +10,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 
 ## Set it up
 
-1. Open the [configurator](https://agent-policy-kit.trymenow.io/). Pick roles, your coding tools and a mode: **Light**, **Standard** or **Top-tier**, by how much of your plan subagents may use.
+1. Open the [configurator](https://agent-policy-kit.trymenow.io/). Pick roles, your AI assistants and a mode: **Light**, **Standard** or **Top-tier**, by how much of your plan subagents may use.
 2. Copy the command and run it. Remove the last `--apply` line to preview first; nothing is written without it.
 
 ![Configurator: models and effort for each subagent role, and the setup command](docs/assets/configurator.png)
@@ -18,6 +18,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 ## Good to know
 
 - Your main agent and its model stay unchanged. It still decides when to delegate.
+- APK configures the coding agent of each assistant: Codex in ChatGPT, Claude Code in Claude, Kimi Code, Antigravity for Gemini and Grok Build. Plain chats do not change.
 - Desktop apps on macOS work too. APK finds the Codex that ChatGPT Desktop includes and the Claude Code in the Code tab of Claude Desktop. Both read the same settings as their CLIs. Claude Cowork reads its settings from your Claude account, so APK does not change Cowork.
 - No proxy and no background process. Delete the npm package after setup.
 - `npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove APK's settings and keep yours.
