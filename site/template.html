@@ -143,7 +143,9 @@ __APK_SHARE_CODEC__
       const profile=state.profiles[client];
       return concurrencyFor(state,client)!==profile.presetCap||ROLES.some(role=>{const current=state.jobs?.[client]?.[role],base=presetJob(state,client,role);return current?.model!==base.model||current?.effort!==base.effort;});
     });
-    if(replacing&&(!all||mixed||pending||edited)&&!confirmReplace())return state;
+    // The scope warning only matters when other selected tools keep their choices; otherwise ask only before losing edits.
+    const scoped=!all&&(Array.isArray(state.selected)?state.selected.length:0)>1;
+    if(replacing&&(scoped||mixed||pending||edited)&&!confirmReplace())return state;
     const next = clone(state);
     for (const client of targets) {
       const preferences = preset.preferences.clients[client];
@@ -396,7 +398,7 @@ __APK_SHARE_CODEC__
 
  }
  function apply(preset){
-  const message=state.active==='all'?`Apply ${preset.label} to all selected tools? This replaces their individual modes, models and effort.`:`Apply ${preset.label} to ${toolName(state.active)} only? Other tools keep their choices.`;
+  const message=state.active==='all'?`Apply ${preset.label} to all selected tools? This replaces their individual modes, models and effort.`:state.selected.length>1?`Apply ${preset.label} to ${toolName(state.active)} only? Other tools keep their choices.`:`Replace your changes to ${toolName(state.active)} with ${preset.label}?`;
   const next=A.applyPreset(state,preset,()=>window.confirm(message));if(next!==state){state=next;}render();
  }
  function renderModes(){

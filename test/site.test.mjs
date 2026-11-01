@@ -209,6 +209,16 @@ test('replacing custom settings requires confirmation and preserves the selected
   assert.deepEqual(plain(api.buildConfig(named, preferences).config), preferences);
 });
 
+test('switching the only selected tool between presets asks only when edits would be lost',()=>{
+ const fast=JSON.parse(fs.readFileSync(new URL('../policies/fast.json',import.meta.url),'utf8'));
+ let state=api.initialState(preferences,'balanced',{empty:true});state.selected=['codex'];state.active='codex';
+ state=api.applyPreset(state,{id:'balanced',preferences});assert.equal(api.modeFor(state,'codex'),'balanced');
+ const light=api.applyPreset(state,{id:'fast',label:'Light',preferences:fast},()=>{throw new Error('nothing to lose, no confirmation');});
+ assert.equal(api.modeFor(light,'codex'),'fast');
+ state.jobs.codex.worker={model:'custom/code',effort:'low'};let asked=0;
+ assert.equal(api.applyPreset(state,{id:'fast',label:'Light',preferences:fast},()=>{asked++;return false;}),state);assert.equal(asked,1);
+});
+
 test('an individual preset changes only that tool and All reports mixed modes',()=>{
  const state=api.initialState(preferences);state.active='kimi';
  const quality=JSON.parse(fs.readFileSync(new URL('../policies/quality.json',import.meta.url),'utf8'));
