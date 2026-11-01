@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {bundledReleaseInfo,presetPreferences,modelCatalog} from '../src/release.mjs';
 import {validatePolicy} from '../src/policy.mjs';
 import {ROLE_DEFINITIONS} from '../src/roles.mjs';
+import {limitsChartSvg} from './build-limits-chart.mjs';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const releaseVersion=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
 export function renderConfigurationPage({canonicalRoot=false,hostedReleases=[]}={}) {
@@ -51,6 +52,7 @@ const replacements={...metadata,
   __APK_SHARE_CODEC__:fs.readFileSync(path.join(root,'src/share.mjs'),'utf8').replace(/^export /gm,''),
   __APK_BASE_CSS__:fs.readFileSync(path.join(root,'site/base.css'),'utf8'),
   __APK_FONT_DATA__:font,__APK_FONT_LICENSE__:fontLicense,
+  __APK_LIMITS_CHART__:limitsChartSvg({darkMode:false,idPrefix:'apk-limits'}),__APK_LIMITS_EVIDENCE_URL__:escapeHtml(repositoryUrl+'/blob/main/docs/limits-evidence.md'),
   [marker]:JSON.stringify(data).replaceAll('<','\\u003c')
 };
 for(const key of Object.keys(replacements))if(template.split(key).length!==2)throw new Error(`Configuration page must have one ${key} marker`);
