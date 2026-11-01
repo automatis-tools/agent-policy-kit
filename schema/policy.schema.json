@@ -50,6 +50,9 @@
         },
         "agy": {
           "$ref": "#/$defs/tierClient"
+        },
+        "grok": {
+          "$ref": "#/$defs/grokClient"
         }
       }
     }
@@ -369,6 +372,77 @@
             },
             "writer": {
               "$ref": "#/$defs/claudeProfile"
+            }
+          }
+        },
+        "maxConcurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Overrides the shared maxConcurrent fallback for this tool."
+        }
+      }
+    },
+    "grokProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/identifier"
+        },
+        "effort": {
+          "type": "null"
+        }
+      }
+    },
+    "grokClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "light",
+        "avoidModels"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/grokProfile"
+        },
+        "light": {
+          "$ref": "#/$defs/grokProfile"
+        },
+        "avoidModels": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "$ref": "#/$defs/grokProfile"
+            },
+            "reviewer": {
+              "$ref": "#/$defs/grokProfile"
+            },
+            "explorer": {
+              "$ref": "#/$defs/grokProfile"
+            },
+            "routine": {
+              "$ref": "#/$defs/grokProfile"
+            },
+            "tester": {
+              "$ref": "#/$defs/grokProfile"
+            },
+            "writer": {
+              "$ref": "#/$defs/grokProfile"
             }
           }
         },

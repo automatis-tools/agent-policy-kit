@@ -34,9 +34,9 @@ agent-policy setup \
   --apply
 ```
 
-Use --codex, --claude, --kimi and/or --antigravity to select tools. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Antigravity accepts role=tier without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
+Use --codex, --claude, --kimi, --antigravity and/or --grok to select tools. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Antigravity accepts role=tier and Grok Build accepts role=model, both without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
 
-Optional --codex-max-concurrent, --claude-max-concurrent, --kimi-max-concurrent and --antigravity-max-concurrent override --max-concurrent for their selected tool. They accept whole numbers from 1 to 32 and require the corresponding tool argument. JSON preferences can instead set clients[tool].maxConcurrent. Omitted overrides use the top-level fallback.
+Optional --codex-max-concurrent, --claude-max-concurrent, --kimi-max-concurrent, --antigravity-max-concurrent and --grok-max-concurrent override --max-concurrent for their selected tool. They accept whole numbers from 1 to 32 and require the corresponding tool argument. JSON preferences can instead set clients[tool].maxConcurrent. Omitted overrides use the top-level fallback.
 
 Explicit arguments are setup/install-only and cannot combine with --client, --release, --preset, --policy or --config. Duplicate flags and incomplete role maps fail before writes. Omit --apply to plan first. Explicit commands allow deliberate owned replacement and record custom source with no named preset provenance. The native files do not retain a dependency on the codec or package.
 
@@ -52,7 +52,7 @@ Optional top-level selectedRoles selects worker, reviewer, explorer, tester, wri
 
 Use model-supported native effort levels. null means no explicit pin. A known catalog model rejects unsupported explicit effort. Keep at most one non-null pin per selected Kimi alias. Preset identity and custom source are reported separately. Tools omitted from clients are not selected.
 
-Run detect and inspect the setup plan. Working executable identity is required; stale directories are not presence. Automatic targets use standard native roots. Nondefault CODEX_HOME/CLAUDE_CONFIG_DIR/KIMI_CODE_HOME returns a per-client zero-write prerequisite rather than configuring a dormant folder. Explicit --home selects the standard layout under that intended base; preserve exact --home/--state-dir for later inspection/removal. It does not remap arbitrary native roots.
+Run detect and inspect the setup plan. Working executable identity is required; stale directories are not presence. Automatic targets use standard native roots. Nondefault CODEX_HOME/CLAUDE_CONFIG_DIR/KIMI_CODE_HOME/GROK_HOME returns a per-client zero-write prerequisite rather than configuring a dormant folder. Explicit --home selects the standard layout under that intended base; preserve exact --home/--state-dir for later inspection/removal. It does not remap arbitrary native roots.
 
 ## 3. Apply the concrete reviewed plan
 
@@ -68,7 +68,7 @@ The available role names are apk-worker/apk-reviewer/apk-explorer/apk-tester/apk
 
 ## 4. Native limits
 
-Codex/Claude have native defaults/caps with higher-priority setting and execution-path exceptions. Kimi role-to-pool selection and concurrency are guidance. Antigravity uses native Pro/Flash/Flash Lite/inherit tiers, with no documented per-role effort or universal hard cap. avoidModels is guidance. A pinned configuration does not prove provider identity, entitlement, task quality or unchanged alias resolution. Never add a runtime gate to strengthen a missing native feature.
+Codex/Claude have native defaults/caps with higher-priority setting and execution-path exceptions. Kimi role-to-pool selection and concurrency are guidance. Antigravity uses native Pro/Flash/Flash Lite/inherit tiers, with no documented per-role effort or universal hard cap. Grok Build writes agents/apk-ROLE.md, per-role models and a general-purpose fallback in config.toml [subagents.models], and a native [subagents] max_concurrent cap; it has no per-role effort, so subagents use the main session effort. avoidModels is guidance. A pinned configuration does not prove provider identity, entitlement, task quality or unchanged alias resolution. Never add a runtime gate to strengthen a missing native feature.
 
 ## 5. Removal and incompatible formats
 

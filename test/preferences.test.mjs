@@ -28,9 +28,15 @@ test('agy preferences use native tiers without fabricated per-role effort', () =
   assert.equal(validatePolicy(p).clients.agy.code.model,'pro');
   p.clients.agy.code.effort='high';assert.throws(()=>validatePolicy(p));
 });
+test('grok preferences accept any model identifier without per-role effort', () => {
+  const p=preferences();p.clients.grok={code:{model:'grok-4.7',effort:null},light:{model:'grok-4.5',effort:null},avoidModels:[]};
+  assert.equal(validatePolicy(p).clients.grok.light.model,'grok-4.5');
+  p.clients.grok.code.effort='high';assert.throws(()=>validatePolicy(p));
+  p.clients.grok.code={model:'grok-4.7',effort:null};p.clients.grok.avoidModels=['grok-4.7'];assert.throws(()=>validatePolicy(p));
+});
 test('the bundled preset uses the same shared preference contract', () => {
   const p=validatePolicy(JSON.parse(fs.readFileSync(new URL('../policies/balanced.json',import.meta.url))));
-  assert.equal(p.maxConcurrent,3);assert.equal(Object.keys(p.clients).length,4);
+  assert.equal(p.maxConcurrent,3);assert.equal(Object.keys(p.clients).length,5);
 });
 
 test('individual task choices override recommendations without changing other roles',()=>{

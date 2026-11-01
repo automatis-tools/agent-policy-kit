@@ -55,7 +55,7 @@ function shareRelease(release){
 }
 function shareChoice(choice,id,metadata){
  shareRecord(choice,['model','effort']);
- if(typeof choice.model!=='string'||choice.model.length>128||(choice.effort!==null&&(id==='agy'||!metadata.catalog[id].efforts.includes(choice.effort))))invalidShare();
+ if(typeof choice.model!=='string'||choice.model.length>128||(choice.effort!==null&&(['agy','grok'].includes(id)||!metadata.catalog[id].efforts.includes(choice.effort))))invalidShare();
  return {model:choice.model,effort:choice.effort};
 }
 function sharePayload(payload,release,metadata){

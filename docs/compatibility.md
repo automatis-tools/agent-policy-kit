@@ -6,6 +6,7 @@
 | Claude Code | User role Markdown with model/effort, native default/concurrency env, routing instructions | Force settings and native execution-path exceptions can override the intended mapping |
 | Kimi Code | User role Markdown, existing secondary-model pool, per-alias effort, routing instructions | Model-role selection and max concurrency are guidance; provisioned aliases/capabilities are required |
 | Antigravity | User role Markdown with Pro/Flash/Flash Lite/inherit tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
+| Grok Build | User role Markdown (read-only roles use permission_mode plan), per-role models and a general-purpose fallback in config.toml, native max_concurrent, routing instructions | No documented per-role effort; subagents use the main session effort. Higher-priority project/explicit settings still follow Grok Build rules |
 
 These are preferences implemented through native features. APK does not participate in later agent operation and does not enforce policy on every request. avoidModels is guidance. No hook, wrapper or proxy is installed to bypass native limits.
 
@@ -19,3 +20,4 @@ Primary references checked for this design:
 - [Claude native subagents](https://code.claude.com/docs/en/sub-agents).
 - [Kimi configuration](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/configuration/config-files.md) and [agent definitions](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/agents.md).
 - [Antigravity native subagents](https://antigravity.google/docs/subagents?tab=cli).
+- [Grok Build subagents](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md), observed with Grok Build 1.0.70 and an isolated GROK_HOME.

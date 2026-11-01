@@ -4,6 +4,8 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## 0.2.0 — Unreleased
 
+- Add Grok Build as a fifth coding tool, listed after Antigravity. APK writes `agents/apk-<role>.md` role files (Reviewer and Code explorer use the read-only `permission_mode: plan`), per-role models and a `general-purpose` fallback copied from the first selected role (the Coder when selected) in `config.toml` `[subagents.models]`, a native `[subagents] max_concurrent` cap and a delegation block in `AGENTS.md` under `$GROK_HOME` (default `~/.grok`). Per-role effort is not configurable, so every Grok choice has effort null and the page shows no effort controls. Presets use Grok Build 0.1, xAI's fast coding model, for light work and Grok 4.7 for stronger roles; Grok 4.6 and 4.5 stay available in Custom. Explicit commands use `--grok`, `--grok-max-concurrent` and `--avoid-grok`. Removal restores the original settings and refuses on local edits.
+
 - Rename work modes to Light, Standard and Top-tier and describe them by how much of a plan's limits subagents use. Preset ids and share-link ids are unchanged. Top-tier now uses Opus 5.5, GPT-6.1 Sol and K3 at high effort for code, review and tests. A per-tool switch under Top-tier opts those roles into Fable 5.1, GPT-6 Astra or K3.1 Pro; it is off by default. Top models no longer run at xhigh/max, because native default subagent settings copy the first selected role (the Coder when selected) to subagents started without a named role.
 
 - Explain each configuration step with a short ? note, and stop repeating vendor billing or version documentation in the work-mode notice.

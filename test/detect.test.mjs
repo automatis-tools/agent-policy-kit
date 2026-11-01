@@ -20,9 +20,9 @@ async function executable(file,body) {
 
 test('config directories alone never detect a client or execute anything',async t=>{
   const f = await fixture(t);
-  for (const dir of ['.codex','.claude','.kimi-code','.gemini']) await fs.mkdir(path.join(f.hostHome,dir));
+  for (const dir of ['.codex','.claude','.kimi-code','.gemini','.grok']) await fs.mkdir(path.join(f.hostHome,dir));
   const records = await detectClients(f);
-  assert.deepEqual(records.map(r=>r.status),['not_found','not_found','not_found','not_found']);
+  assert.deepEqual(records.map(r=>r.status),['not_found','not_found','not_found','not_found','not_found']);
   assert.ok(records.every(r=>r.version === null && r.executable === null));
 });
 
@@ -46,6 +46,17 @@ test('conventional host locations and native launcher symlinks work when PATH la
   await executable(path.join(f.hostHome,'.kimi-code/bin/kimi'),'if (process.argv[2] === "--version") console.log("2.4.0"); else console.log("Kimi Code CLI\\nUsage: kimi [OPTIONS]");');
   const kimi = await resolveClient('kimi',f);
   assert.equal(kimi.status,'detected'); assert.equal(kimi.version,'2.4.0'); assert.equal(kimi.origin,'known_location');
+});
+
+test('Grok Build is detected only from its branded executable version',async t=>{
+  const f = await fixture(t);
+  await executable(path.join(f.bin,'grok'),'console.log("grok 1.0.70 (abc123 2026-10-30) [stable]");');
+  const result = await resolveClient('grok',f);
+  assert.equal(result.status,'detected');assert.equal(result.version,'1.0.70');assert.equal(result.origin,'path');
+  await executable(path.join(f.bin,'grok'),'console.log("1.0.70");');
+  assert.equal((await resolveClient('grok',f)).status,'invalid');
+  await executable(path.join(f.bin,'grok'),'console.log("other-product 1.0.70");');
+  assert.equal((await resolveClient('grok',f)).status,'invalid');
 });
 
 test('invalid earlier candidates never hide a later real client',async t=>{

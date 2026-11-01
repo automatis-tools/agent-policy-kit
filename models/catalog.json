@@ -694,6 +694,50 @@
         }
       ],
       "note": "Native per-subagent selectors are tiers, not the session model inventory. CLI 1.4.10 parser explicitly accepts inherit/flash_lite/flash/pro, including Flash Lite absent from the shared docs App table. Per-role effort is not exposed by the agent-file schema."
+    },
+    "grok": {
+      "label": "Grok Build",
+      "efforts": [],
+      "observedClientVersion": "1.0.70",
+      "models": [
+        {
+          "id": "grok-4.7",
+          "label": "Grok 4.7",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://docs.x.ai/developers/models",
+          "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
+          "kind": "model"
+        },
+        {
+          "id": "grok-4.6",
+          "label": "Grok 4.6",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://docs.x.ai/developers/models",
+          "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
+          "kind": "model"
+        },
+        {
+          "id": "grok-4.5",
+          "label": "Grok 4.5",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://docs.x.ai/developers/models",
+          "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
+          "kind": "model"
+        },
+        {
+          "id": "grok-build-0.1",
+          "label": "Grok Build 0.1",
+          "efforts": [],
+          "defaultEffort": null,
+          "source": "https://docs.x.ai/developers/models",
+          "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
+          "kind": "model"
+        }
+      ],
+      "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. Per-role effort is not exposed by the agent-file schema, so subagents use the main session effort. [subagents] max_concurrent is a native cap."
     }
   }
 }

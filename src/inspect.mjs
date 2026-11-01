@@ -5,8 +5,8 @@ import {parseToml} from './toml.mjs';
 import {CLIENTS} from './policy.mjs';
 import {inspectConfiguration} from './install.mjs';
 
-const ROOTS={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini'};
-const ENV_ROOTS={codex:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME'};
+const ROOTS={codex:'.codex',claude:'.claude',kimi:'.kimi-code',agy:'.gemini',grok:'.grok'};
+const ENV_ROOTS={codex:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'};
 const MAX_FILE=1024*1024,MAX_TOTAL=4*MAX_FILE,MAX_ENTRIES=256;
 const identifier=/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
 const namePattern=/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,79}$/;
@@ -78,8 +78,16 @@ function frontmatter(text){
 }
 function cap(value){if(!Number.isSafeInteger(value)||value<1)throw failure('UNSUPPORTED_NATIVE_SETTING');return value;}
 function optionalString(value,pattern){return value===undefined?null:safeString(value,pattern);}
-function extractSettings(client,id,native,env){
+function extractSettings(client,id,native,env,models){
  if(!record(native))throw failure('UNSUPPORTED_NATIVE_SETTING');
+ if(id==='grok'){
+  const subagents=native.subagents??{};if(!record(subagents))throw failure('UNSUPPORTED_NATIVE_SETTING');
+  const configured=subagents.models??{};if(!record(configured)||Object.keys(configured).length>MAX_ENTRIES)throw failure(record(configured)?'INSPECTION_LIMIT':'UNSUPPORTED_NATIVE_SETTING');
+  for(const[name,model]of Object.entries(configured))models.set(safeString(name,namePattern),safeString(model));
+  client.defaults.model=models.get('general-purpose')??null;
+  if(subagents.max_concurrent!==undefined)client.concurrency.value=cap(subagents.max_concurrent);
+  return;
+ }
  if(id==='codex'){
   const agents=native.agents??{};if(!record(agents))throw failure('UNSUPPORTED_NATIVE_SETTING');
   client.defaults.model=optionalString(agents.default_subagent_model);
@@ -113,7 +121,7 @@ function extractSettings(client,id,native,env){
   }
  }
 }
-async function rolesIn(directory,client,id,budget,depth=0){
+async function rolesIn(directory,client,id,budget,models,depth=0){
  await safePath(directory);
  let directoryHandle;
  try{directoryHandle=await fs.opendir(directory);}catch(error){if(error.code==='ENOENT')return;throw error;}
@@ -126,7 +134,7 @@ async function rolesIn(directory,client,id,budget,depth=0){
    if(entry.isDirectory()){
     if(id==='codex')continue;
     if(depth>=4)throw failure('INSPECTION_LIMIT');
-    await rolesIn(file,client,id,budget,depth+1);continue;
+    await rolesIn(file,client,id,budget,models,depth+1);continue;
    }
    if(!entry.name.endsWith(id==='codex'?'.toml':'.md'))continue;
    const body=await readFile(file,budget);if(body===null)throw failure('CONFIG_CHANGED_DURING_READ');
@@ -140,6 +148,11 @@ async function rolesIn(directory,client,id,budget,depth=0){
      const routing=body.match(/^The parent must select configured pool alias ([A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}) for this role; Markdown frontmatter does not select a model\. Requested effort: (native default|[A-Za-z0-9_-]+)\.$/m);
      if(routing){role.model=safeString(routing[1]);role.effort=routing[2]==='native default'?null:safeString(routing[2]);role.modelSelection='guidance';}
     }
+   }
+   if(id==='grok'){
+    // The native per-subagent model override lives in config.toml, not in the agent file.
+    role.model=models.get(role.name)??role.model;
+    if(fields.effort!==undefined){role.effort=null;warning(client,failure('UNSUPPORTED_ROLE_EFFORT'));}
    }
    if(id==='agy'){
     if(role.model!==null&&!['pro','flash','flash_lite','inherit'].includes(role.model))throw failure('UNSUPPORTED_NATIVE_SETTING');
@@ -166,18 +179,18 @@ export async function readConfiguration({client=null,home,env=process.env,explic
  const report={schemaVersion:1,scope:'user',modelExecution:'not_checked',clients:{}};
  for(const id of client?[client]:CLIENTS){
   const root=path.resolve(!explicitHome&&env[ENV_ROOTS[id]]?env[ENV_ROOTS[id]]:path.join(home,ROOTS[id]));
-  const c={status:'not_configured',defaults:{model:null,effort:null,enabled:null},concurrency:{value:null,kind:['codex','claude'].includes(id)?'native_setting':'guidance'},roles:[],pool:[],warnings:[],apk:{status:'not_checked'}};
-  report.clients[id]=c;const budget={bytes:0,entries:0};
+  const c={status:'not_configured',defaults:{model:null,effort:null,enabled:null},concurrency:{value:null,kind:['codex','claude','grok'].includes(id)?'native_setting':'guidance'},roles:[],pool:[],warnings:[],apk:{status:'not_checked'}};
+  report.clients[id]=c;const budget={bytes:0,entries:0},models=new Map();
   try{
    await safePath(root);
    if(id!=='agy'){
     try{
      const text=await readFile(path.join(root,id==='claude'?'settings.json':'config.toml'),budget);
-     if(text!==null){let native;if(id==='claude'){try{native=JSON.parse(text);}catch{throw failure('INVALID_JSON');}}else native=parseToml(text);extractSettings(c,id,native,env);}
-     else if(id==='claude')extractSettings(c,id,{},env);
+     if(text!==null){let native;if(id==='claude'){try{native=JSON.parse(text);}catch{throw failure('INVALID_JSON');}}else native=parseToml(text);extractSettings(c,id,native,env,models);}
+     else if(id==='claude')extractSettings(c,id,{},env,models);
     }catch(error){warning(c,error);}
    }
-   await rolesIn(path.join(root,id==='agy'?'config/agents':'agents'),c,id,budget);
+   await rolesIn(path.join(root,id==='agy'?'config/agents':'agents'),c,id,budget,models);
    if(id==='kimi'||id==='agy'){try{await readGuidance(root,c,budget);}catch(error){warning(c,error);}}
    if(c.status!=='attention'&&(c.roles.length||c.pool.length||c.defaults.model!==null||c.defaults.effort!==null||c.defaults.enabled!==null||c.concurrency.value!==null||Object.keys(c.overrides??{}).length))c.status='configured';
    if(root===path.resolve(home,ROOTS[id])){

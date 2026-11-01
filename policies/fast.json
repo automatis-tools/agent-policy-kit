@@ -65,6 +65,17 @@
         "effort": null
       },
       "avoidModels": []
+    },
+    "grok": {
+      "code": {
+        "model": "grok-build-0.1",
+        "effort": null
+      },
+      "light": {
+        "model": "grok-build-0.1",
+        "effort": null
+      },
+      "avoidModels": []
     }
   }
 }
