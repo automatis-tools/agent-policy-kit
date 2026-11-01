@@ -66,3 +66,6 @@ test('Antigravity does not report unsupported effort as a native pin',async t=>{
 test('Antigravity delegation-disabled roles retain their disabled state',async t=>{
  const home=await fixture(t);await put(home,'.gemini/config/agents/primary.md','---\nname: primary-only\ndescription: Primary agent\nmodel: pro\nsubagent: false\n---\n');const c=(await read(home,'agy')).clients.agy;assert.equal(c.roles[0].enabled,false);
 });
+test('role directory iteration has no rethrow-only catch',async()=>{
+ assert.doesNotMatch(await fs.readFile(new URL('../src/inspect.mjs',import.meta.url),'utf8'),/catch\(error\)\{throw error;\}/);
+});

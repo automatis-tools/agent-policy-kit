@@ -126,7 +126,7 @@ async function rolesIn(directory,client,id,budget,models,depth=0){
  let directoryHandle;
  try{directoryHandle=await fs.opendir(directory);}catch(error){if(error.code==='ENOENT')return;throw error;}
  const entries=[];
- try{for await(const entry of directoryHandle){if(++budget.entries>MAX_ENTRIES)throw failure('INSPECTION_LIMIT');entries.push(entry);}}catch(error){throw error;}
+ for await(const entry of directoryHandle){if(++budget.entries>MAX_ENTRIES)throw failure('INSPECTION_LIMIT');entries.push(entry);}
  for(const entry of entries.sort((a,b)=>a.name.localeCompare(b.name,'en'))){
   const file=path.join(directory,entry.name);
   try{

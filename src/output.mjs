@@ -1,7 +1,9 @@
+import {PRESETS} from './release.mjs';
 const LABELS={codex:'Codex',claude:'Claude Code',kimi:'Kimi',agy:'Antigravity',grok:'Grok Build'};
 const label=client=>LABELS[client]??'Tool';
 const code=value=>typeof value==='string'&&/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(value)?value:'OPERATION_FAILED';
-const preset=value=>['fast','balanced','quality'].includes(value)?' · '+value[0].toUpperCase()+value.slice(1):'';
+const PRESET_LABELS=Object.fromEntries(PRESETS.map(entry=>[entry.id,entry.label]));
+const preset=value=>Object.hasOwn(PRESET_LABELS,value)?' · '+PRESET_LABELS[value]:'';
 const NOTES={
  'codex-native-precedence-limits':'Project and explicit client settings can override these defaults.',
  'claude-native-precedence-limits':'Project and explicit client settings can override these defaults.',

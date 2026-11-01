@@ -736,11 +736,6 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
     }
     return {config: errors.length ? null : {schemaVersion: preferences.schemaVersion, maxConcurrent,...(selectedRoles.length===ROLES.length?{}:{selectedRoles}), clients}, errors};
   }
-  function stepCompletion(state, preferences, catalog, copied=false) {
-    const rolesReady=(state.selectedRoles??ROLES).length>0,toolsReady=state.selected.length>0;
-    const ready=rolesReady&&toolsReady&&buildConfig(state,preferences,catalog).config!==null;
-    return [rolesReady,toolsReady,ready,ready&&copied];
-  }
   function encodeConfig(config) {
     const bytes = new TextEncoder().encode(JSON.stringify(config));
     let binary = '';
@@ -748,7 +743,7 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
   function buildCommand(config, release) {return formatExplicitCommand(config,release.version,RELEASE.roles);}
-  globalThis.APKConfigurator = Object.freeze({initialState, modeFor, presetModelSummary, topModelRoles, topModelsOn, setTopModels, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, updateConcurrency, stepConcurrency, concurrencyFor, restoreState, stepCompletion, addAll, buildConfig, encodeConfig, buildCommand});
+  globalThis.APKConfigurator = Object.freeze({initialState, modeFor, presetModelSummary, topModelRoles, topModelsOn, setTopModels, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, updateConcurrency, stepConcurrency, concurrencyFor, restoreState, addAll, buildConfig, encodeConfig, buildCommand});
   if (typeof document === 'undefined') return;
 
 (() => {
@@ -977,7 +972,7 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
  }
  function updateProgress(){
   const copied=!!currentCommand&&lastCopiedCommand===currentCommand;
-  const complete=A.stepCompletion(state,RELEASE.preferences,RELEASE.catalog,copied);
+  const complete=[helpers.length>0,pickedTools.length>0,!!currentCommand,copied];
   document.querySelectorAll('.builder>section').forEach((section,index)=>{
    const marker=section.querySelector('.step-number'),value=String(complete[index]),changed=marker.dataset.complete!==undefined&&marker.dataset.complete!==value;section.dataset.complete=value;marker.dataset.complete=value;
    const text=complete[index]?'✓':String(index+1);if(marker.textContent!==text)marker.textContent=text;marker.setAttribute('role','img');marker.setAttribute('aria-label',`Step ${index+1}${complete[index]?' complete':''}`);if(changed)flashStep(marker,complete[index]);
@@ -1031,7 +1026,7 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
  window.addEventListener('hashchange',addressChanged);window.addEventListener('popstate',addressChanged);
  $('reset-form').addEventListener('click',()=>{freshForm();linkError='';render();});
 
- function refreshConcurrency(){toolModeLabel(state.active);renderModes();renderResult();}
+ function refreshConcurrency(){linkError='';toolModeLabel(state.active);renderModes();renderResult();}
  $('max-concurrent').addEventListener('input',event=>{const client=event.target.dataset.client;if(client!==state.active||!clients.includes(client))return;A.updateConcurrency(state,client,event.target.value);refreshConcurrency();});
  for(const [id,step]of [['decrease-concurrency',-1],['increase-concurrency',1]])$(id).addEventListener('click',()=>{const client=state.active;if(!clients.includes(client))return;A.stepConcurrency(state,client,step);$('max-concurrent').value=A.concurrencyFor(state,client);refreshConcurrency();});
  $('top-models-toggle').addEventListener('click',event=>{A.setTopModels(state,topTargets(),event.currentTarget.getAttribute('aria-checked')!=='true');render();});

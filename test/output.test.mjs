@@ -43,3 +43,9 @@ test('show distinguishes user configuration, inherited effort and guidance from 
 test('show labels delegation-disabled Antigravity roles explicitly',()=>{
  const text=formatResult('show',{clients:{agy:{status:'configured',defaults:{model:null,effort:null},concurrency:{value:null,kind:'guidance'},roles:[{name:'primary-only',model:'pro',effort:null,enabled:false}],pool:[],warnings:[],apk:{status:'not_configured'}}}},context);assert.match(text,/primary-only.*delegation disabled/);
 });
+test('terminal output names presets with the configurator labels',()=>{
+ for(const [id,label]of [['fast','Light'],['balanced','Standard'],['quality','Top-tier']]){
+  const text=formatResult('setup',report([{client:'codex',status:'configured',appliedPreset:id}]),context);
+  assert.match(text,new RegExp(`Configuration applied · ${label}`));assert.doesNotMatch(text,/· (?:Fast|Balanced|Quality)\b/);
+ }
+});
