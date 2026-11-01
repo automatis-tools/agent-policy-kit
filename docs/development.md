@@ -10,6 +10,14 @@ npm run test:unit
 npm run test:package
 ```
 
+Enable the contributor pre-push check once per clone:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+The hook runs npm run check before each push that updates a branch or tag. A push that only deletes refs skips the check. The hook is not packaged and is unrelated to generated client settings. Unit and package tests run in CI.
+
 npm run test:cache primes public dependency metadata on a fresh machine before the offline tarball consumers run. It installs only into a disposable directory and removes it afterward. npm ci alone may cache tarballs without the registry metadata required by a new offline consumer.
 
 npm test includes both unit tests and the installed-tarball gate. The gate needs macOS sandbox-exec or Linux bubblewrap. It must actually deny checkout access; unavailable isolation fails rather than skipping. Use a normal approved host if a managed sandbox forbids nesting.

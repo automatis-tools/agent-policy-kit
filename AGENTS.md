@@ -1,6 +1,7 @@
 # Contributor instructions
 
 - This is a one-shot native configurator. No custom code may run during normal client operation. Do not add hooks, wrappers, plugins, daemons, proxies or runtime audits.
+- The repository's own `.githooks/pre-push` is a contributor check, not client code. It is not packaged and does not change generated settings. Keep it enabled with `git config core.hooksPath .githooks`.
 - Subagent preferences apply only if the main agent chooses to delegate. Do not require delegation, enable disabled subagent features or change ordinary direct work.
 - Native files must remain independent with npm package, source and kit state removed. Never generate executable/import references to them.
 - Use Node.js 22.x (22.13+) or 24+. Run unit tests and the packed-package acceptance gate before completion.
