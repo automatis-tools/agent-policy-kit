@@ -17,7 +17,7 @@ Some desktop apps include their own copy of a CLI and do not put it on PATH. On 
 | App | Checked location | Settings it reads |
 |---|---|---|
 | ChatGPT Desktop (Codex) | `/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex`, and the same path under `~/Applications` | `~/.codex`, the same as the Codex CLI |
-| Claude Desktop (Code tab) | `~/Library/Application Support/Claude/claude-code/<version>/<build>/claude.app/Contents/MacOS/claude`, newest version first | `~/.claude`, the same as the Claude Code CLI |
+| Claude Desktop (Code tab) | `~/Library/Application Support/Claude/claude-code/<version>/<build>/claude.app/Contents/MacOS/claude`, newest version first, and within a version the most recently written build first | `~/.claude`, the same as the Claude Code CLI |
 
 A client found this way has `origin: "desktop_app"` in detect output. The app must be installed, and the bundled CLI must report a valid version. Settings apply to new desktop sessions.
 

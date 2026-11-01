@@ -36,8 +36,17 @@ async function desktopCandidates(client,{hostHome,platform,systemApplications}) 
   if (client !== 'claude') return [];
   const base = path.join(hostHome,CLAUDE_DESKTOP), files = [];
   for (const version of (await directories(base)).filter(name=>DESKTOP_VERSION.test(name)).sort(newerFirst)) {
-    for (const build of (await directories(path.join(base,version))).filter(name=>DESKTOP_BUILD.test(name)).sort()) {
-      files.push(path.join(base,version,build,'claude.app/Contents/MacOS/claude'));
+    // Only builds that contain the CLI count toward the limit, so empty or partial folders cannot hide a working one.
+    // Within one version the most recently written CLI comes first; the name breaks ties.
+    const builds = [];
+    for (const build of (await directories(path.join(base,version))).filter(name=>DESKTOP_BUILD.test(name))) {
+      const file = path.join(base,version,build,'claude.app/Contents/MacOS/claude');
+      try { const stat = await fs.stat(file); if (stat.isFile()) builds.push({file,build,mtime:stat.mtimeMs}); } catch {}
+    }
+    builds.sort((a,b)=>b.mtime-a.mtime || (a.build < b.build ? -1 : a.build > b.build ? 1 : 0));
+    for (const {file} of builds) {
+      files.push(file);
+      // The limit bounds detection time: each candidate that exists is started once with --version.
       if (files.length === DESKTOP_LIMIT) return files;
     }
   }
