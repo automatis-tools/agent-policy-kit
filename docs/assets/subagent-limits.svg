@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="apk-limits" viewBox="0 0 880 362" width="880" height="362" role="img" aria-labelledby="apk-limits-title">
+<svg xmlns="http://www.w3.org/2000/svg" class="apk-limits" viewBox="0 0 880 322" width="880" height="322" role="img" aria-labelledby="apk-limits-title">
 <title id="apk-limits-title">One weekly Codex limit lasted 5.3 h of my work without APK and 25 h with APK</title>
 <defs>
   <pattern id="apk-limits-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -22,10 +22,8 @@
   .apk-limits .rn { font-size: 14px; font-weight: 400; fill: var(--ink2); }
   .apk-limits .val { font-size: 18px; font-weight: 700; }
   .apk-limits .chip { fill: var(--bg); }
-  .apk-limits .why { font-size: 14px; fill: var(--ink2); }
-  .apk-limits .whyb { font-weight: 700; fill: var(--ink); }
 </style>
-<rect class="bg" width="880" height="362" rx="12"/>
+<rect class="bg" width="880" height="322" rx="12"/>
 <text class="h1" x="32" y="48">One weekly limit: 5.3 h vs 25 h of work</text>
 <text class="sub" x="32" y="74">My own Codex work on the same plan, in 8-hour workdays. Hatched: limit used up.</text>
 <text class="day" x="113.6" y="114" text-anchor="middle">Mon</text><text class="day" x="276.8" y="114" text-anchor="middle">Tue</text><text class="day" x="440.0" y="114" text-anchor="middle">Wed</text><text class="day" x="603.2" y="114" text-anchor="middle">Thu</text><text class="day" x="766.4" y="114" text-anchor="middle">Fri</text>
@@ -37,11 +35,10 @@
   <rect class="chip" x="150.8" y="161" width="71" height="30" rx="6"/>
   <text class="val" x="158.8" y="183">5.3 h</text>
 
-  <text class="rl" x="32" y="228">With APK</text>
+  <text class="rl" x="32" y="228">With APK<tspan class="rn"> · each role ran on a model that fits the task and the plan</tspan></text>
   <rect fill="url(#apk-limits-hatch)" x="32" y="240" width="816" height="48" rx="8"/>
   <rect class="after" x="32" y="240" width="510.0" height="48" rx="8"/>
   <line class="sep" x1="195.2" x2="195.2" y1="240" y2="288"/><line class="sep" x1="358.4" x2="358.4" y1="240" y2="288"/><line class="sep" x1="521.6" x2="521.6" y1="240" y2="288"/><line class="sep" x1="684.8" x2="684.8" y1="240" y2="288"/>
   <rect class="chip" x="552.0" y="249" width="60" height="30" rx="6"/>
   <text class="val" x="560.0" y="271">25 h</text>
-<text class="why" x="32" y="334"><tspan class="whyb">Why:</tspan> APK gives each subagent role a model that fits the task and the plan, not the top model.</text>
 </svg>

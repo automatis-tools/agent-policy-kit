@@ -268,7 +268,7 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 <header><span class="mark" aria-hidden="true">apk</span><span class="brand">Agent Policy Kit</span><a class="repo-link" href="https://github.com/automatis-tools/agent-policy-kit" target="_blank" rel="noopener noreferrer" aria-label="Agent Policy Kit on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg><span>GitHub</span></a></header>
 <main>
 <div class="intro"><h1>Stop subagents from burning your plan limits.</h1><p>Give each subagent role a model that fits the task and your plan. Four steps, one command.</p><details class="how-it-works"><summary>Why: one weekly limit lasted 5.3 h of work without APK and 25 h with it</summary><div class="explanation">
-<div class="limits-chart"><svg xmlns="http://www.w3.org/2000/svg" class="apk-limits" viewBox="0 0 880 362" width="880" height="362" role="img" aria-labelledby="apk-limits-title">
+<div class="limits-chart"><svg xmlns="http://www.w3.org/2000/svg" class="apk-limits" viewBox="0 0 880 322" width="880" height="322" role="img" aria-labelledby="apk-limits-title">
 <title id="apk-limits-title">One weekly Codex limit lasted 5.3 h of my work without APK and 25 h with APK</title>
 <defs>
   <pattern id="apk-limits-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -289,10 +289,8 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
   .apk-limits .rn { font-size: 14px; font-weight: 400; fill: var(--ink2); }
   .apk-limits .val { font-size: 18px; font-weight: 700; }
   .apk-limits .chip { fill: var(--bg); }
-  .apk-limits .why { font-size: 14px; fill: var(--ink2); }
-  .apk-limits .whyb { font-weight: 700; fill: var(--ink); }
 </style>
-<rect class="bg" width="880" height="362" rx="12"/>
+<rect class="bg" width="880" height="322" rx="12"/>
 <text class="h1" x="32" y="48">One weekly limit: 5.3 h vs 25 h of work</text>
 <text class="sub" x="32" y="74">My own Codex work on the same plan, in 8-hour workdays. Hatched: limit used up.</text>
 <text class="day" x="113.6" y="114" text-anchor="middle">Mon</text><text class="day" x="276.8" y="114" text-anchor="middle">Tue</text><text class="day" x="440.0" y="114" text-anchor="middle">Wed</text><text class="day" x="603.2" y="114" text-anchor="middle">Thu</text><text class="day" x="766.4" y="114" text-anchor="middle">Fri</text>
@@ -304,13 +302,12 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
   <rect class="chip" x="150.8" y="161" width="71" height="30" rx="6"/>
   <text class="val" x="158.8" y="183">5.3 h</text>
 
-  <text class="rl" x="32" y="228">With APK</text>
+  <text class="rl" x="32" y="228">With APK<tspan class="rn"> · each role ran on a model that fits the task and the plan</tspan></text>
   <rect fill="url(#apk-limits-hatch)" x="32" y="240" width="816" height="48" rx="8"/>
   <rect class="after" x="32" y="240" width="510.0" height="48" rx="8"/>
   <line class="sep" x1="195.2" x2="195.2" y1="240" y2="288"/><line class="sep" x1="358.4" x2="358.4" y1="240" y2="288"/><line class="sep" x1="521.6" x2="521.6" y1="240" y2="288"/><line class="sep" x1="684.8" x2="684.8" y1="240" y2="288"/>
   <rect class="chip" x="552.0" y="249" width="60" height="30" rx="6"/>
   <text class="val" x="560.0" y="271">25 h</text>
-<text class="why" x="32" y="334"><tspan class="whyb">Why:</tspan> APK gives each subagent role a model that fits the task and the plan, not the top model.</text>
 </svg>
 </div>
 <p>From my own Codex logs; tasks differed between the runs. <a href="https://github.com/automatis-tools/agent-policy-kit/blob/main/docs/limits-evidence.md" target="_blank" rel="noopener noreferrer">How it was measured</a>. APK writes your coding tools’ native settings, then exits. Your main agent and its model stay unchanged.</p>

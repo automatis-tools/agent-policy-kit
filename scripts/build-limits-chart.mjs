@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 export const LIMITS_EVIDENCE = Object.freeze({withoutHours: 16 / 3, withHours: 25});
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-const W = 880, H = 362, L = 32, R = 848, SPAN = R - L, DAY_W = SPAN / DAYS.length;
+const W = 880, H = 322, L = 32, R = 848, SPAN = R - L, DAY_W = SPAN / DAYS.length;
 const f1 = n => n.toFixed(1);
 const xh = h => L + (h / (8 * DAYS.length)) * SPAN;
 const hours = h => (Math.abs(h - Math.round(h)) < 0.05 ? `${Math.round(h)} h` : `${f1(h)} h`);
@@ -51,16 +51,13 @@ export function limitsChartSvg({darkMode = true, idPrefix = 'apk-limits'} = {}) 
   .apk-limits .rn { font-size: 14px; font-weight: 400; fill: var(--ink2); }
   .apk-limits .val { font-size: 18px; font-weight: 700; }
   .apk-limits .chip { fill: var(--bg); }
-  .apk-limits .why { font-size: 14px; fill: var(--ink2); }
-  .apk-limits .whyb { font-weight: 700; fill: var(--ink); }
 </style>
 <rect class="bg" width="${W}" height="${H}" rx="12"/>
 <text class="h1" x="${L}" y="48">One weekly limit: ${hours(b)} vs ${hours(a)} of work</text>
 <text class="sub" x="${L}" y="74">My own Codex work on the same plan, in 8-hour workdays. Hatched: limit used up.</text>
 ${DAYS.map((d, i) => `<text class="day" x="${f1(L + DAY_W * i + DAY_W / 2)}" y="114" text-anchor="middle">${d}</text>`).join('')}
 ${row(152, 'before', b, 'Without APK', 'half of subagent work ran on the top model')}
-${row(240, 'after', a, 'With APK')}
-<text class="why" x="${L}" y="334"><tspan class="whyb">Why:</tspan> APK gives each subagent role a model that fits the task and the plan, not the top model.</text>
+${row(240, 'after', a, 'With APK', 'each role ran on a model that fits the task and the plan')}
 </svg>
 `;
 }
