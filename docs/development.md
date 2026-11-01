@@ -20,6 +20,8 @@ The hook runs npm run check and npm run test:unit before each push that updates 
 
 npm run test:cache primes public dependency metadata on a fresh machine before the offline tarball consumers run. It installs only into a disposable directory and removes it afterward. npm ci alone may cache tarballs without the registry metadata required by a new offline consumer.
 
+Detection checks desktop app bundles under /Applications. Set AGENT_POLICY_APPLICATIONS_DIR to another absolute directory to replace /Applications. The tests set it, so apps installed on the host do not change their results.
+
 npm test includes both unit tests and the installed-tarball gate. The gate needs macOS sandbox-exec or Linux bubblewrap. It must actually deny checkout access; unavailable isolation fails rather than skipping. Use a normal approved host if a managed sandbox forbids nesting.
 
 src/policy.mjs validates shared preferences. src/detect.mjs probes executable identity. Native generation and the installer write ordinary role/config/instruction files. src/setup.mjs coordinates detected clients. src/inspect.mjs reads bounded native subagent fields without writes or executable probing. src/output.mjs formats readable terminal results. bin/agent-policy.mjs retains captured JSON output and supports explicit --json.

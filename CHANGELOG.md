@@ -2,6 +2,12 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
+## Unreleased
+
+### What changed
+
+- On macOS, setup finds the Codex that ChatGPT Desktop includes and the Claude Code in the Code tab of Claude Desktop, also when no CLI is on PATH. Both apps read the same settings as their CLIs. A CLI on PATH or in a conventional location still has priority. Detect output reports these clients with `origin: "desktop_app"`. Claude Cowork reads its settings from the Claude account, so APK does not configure it.
+
 ## 0.2.0 — 2026-11-01
 
 ### Why this release

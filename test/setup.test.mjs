@@ -12,7 +12,7 @@ async function fixture(t) {
   await fs.mkdir(home); await fs.mkdir(hostHome); await fs.mkdir(bin);
   const policyPath=path.join(root,'policy.json');
   await fs.copyFile(new URL('../policies/balanced.json',import.meta.url),policyPath);
-  return {root,home,hostHome,bin,env:{PATH:bin},stateDir:path.join(home,'.policy'),policyPath,packageRoot:path.resolve('.'),nodePath:process.execPath};
+  return {root,home,hostHome,bin,env:{PATH:bin,AGENT_POLICY_APPLICATIONS_DIR:path.join(root,'Applications')},stateDir:path.join(home,'.policy'),policyPath,packageRoot:path.resolve('.'),nodePath:process.execPath};
 }
 async function binary(f,client,version) { await fs.writeFile(path.join(f.bin,client),`#!${process.execPath}\nconsole.log(${JSON.stringify(version)});\n`,{mode:0o700}); }
 

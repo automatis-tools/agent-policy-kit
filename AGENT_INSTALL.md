@@ -52,7 +52,7 @@ Optional top-level selectedRoles selects worker, reviewer, explorer, tester, wri
 
 Use model-supported native effort levels. null means no explicit pin. A known catalog model rejects unsupported explicit effort. Keep at most one non-null pin per selected Kimi alias. Preset identity and custom source are reported separately. Tools omitted from clients are not selected.
 
-Run detect and inspect the setup plan. Working executable identity is required; stale directories are not presence. Automatic targets use standard native roots. Nondefault CODEX_HOME/CLAUDE_CONFIG_DIR/KIMI_CODE_HOME/GROK_HOME returns a per-client zero-write prerequisite rather than configuring a dormant folder. Explicit --home selects the standard layout under that intended base; preserve exact --home/--state-dir for later inspection/removal. It does not remap arbitrary native roots.
+Run detect and inspect the setup plan. Working executable identity is required; stale directories are not presence. On macOS, detect also checks the CLIs bundled in ChatGPT Desktop and Claude Desktop after PATH; such a client reports origin desktop_app and uses the standard native root. Automatic targets use standard native roots. Nondefault CODEX_HOME/CLAUDE_CONFIG_DIR/KIMI_CODE_HOME/GROK_HOME returns a per-client zero-write prerequisite rather than configuring a dormant folder. Explicit --home selects the standard layout under that intended base; preserve exact --home/--state-dir for later inspection/removal. It does not remap arbitrary native roots.
 
 ## 3. Apply the concrete reviewed plan
 

@@ -32,7 +32,7 @@ test('packed configurator produces independent native files that survive npm and
   const env = { TMPDIR:scratch, PATH: cleanPath, LANG: 'C.UTF-8', HOME: freshHome, USERPROFILE: freshHome, XDG_CONFIG_HOME: path.join(freshHome, 'xdg/config'),
     XDG_DATA_HOME: path.join(freshHome, 'xdg/data'), XDG_STATE_HOME: path.join(freshHome, 'xdg/state'),
     CODEX_HOME: path.join(freshHome, '.codex'), CLAUDE_CONFIG_DIR: path.join(freshHome, '.claude'), KIMI_CODE_HOME: path.join(freshHome, '.kimi-code'), GROK_HOME: path.join(freshHome, '.grok'),
-    AGENT_POLICY_HOME: state, npm_config_cache: cache, npm_config_registry: 'https://registry.npmjs.org',
+    AGENT_POLICY_HOME: state, AGENT_POLICY_APPLICATIONS_DIR: path.join(freshHome, 'Applications'), npm_config_cache: cache, npm_config_registry: 'https://registry.npmjs.org',
     npm_config_userconfig: path.join(freshHome, '.npmrc'), npm_config_globalconfig: path.join(freshHome, 'npm-global-config') };
   delete env.NODE_OPTIONS;
   fs.writeFileSync(env.npm_config_userconfig, ''); fs.writeFileSync(env.npm_config_globalconfig, '');

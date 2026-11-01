@@ -8,11 +8,56 @@ const CLIENTS = ['codex','claude','kimi','agy','grok'];
 const OUTPUT_LIMIT = 65536;
 const VERSION = String.raw`(\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9][A-Za-z0-9.-]{0,63})?(?:\+[A-Za-z0-9][A-Za-z0-9.-]{0,63})?)`;
 function failure(code) { return Object.assign(new Error(code),{code}); }
-function options({env=process.env,hostHome=os.homedir(),timeoutMs=5000} = {}) {
-  if (!env || typeof env !== 'object' || typeof hostHome !== 'string' || !path.isAbsolute(hostHome) || hostHome.includes('\0') || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) throw failure('INVALID_DETECTION_OPTIONS');
-  return {env,hostHome:path.resolve(hostHome),timeoutMs};
+const absolute = value => typeof value === 'string' && path.isAbsolute(value) && !value.includes('\0');
+function options({env=process.env,hostHome=os.homedir(),timeoutMs=5000,platform=process.platform,systemApplications} = {}) {
+  // AGENT_POLICY_APPLICATIONS_DIR replaces /Applications, so hermetic runs never see the host's installed apps.
+  systemApplications ??= (typeof env?.AGENT_POLICY_APPLICATIONS_DIR === 'string' && env.AGENT_POLICY_APPLICATIONS_DIR) || '/Applications';
+  if (!env || typeof env !== 'object' || !absolute(hostHome) || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000 || typeof platform !== 'string' || !absolute(systemApplications)) throw failure('INVALID_DETECTION_OPTIONS');
+  return {env,hostHome:path.resolve(hostHome),timeoutMs,platform,systemApplications:path.resolve(systemApplications)};
 }
-function candidates(client,{env,hostHome}) {
+// Desktop apps ship their own copy of a CLI and keep it off PATH. ChatGPT Desktop runs Codex from a
+// fixed bundle path; Claude Desktop keeps one Claude Code per <version>/<build> directory.
+const CHATGPT_CODEX = 'ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex';
+const CLAUDE_DESKTOP = 'Library/Application Support/Claude/claude-code';
+const DESKTOP_VERSION = /^(\d{1,4})\.(\d{1,4})\.(\d{1,4})$/;
+const DESKTOP_BUILD = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+const DESKTOP_LIMIT = 8;
+async function directories(dir) {
+  try { return (await fs.readdir(dir,{withFileTypes:true})).filter(entry=>entry.isDirectory()).map(entry=>entry.name); }
+  catch { return []; }
+}
+function newerFirst(a,b) {
+  const [x,y] = [a,b].map(name=>name.match(DESKTOP_VERSION).slice(1).map(Number));
+  return y[0]-x[0] || y[1]-x[1] || y[2]-x[2];
+}
+async function desktopCandidates(client,{hostHome,platform,systemApplications}) {
+  if (platform !== 'darwin') return [];
+  if (client === 'codex') return [systemApplications,path.join(hostHome,'Applications')].map(dir=>path.join(dir,CHATGPT_CODEX));
+  if (client !== 'claude') return [];
+  const base = path.join(hostHome,CLAUDE_DESKTOP), files = [];
+  for (const version of (await directories(base)).filter(name=>DESKTOP_VERSION.test(name)).sort(newerFirst)) {
+    // Only builds that contain the CLI count toward the limit, so empty or partial folders cannot hide a working one.
+    // Within one version the most recently written CLI comes first; the name breaks ties.
+    const builds = [];
+    for (const build of (await directories(path.join(base,version))).filter(name=>DESKTOP_BUILD.test(name))) {
+      const file = path.join(base,version,build,'claude.app/Contents/MacOS/claude');
+      try { const stat = await fs.stat(file); if (stat.isFile()) builds.push({file,build,mtime:stat.mtimeMs}); } catch {}
+    }
+    builds.sort((a,b)=>b.mtime-a.mtime || (a.build < b.build ? -1 : a.build > b.build ? 1 : 0));
+    for (const {file} of builds) {
+      files.push(file);
+      // The limit bounds detection time: each candidate that exists is started once with --version.
+      if (files.length === DESKTOP_LIMIT) return files;
+    }
+  }
+  return files;
+}
+async function candidates(client,settings) {
+  const result = cliCandidates(client,settings);
+  for (const file of await desktopCandidates(client,settings)) result.push({file,origin:'desktop_app'});
+  return result.filter((candidate,index) => result.findIndex(c=>c.file === candidate.file) === index);
+}
+function cliCandidates(client,{env,hostHome}) {
   const dirs = typeof env.PATH === 'string' ? env.PATH.split(path.delimiter) : [];
   const names = process.platform === 'win32' ? [client + '.exe',client] : [client];
   const result = [];
@@ -25,7 +70,7 @@ function candidates(client,{env,hostHome}) {
     : client === 'claude' ? ['.local/bin/claude','.claude/local/claude']
     : [`.local/bin/${client}`];
   for (const relative of conventional) result.push({file:path.join(hostHome,relative),origin:'known_location'});
-  return result.filter((candidate,index) => result.findIndex(c=>c.file === candidate.file) === index);
+  return result;
 }
 async function inspect(file) {
   try {
@@ -110,7 +155,7 @@ export async function resolveClient(client,opts = {}) {
   const settings = options(opts);
   let best = {client,status:'not_found',version:null,origin:null,executable:null};
   const checked = new Set();
-  for (const candidate of candidates(client,settings)) {
+  for (const candidate of await candidates(client,settings)) {
     const inspected = await inspect(candidate.file);
     if (inspected.status === 'not_found') continue;
     if (inspected.status === 'invalid') {
@@ -132,6 +177,6 @@ export function summarizeDetection(records) {
   return records.filter(r=>CLIENTS.includes(r?.client)).map(({client,status,version,origin})=>{
     status = ['detected','not_found','invalid','timeout'].includes(status) ? status : 'invalid';
     if (status === 'detected' && (typeof version !== 'string' || version.length > 128 || !new RegExp(`^${VERSION}$`).test(version))) status = 'invalid';
-    return {client,status,version:status === 'detected' ? version : null,origin:['path','known_location'].includes(origin) ? origin : null};
+    return {client,status,version:status === 'detected' ? version : null,origin:['path','known_location','desktop_app'].includes(origin) ? origin : null};
   });
 }
