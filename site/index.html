@@ -231,6 +231,7 @@ footer{display:grid;gap:14px;margin-top:20px;padding:16px 0 24px;border-top:1px 
 @media(forced-colors:active){.tag,.suggestion{border-color:ButtonText}.tool-group .tool-scope[aria-pressed=true],.efforts button[aria-pressed=true]{outline:2px solid ButtonText;outline-offset:-3px}.mode-option input{appearance:auto}#mode-options::before{height:0;border-top:2px solid CanvasText}.editor select{appearance:auto;background-image:none}}
 
 html{scrollbar-gutter:stable}body{overflow-anchor:none}
+.suggestion.add-all{border-style:solid;background:var(--paper)}.suggestion.add-all:hover{background:var(--control-hover)}
 .helper-option{display:inline-flex;align-items:stretch;border:1px dashed var(--line);border-radius:5px;background:var(--white)}.helper-option>.suggestion{border:0;background:transparent;border-radius:4px 0 0 4px;padding-right:5px}.helper-option:hover{border-color:var(--brand-blue);background:var(--control-hover)}.helper-option:hover>.suggestion{color:var(--accent)}
 .helper-info{display:grid;place-items:center;align-self:stretch;flex-shrink:0;width:27px;min-height:28px;border:0;padding:0 5px;background:transparent;color:var(--accent);cursor:help;border-radius:4px}.helper-info:hover{background:var(--control-hover)}.info-dot{display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:10px;line-height:1;font-weight:600}.tag .helper-info{margin-right:3px}.tag .tag-label{padding-right:4px}
 .role-tooltip{position:fixed;z-index:1000;width:min(420px,calc(100vw - 32px));padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);box-shadow:0 6px 15px #19283e07;opacity:0;transform:translateY(3px);transition:opacity 120ms ease,transform 120ms ease;view-transition-name:role-tooltip}.role-tooltip.visible{opacity:1;transform:none}.role-tooltip strong{font-size:14px;font-weight:600}.role-tooltip p{font-size:var(--text-ui);line-height:1.7;margin:9px 0 14px;color:var(--muted)}.role-tooltip .definition-label{font-size:var(--text-meta);font-weight:600;color:var(--muted);margin:0 0 7px}.role-tooltip pre{margin:0;padding:11px;border:1px solid var(--line);border-radius:5px;background:var(--paper);white-space:pre-wrap;font:var(--text-meta)/1.7 var(--mono)}.role-tooltip .definition-note{margin:10px 0 0;font-size:var(--text-meta)}
@@ -746,7 +747,7 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
    const isRole=kind==='helpers',chosen=isRole?helpers:pickedTools,available=isRole?roles:clients.map(id=>({id,name:toolName(id)}));
    const box=$(isRole?'selected-helpers':'selected-tools'),options=$(isRole?'helper-options':'tool-options');box.replaceChildren();options.replaceChildren();box.hidden=false;
    if(available.some(item=>!chosen.includes(item.id))){
-    const all=el('button',{type:'button',class:'suggestion','aria-label':isRole?'Add all subagent roles':'Add all coding tools'});
+    const all=el('button',{type:'button',class:'suggestion add-all','aria-label':isRole?'Add all subagent roles':'Add all coding tools'});
     all.append(el('span',{class:'plus','aria-hidden':'true'},'+'),document.createTextNode('Add all'));
     all.addEventListener('click',()=>{const next=A.addAll(chosen,available.map(item=>item.id));if(isRole)helpers=next;else pickedTools=next;render();});
     options.append(all);
