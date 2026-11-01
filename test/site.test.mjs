@@ -64,7 +64,7 @@ test('the Top-tier top-model switch changes only code roles of the chosen tool a
 });
 
 test('the page shows one top-model switch under Top-tier and wires it to the selected scope',()=>{
- assert.match(template,/<button type="button" role="switch" id="top-models-toggle" aria-checked="false" aria-describedby="top-models-note">/);
+ assert.match(template,/<button type="button" role="switch" id="top-models-toggle" aria-checked="false">/);
  assert.match(template,/renderModeNotice\(\);renderTopModels\(\);/);
  assert.match(template,/A\.setTopModels\(state,topTargets\(\),event\.currentTarget\.getAttribute\('aria-checked'\)!=='true'\)/);
  assert.match(template,/if\(A\.modeFor\(state\)!=='quality'\)return \[\];/);
@@ -84,6 +84,14 @@ test('every step explains itself briefly and the page does not repeat vendor doc
  for(const [id,text]of entries){assert.match(template,new RegExp(`<h2 id="${id}"`));assert.ok(text.length>0&&text.length<=180,id);}
  assert.match(template,/heading\.after\(infoButton\(/);
  assert.doesNotMatch(template,/usage credits|requires Claude Code/);
+});
+
+test('secondary explanations stay behind ? buttons instead of on-screen text',()=>{
+ for(const id of ['top-models-note','concurrency-hint','step-hint-1','step-hint-2','step-hint-3'])assert.doesNotMatch(template,new RegExp(`id="${id}"`),id);
+ assert.doesNotMatch(template,/Writes native config, then exits|Only installed tools are configured|Click a mode to select it|You can add more|All available roles added|Click a coding tool to configure/);
+ assert.match(template,/\$\('top-models'\)\.append\(infoButton\(/);
+ assert.match(template,/\$\('concurrency-title'\)\.after\(infoButton\(/);
+ assert.match(template,/<label for="max-concurrent">Max per session<\/label>/);
 });
 
 test('empty role and tool fields share one empty-field appearance',()=>{

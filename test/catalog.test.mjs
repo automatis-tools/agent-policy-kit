@@ -27,7 +27,7 @@ test('current Kimi inventory includes both K3.1 Pro routes with native thinking 
 
 test('presets name how much of the plan subagents use and top models stay an explicit Top-tier opt-in',()=>{
  assert.deepEqual(PRESETS.map(preset=>[preset.id,preset.label]),[['fast','Light'],['balanced','Standard'],['quality','Top-tier']]);
- for(const preset of PRESETS)assert.ok(preset.description.length<=140,preset.id);
+ for(const preset of PRESETS)assert.ok(preset.description.length<=70,preset.id);
  const top={codex:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'},catalog=modelCatalog().clients;
  assert.deepEqual(PRESETS.find(preset=>preset.id==='quality').topModels,top);
  assert.ok(PRESETS.filter(preset=>preset.id!=='quality').every(preset=>preset.topModels===undefined));
