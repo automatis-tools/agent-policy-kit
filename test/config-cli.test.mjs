@@ -1,3 +1,4 @@
+import {PACKAGE_VERSION} from '../src/release.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +13,7 @@ test('CLI exposes configuration commands and no ongoing runtime entry points',t=
   const home=fixture(t),help=cli(home,['--help']);assert.equal(help.status,0);
   for(const command of ['setup','uninstall','doctor','instructions']) assert.match(help.stdout,new RegExp(`\\b${command}\\b`));
   assert.doesNotMatch(help.stdout,/^\s+(?:run|hook|record|audit|evaluate)\s/m);
-  assert.equal(cli(home,['--version']).stdout.trim(),'0.1.0');
+  assert.equal(cli(home,['--version']).stdout.trim(),PACKAGE_VERSION);
 });
 test('packaged instructions work before any policy/client setup',t=>{
   const got=cli(fixture(t),['instructions']);assert.equal(got.status,0);assert.match(got.stdout,/configuration.only|configurator/i);

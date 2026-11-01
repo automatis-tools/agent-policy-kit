@@ -1,3 +1,4 @@
+import {PACKAGE_VERSION} from '../src/release.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {spawnSync} from 'node:child_process';import {fileURLToPath} from 'node:url';
 const bin=fileURLToPath(new URL('../bin/agent-policy.mjs',import.meta.url));
 function fixture(t){const home=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),"release cli's "));t.after(()=>fs.rmSync(home,{recursive:true,force:true}));fs.mkdirSync(path.join(home,'tmp'));const native=path.join(home,'bin');fs.mkdirSync(native);for(const [name,v]of Object.entries({codex:'codex-cli 0.166.0',claude:'2.1.312 (Claude Code)'}))fs.writeFileSync(path.join(native,name),`#!${process.execPath}\nconsole.log(${JSON.stringify(v)});\n`,{mode:0o700});return {home,env:{PATH:native+path.delimiter+path.dirname(process.execPath),HOME:home,USERPROFILE:home,TMPDIR:path.join(home,'tmp'),AGENT_POLICY_HOME:path.join(home,'.policy'),CODEX_HOME:path.join(home,'.codex'),CLAUDE_CONFIG_DIR:path.join(home,'.claude'),KIMI_CODE_HOME:path.join(home,'.kimi-code')}};}
@@ -34,7 +35,7 @@ test('duplicate explicit flags and mixed input modes fail before any writes',t=>
 });
 test('release metadata and notes are available independently of configured state',t=>{
  const f=fixture(t);fs.mkdirSync(path.join(f.home,'.policy'));fs.writeFileSync(path.join(f.home,'.policy/policy.json'),'{broken');
- const got=cli(f,['release']);assert.equal(got.status,0);const data=JSON.parse(got.stdout);assert.equal(data.version,'0.1.0');assert.match(data.notes,/Why this release/);assert.match(data.preferencesHash,/^[a-f0-9]{64}$/);
+ const got=cli(f,['release']);assert.equal(got.status,0);const data=JSON.parse(got.stdout);assert.equal(data.version,PACKAGE_VERSION);assert.match(data.notes,/Why this release/);assert.match(data.preferencesHash,/^[a-f0-9]{64}$/);
 });
 test('release and custom preference sources are mutually exclusive before writes',t=>{
  const f=fixture(t);for(const args of [['--release','--policy','missing.json'],['--release','--config',encode(config())],['--config',encode(config()),'--policy','missing.json']]){
@@ -51,12 +52,12 @@ test('page payload configures selected tasks/tools, records custom provenance an
  assert.equal(fs.existsSync(path.join(f.home,'.claude')),false);assert.match(fs.readFileSync(path.join(f.home,'.codex/agents/apk-reviewer.toml'),'utf8'),/review-model/);assert.match(fs.readFileSync(path.join(f.home,'.codex/config.toml'),'utf8'),/max_concurrent_threads_per_session = 2/);
  assert.deepEqual(fs.readdirSync(path.join(f.home,'tmp')),[]);
  fs.writeFileSync(path.join(f.home,'.policy/policy.json'),'{broken');
- const report=JSON.parse(cli(f,['doctor','--client','codex']).stdout);assert.equal(report.clients.codex.configuration.status,'verified');assert.equal(report.clients.codex.configuration.releaseVersion,'0.1.0');assert.equal(report.clients.codex.configuration.source,'custom');
+ const report=JSON.parse(cli(f,['doctor','--client','codex']).stdout);assert.equal(report.clients.codex.configuration.status,'verified');assert.equal(report.clients.codex.configuration.releaseVersion,PACKAGE_VERSION);assert.equal(report.clients.codex.configuration.source,'custom');
 });
 test('explicit bundled release replaces custom choices without a physical uninstall gap',t=>{
  const f=fixture(t);assert.equal(cli(f,['setup','--config',encode(config()),'--apply']).status,0);
  const plan=cli(f,['setup','--release','--client','codex']);assert.equal(plan.status,0,plan.stdout);assert.match(fs.readFileSync(path.join(f.home,'.codex/agents/apk-reviewer.toml'),'utf8'),/review-model/);
- const apply=cli(f,['setup','--release','--client','codex','--apply']);assert.equal(apply.status,0,apply.stdout);const metadata=JSON.parse(apply.stdout).results[0];assert.equal(metadata.previousSource,'custom');assert.equal(metadata.appliedSource,'release');assert.equal(metadata.appliedReleaseVersion,'0.1.0');
+ const apply=cli(f,['setup','--release','--client','codex','--apply']);assert.equal(apply.status,0,apply.stdout);const metadata=JSON.parse(apply.stdout).results[0];assert.equal(metadata.previousSource,'custom');assert.equal(metadata.appliedSource,'release');assert.equal(metadata.appliedReleaseVersion,PACKAGE_VERSION);
  assert.doesNotMatch(fs.readFileSync(path.join(f.home,'.codex/agents/apk-reviewer.toml'),'utf8'),/review-model/);
 });
 

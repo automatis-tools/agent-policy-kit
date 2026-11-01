@@ -1,6 +1,6 @@
 {
   "name": "agent-policy-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Configure native subagent settings across coding tools, then exit",
   "type": "module",
   "license": "MIT",
@@ -61,5 +61,5 @@
   "bugs": {
     "url": "https://github.com/automatis-tools/agent-policy-kit/issues"
   },
-  "homepage": "https://agent-policy-kit.trymenow.io/v/0.1.0/"
+  "homepage": "https://agent-policy-kit.trymenow.io/v/0.2.0/"
 }

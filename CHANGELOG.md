@@ -2,7 +2,7 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
-## Unreleased
+## 0.2.0 — Unreleased
 
 - Add Grok Build as a fifth coding tool, listed after Antigravity. APK writes `agents/apk-<role>.md` role files (Reviewer and Code explorer use the read-only `permission_mode: plan`), per-role models and a `general-purpose` fallback copied from the first selected role (the Coder when selected) in `config.toml` `[subagents.models]`, a native `[subagents] max_concurrent` cap and a delegation block in `AGENTS.md` under `$GROK_HOME` (default `~/.grok`). Per-role effort is not configurable, so every Grok choice has effort null and the page shows no effort controls. Presets use Grok Build 0.1, xAI's fast coding model, for light work and Grok 4.7 for stronger roles; Grok 4.6 and 4.5 stay available in Custom. Explicit commands use `--grok`, `--grok-max-concurrent` and `--avoid-grok`. Removal restores the original settings and refuses on local edits.
 
