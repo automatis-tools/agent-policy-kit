@@ -2,7 +2,18 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
-## 0.3.0 — Unreleased
+## 0.3.0 — 2026-11-01
+
+### Why this release
+
+People know their assistants as ChatGPT, Claude, Kimi, Gemini and Grok, not by the names of the coding agents inside them. The configurator and the CLI now use those names. Some people use only the desktop apps, and they have no CLI on PATH. Before this release, setup found nothing for them.
+
+### Who should update
+
+- Anyone who uses Codex in ChatGPT Desktop or Claude Code in the Code tab of Claude Desktop on macOS without a separate CLI.
+- Anyone who wants the general assistant names on the page and in the terminal.
+
+Preset values do not change, so an installation of 0.2.0 keeps working without an update.
 
 ### Breaking change
 
@@ -13,6 +24,19 @@ AI assistants now have general names: ChatGPT, Claude, Kimi, Gemini and Grok. AP
 - Warning and error codes follow the new IDs, for example `chatgpt-native-precedence-limits` and `CHATGPT_CAP_ALIAS_CONFLICT`.
 
 Before you use this version, remove the APK settings for these two assistants with the version that created them: `npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy uninstall --apply`. This version does not read the old `codex` and `agy` installation receipts, so its setup refuses the existing `apk-*` files as unowned. Policy files and share links that use the old IDs are refused too. Claude, Kimi and Grok keep their IDs.
+
+### Migration and rollback
+
+The two renamed IDs set a migration boundary. These results come from tests with the published 0.2.0 package and this release:
+
+- **ChatGPT (Codex) and Gemini (Antigravity):** remove the APK settings with the version that created them before you set up with the other version. A move in either direction without removal reports `OWNERSHIP_CONFLICT` and changes nothing. After removal, setup with the other version succeeds.
+- **Claude, Kimi and Grok:** their IDs and receipt format v4 are unchanged. In the tests, setup with 0.3.0 upgraded 0.2.0 installations of Claude and Grok in place, and setup with 0.2.0 moved Claude back. Kimi uses the same receipt format, but it was not tested with a provisioned model pool.
+
+`uninstall --apply` removes the settings of every assistant. Run setup again afterwards for the assistants you use.
+
+### Presets and model catalog
+
+Preset models, effort levels and parallel limits are the same as in 0.2.0. Only the keys `codex` and `agy` became `chatgpt` and `gemini`, and the catalog labels became the general names. The model catalog snapshot is still dated 2026-10-30, with the Grok entries checked on 2026-11-01. Configuration checks are not model-quality evaluations.
 
 ### What changed
 
