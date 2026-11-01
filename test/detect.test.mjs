@@ -11,8 +11,11 @@ async function fixture(t) {
   const hostHome = path.join(root,'host');
   const bin = path.join(root,"bin's directory");
   await fs.mkdir(hostHome); await fs.mkdir(bin);
-  return {root,hostHome,bin,env:{PATH:bin}};
+  // Desktop app bundles are macOS-only; a fixture root replaces /Applications so the host's real apps never leak in.
+  return {root,hostHome,bin,env:{PATH:bin},platform:'darwin',systemApplications:path.join(root,'Applications')};
 }
+const CHATGPT_CODEX = 'ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex';
+const claudeDesktop = (hostHome,version,build) => path.join(hostHome,'Library/Application Support/Claude/claude-code',version,build,'claude.app/Contents/MacOS/claude');
 async function executable(file,body) {
   await fs.mkdir(path.dirname(file),{recursive:true});
   await fs.writeFile(file,`#!${process.execPath}\n${body}\n`,{mode:0o700});
@@ -161,4 +164,66 @@ test('each POSIX probe cleans its own descendants on timeout, overflow and compl
     assert.throws(()=>process.kill(pid,0),{code:'ESRCH'},`${mode} probe leaked a descendant`);
     assert.doesNotThrow(()=>process.kill(unrelated.pid,0),'probe killed an unrelated process');
   }
+});
+
+test('ChatGPT Desktop bundled Codex is detected when PATH lacks the CLI',async t=>{
+  const f = await fixture(t);
+  const file = path.join(f.systemApplications,CHATGPT_CODEX);
+  await executable(file,'console.log("codex-cli 0.166.0-alpha.5.1");');
+  const result = await resolveClient('codex',f);
+  assert.deepEqual(result,{client:'codex',status:'detected',version:'0.166.0-alpha.5.1',origin:'desktop_app',executable:file});
+  assert.deepEqual(summarizeDetection([result]),[{client:'codex',status:'detected',version:'0.166.0-alpha.5.1',origin:'desktop_app'}]);
+  await fs.rm(path.join(f.systemApplications,'ChatGPT.app'),{recursive:true});
+  await executable(path.join(f.hostHome,'Applications',CHATGPT_CODEX),'console.log("codex-cli 0.166.0");');
+  const user = await resolveClient('codex',f);
+  assert.equal(user.status,'detected'); assert.equal(user.origin,'desktop_app');
+});
+
+test('Claude Desktop bundled Claude Code uses the newest numeric version',async t=>{
+  const f = await fixture(t);
+  await executable(claudeDesktop(f.hostHome,'2.1.99','old'),'console.log("2.1.99 (Claude Code)");');
+  await executable(claudeDesktop(f.hostHome,'2.1.309','5af865b9901c'),'console.log("2.1.309 (Claude Code)");');
+  await fs.mkdir(path.join(f.hostHome,'Library/Application Support/Claude/claude-code/not-a-version/x'),{recursive:true});
+  const result = await resolveClient('claude',f);
+  assert.equal(result.status,'detected'); assert.equal(result.version,'2.1.309'); assert.equal(result.origin,'desktop_app');
+});
+
+test('a broken newest Claude Desktop bundle falls back to an older working one',async t=>{
+  const f = await fixture(t);
+  await executable(claudeDesktop(f.hostHome,'2.1.310','partial'),'process.exitCode=1;');
+  await executable(claudeDesktop(f.hostHome,'2.1.309','good'),'console.log("2.1.309 (Claude Code)");');
+  const result = await resolveClient('claude',f);
+  assert.equal(result.status,'detected'); assert.equal(result.version,'2.1.309');
+});
+
+test('standalone CLIs take precedence over desktop app bundles',async t=>{
+  const f = await fixture(t);
+  await executable(path.join(f.systemApplications,CHATGPT_CODEX),'console.log("codex-cli 0.166.0");');
+  await executable(path.join(f.bin,'codex'),'console.log("codex-cli 0.165.0");');
+  await executable(claudeDesktop(f.hostHome,'2.1.309','b'),'console.log("2.1.309 (Claude Code)");');
+  await executable(path.join(f.hostHome,'.local/bin/claude'),'console.log("2.1.312 (Claude Code)");');
+  assert.equal((await resolveClient('codex',f)).origin,'path');
+  assert.equal((await resolveClient('claude',f)).origin,'known_location');
+});
+
+test('desktop app bundles are ignored outside macOS',async t=>{
+  const f = await fixture(t);
+  await executable(path.join(f.systemApplications,CHATGPT_CODEX),'console.log("codex-cli 0.166.0");');
+  await executable(claudeDesktop(f.hostHome,'2.1.309','b'),'console.log("2.1.309 (Claude Code)");');
+  for (const client of ['codex','claude']) assert.equal((await resolveClient(client,{...f,platform:'linux'})).status,'not_found');
+});
+
+test('desktop detection options are validated',async t=>{
+  const f = await fixture(t);
+  await assert.rejects(resolveClient('codex',{...f,systemApplications:'relative/Applications'}),{code:'INVALID_DETECTION_OPTIONS'});
+  await assert.rejects(resolveClient('codex',{...f,platform:42}),{code:'INVALID_DETECTION_OPTIONS'});
+});
+
+test('AGENT_POLICY_APPLICATIONS_DIR replaces /Applications for the ChatGPT Desktop bundle',async t=>{
+  const f = await fixture(t);
+  const {systemApplications,...rest} = f, apps = path.join(f.root,'other apps');
+  await executable(path.join(apps,CHATGPT_CODEX),'console.log("codex-cli 0.166.0");');
+  const result = await resolveClient('codex',{...rest,env:{...f.env,AGENT_POLICY_APPLICATIONS_DIR:apps}});
+  assert.equal(result.status,'detected'); assert.equal(result.origin,'desktop_app');
+  await assert.rejects(resolveClient('codex',{...rest,env:{...f.env,AGENT_POLICY_APPLICATIONS_DIR:'relative'}}),{code:'INVALID_DETECTION_OPTIONS'});
 });

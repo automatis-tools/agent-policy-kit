@@ -21,7 +21,7 @@ async function fixture(t,policy={}) {
  const config={...base,...policy,clients:{grok:{code:{model:'grok-4.7',effort:null},light:{model:'grok-4.6',effort:null},roles:{reviewer:{model:'grok-4.5',effort:null}},avoidModels:[],...(policy.grok??{})}}};
  delete config.grok;
  await fs.writeFile(policyPath,JSON.stringify(config));
- return {root,home,bin,client:'grok',policyPath,stateDir:path.join(home,'.agent-policy-kit'),env:{PATH:bin}};
+ return {root,home,bin,client:'grok',policyPath,stateDir:path.join(home,'.agent-policy-kit'),env:{PATH:bin,AGENT_POLICY_APPLICATIONS_DIR:path.join(root,'Applications')}};
 }
 const put=async(file,text)=>{await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,text);};
 const configPath=f=>path.join(f.home,'.grok/config.toml');
@@ -144,7 +144,7 @@ test('a nonstandard GROK_HOME is a prerequisite for automatic setup and not a co
  const f=await fixture(t),elsewhere=path.join(f.root,'elsewhere');
  await fs.writeFile(path.join(f.bin,'grok'),`#!${process.execPath}\nconsole.log("grok 1.0.70 (abc 2026-10-30) [stable]");\n`,{mode:0o700});
  assert.equal(nativeHomeConflict('grok',f.home,{GROK_HOME:elsewhere}),true);assert.equal(nativeHomeConflict('grok',f.home,{GROK_HOME:path.join(f.home,'.grok')}),false);
- const blocked=await setupDetected({...f,env:{PATH:f.bin,GROK_HOME:elsewhere},apply:true});
+ const blocked=await setupDetected({...f,env:{...f.env,GROK_HOME:elsewhere},apply:true});
  assert.equal(blocked.results.find(r=>r.client==='grok').status,'prerequisite');await assert.rejects(fs.stat(path.join(f.home,'.grok')),{code:'ENOENT'});
  const done=await setupDetected({...f,apply:true,client:'grok'});
  assert.equal(done.status,'configured');assert.ok(done.requiredActions.some(a=>a.code==='grok-per-role-effort-unsupported'));

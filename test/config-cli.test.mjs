@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 const bin=fileURLToPath(new URL('../bin/agent-policy.mjs',import.meta.url));
 function fixture(t) { const home=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),"native cli's "));t.after(()=>fs.rmSync(home,{recursive:true,force:true}));return home; }
-function cli(home,args,input,env={}) {return spawnSync(process.execPath,[bin,...args],{encoding:'utf8',input,env:{...process.env,HOME:home,USERPROFILE:home,CODEX_HOME:path.join(home,'.codex'),CLAUDE_CONFIG_DIR:path.join(home,'.claude'),KIMI_CODE_HOME:path.join(home,'.kimi-code'),AGENT_POLICY_HOME:path.join(home,'.agent-policy-kit'),PATH:path.dirname(process.execPath),...env}});}
+function cli(home,args,input,env={}) {return spawnSync(process.execPath,[bin,...args],{encoding:'utf8',input,env:{...process.env,HOME:home,USERPROFILE:home,CODEX_HOME:path.join(home,'.codex'),CLAUDE_CONFIG_DIR:path.join(home,'.claude'),KIMI_CODE_HOME:path.join(home,'.kimi-code'),AGENT_POLICY_HOME:path.join(home,'.agent-policy-kit'),AGENT_POLICY_APPLICATIONS_DIR:path.join(home,'Applications'),PATH:path.dirname(process.execPath),...env}});}
 test('CLI exposes configuration commands and no ongoing runtime entry points',t=>{
   const home=fixture(t),help=cli(home,['--help']);assert.equal(help.status,0);
   for(const command of ['setup','uninstall','doctor','instructions']) assert.match(help.stdout,new RegExp(`\\b${command}\\b`));
