@@ -2,6 +2,18 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
+## 0.5.0 — Unreleased
+
+### Why this release
+
+### Who should update
+
+### Migration and rollback
+
+### Presets and model catalog
+
+### What changed
+
 ## 0.4.0 — 2026-11-01
 
 ### Why this release

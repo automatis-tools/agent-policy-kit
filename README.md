@@ -22,7 +22,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 - Your main agent and its model do not change. The main agent still decides when to delegate.
 - APK configures the coding agent of each assistant: Codex in ChatGPT, Claude Code in Claude, Kimi Code, Antigravity for Gemini, and Grok Build. Plain chats do not change. [Assistants](docs/reference/assistants.md) lists the details, also for the desktop apps.
 - APK adds no proxy and no background process. You can delete the npm package after setup.
-- `npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove the APK settings and keep yours.
+- `npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove the APK settings and keep yours.
 - Apart from the npm download, APK makes no network requests. [Privacy](docs/guide/privacy.md) tells what it reads and writes.
 
 ## Documentation

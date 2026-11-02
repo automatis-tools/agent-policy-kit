@@ -114,7 +114,7 @@ The command always lists every selected assistant and role with its model and ef
 A generated command has this form:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup \
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup \
   --roles 'reviewer,explorer' \
   --max-concurrent 3 \
   --chatgpt 'reviewer=gpt-6.1-sol:high,explorer=gpt-6-luna:high' \
