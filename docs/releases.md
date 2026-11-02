@@ -7,14 +7,14 @@
 Inspect the release and preview its plan:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy release
-npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy setup --release
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy release
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --release
 ```
 
 Apply explicitly:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy setup --release --preset balanced --apply
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --release --preset balanced --apply
 ```
 
 The package you select supplies both preferences and native templates. --release is a boolean, not another version argument. --preset selects fast/balanced/quality; its identity is stored alongside release/source. The same pattern selects an older compatible release for downgrade. Installing/updating an npm package alone does not change native files. Before publication, use that release's verified .tgz instead of the registry package spec.
@@ -37,4 +37,4 @@ Current native receipt v4 records the selected subset of six bounded role filena
 
 A release reproduces declared settings and templates. Provider aliases/tiers can resolve to new models, old model IDs can retire, and account access can change. See [model maintenance](model-updates.md). No runtime updater or model gateway is installed.
 
-Read [CHANGELOG](../CHANGELOG.md) for what changed, why, who should update and migration limits. Versions 0.1.0 and 0.2.0 are published and 0.3.0 is being prepared; synthetic versions in acceptance tests are not real releases.
+Read [CHANGELOG](../CHANGELOG.md) for what changed, why, who should update and migration limits. Versions 0.1.0, 0.2.0 and 0.3.0 are published and 0.4.0 is being prepared; synthetic versions in acceptance tests are not real releases.

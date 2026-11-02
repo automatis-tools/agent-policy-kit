@@ -226,14 +226,17 @@ test('v2 named presets bind parallelism as well as models while legacy scalar li
 });
 
 test('Top-tier links accept the top-model variant only when every shared code role uses it',()=>{
- const claude=presetPreferences('quality').clients.claude,top='claude-fable-5-1';
+ const claude=presetPreferences('quality').clients.claude,top={model:'claude-opus-5-5',effort:'xhigh'};
  const effectiveRole=id=>effective(claude,ROLE_DEFINITIONS.find(role=>role.id===id));
  const link=choices=>raw({v:2,release:PACKAGE_VERSION,roles:Object.keys(choices),tools:[{id:'claude',mode:'quality',base:'quality',choices,maxConcurrent:2}],scope:'claude'});
  const base={worker:effectiveRole('worker'),reviewer:effectiveRole('reviewer'),explorer:effectiveRole('explorer')};
  assert.deepEqual(decodeFormState(link(base),release).tools[0].choices,base);
- const topped={...base,worker:{model:top,effort:'high'},reviewer:{model:top,effort:'high'}};
+ // Claude's top choice keeps the Top-tier model and raises its effort, so detection compares both.
+ assert.equal(base.worker.model,top.model);assert.notEqual(base.worker.effort,top.effort);
+ const topped={...base,worker:top,reviewer:top};
  assert.deepEqual(decodeFormState(link(topped),release).tools[0].choices,topped);
- invalid(()=>decodeFormState(link({...base,worker:{model:top,effort:'high'}}),release));
- invalid(()=>decodeFormState(link({...topped,explorer:{model:top,effort:'high'}}),release));
- invalid(()=>decodeFormState(link({...topped,worker:{model:top,effort:'xhigh'}}),release));
+ invalid(()=>decodeFormState(link({...base,worker:top}),release));
+ invalid(()=>decodeFormState(link({...topped,explorer:top}),release));
+ invalid(()=>decodeFormState(link({...topped,worker:{model:top.model,effort:'max'}}),release));
+ invalid(()=>decodeFormState(link({...topped,worker:{model:'claude-fable-5-1',effort:'xhigh'}}),release));
 });

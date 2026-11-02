@@ -13,8 +13,8 @@ Package version is configuration-release version. Read that version's CHANGELOG.
 After publication, pinned invocation is supported:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy release
-npx --yes --ignore-scripts --package agent-policy-kit@0.3.0 agent-policy setup --release
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy release
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --release
 ```
 
 Before publication, replace the registry spec with the verified local .tgz. For several commands, install to a temporary or user-owned prefix with npm install --prefix PREFIX TARBALL --ignore-scripts --no-audit --no-fund, then invoke PREFIX/node_modules/.bin/agent-policy. No stable runtime prefix, sudo or shell-profile changes are needed.
@@ -68,7 +68,7 @@ The available role names are apk-worker/apk-reviewer/apk-explorer/apk-tester/apk
 
 ## 4. Native limits
 
-ChatGPT (Codex) and Claude (Claude Code) have native defaults/caps with higher-priority setting and execution-path exceptions. Kimi role-to-pool selection and concurrency are guidance. Gemini (Antigravity) uses native Pro/Flash/Flash Lite/inherit tiers, with no documented per-role effort or universal hard cap. Grok Build writes agents/apk-ROLE.md, per-role models and a general-purpose fallback in config.toml [subagents.models], and a native [subagents] max_concurrent cap; it has no per-role effort, so subagents use the main session effort. avoidModels is guidance. A pinned configuration does not prove provider identity, entitlement, task quality or unchanged alias resolution. Never add a runtime gate to strengthen a missing native feature.
+ChatGPT (Codex) and Claude (Claude Code) have native defaults/caps with higher-priority setting and execution-path exceptions. Kimi role-to-pool selection and concurrency are guidance. Claude Code 2.1.316+ reads the default subagent effort from CLAUDE_CODE_SUBAGENT_EFFORT, which APK sets to the Coder effort capped at high; earlier versions ignore it. Gemini (Antigravity) uses native Pro/Flash/Flash Lite/inherit tiers (Flash Lite is accepted by the CLI but undocumented), with no per-role effort or universal hard cap. Grok Build writes agents/apk-ROLE.md, per-role models and a general-purpose fallback in config.toml [subagents.models], and a native [subagents] max_concurrent cap. These entries carry only a model, so subagents use the main session effort. avoidModels is guidance. A pinned configuration does not prove provider identity, entitlement, task quality or unchanged alias resolution. Never add a runtime gate to strengthen a missing native feature.
 
 ## 5. Removal and incompatible formats
 

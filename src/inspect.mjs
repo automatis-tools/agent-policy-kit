@@ -100,10 +100,11 @@ function extractSettings(client,id,native,env,models){
  }else if(id==='claude'){
   const stored=native.env??{};if(!record(stored))throw failure('UNSUPPORTED_NATIVE_SETTING');
   client.defaults.model=optionalString(stored.CLAUDE_CODE_SUBAGENT_MODEL);
+  client.defaults.effort=optionalString(stored.CLAUDE_CODE_SUBAGENT_EFFORT);
   const count=stored.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS;
   if(count!==undefined){if(typeof count!=='string'||!/^\d{1,9}$/.test(count))throw failure('UNSUPPORTED_NATIVE_SETTING');client.concurrency.value=cap(Number(count));}
   client.overrides={};
-  for(const[key,field]of [['CLAUDE_CODE_SUBAGENT_MODEL','model'],['CLAUDE_CODE_EFFORT_LEVEL','effort']]){
+  for(const[key,field]of [['CLAUDE_CODE_SUBAGENT_MODEL','model'],['CLAUDE_CODE_SUBAGENT_EFFORT','subagentEffort'],['CLAUDE_CODE_EFFORT_LEVEL','effort']]){
    const value=env[key]??(field==='effort'?stored[key]:undefined);
    if(value!==undefined)client.overrides[field]=safeString(value);
   }

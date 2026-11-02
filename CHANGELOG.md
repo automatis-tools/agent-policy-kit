@@ -2,10 +2,51 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
-## Unreleased
+## 0.4.0 — Unreleased
+
+### Why this release
+
+The presets and the model catalog were checked again on 2026-11-01 against the installed native clients and current vendor documentation. No vendor released or retired a subagent model since 2026-10-30. The new evidence changes where effort is spent, and it shows that Claude's top model is Opus 5.5, not Fable 5.1.
+
+### Who should update
+
+- Anyone who uses ChatGPT or Claude presets and wants the revised effort levels.
+- Anyone who uses the Top-tier top models switch in Claude.
+- Claude Code 2.1.316+ users who want subagents without a named role to stop inheriting the main session effort.
+
+Kimi, Gemini and Grok preset values do not change, so their 0.3.0 installations need no update.
+
+### Migration and rollback
+
+Assistant IDs, preset ids (`fast`, `balanced`, `quality`), share-link format v2 and receipt format v4 are unchanged. Setup with 0.4.0 replaces a 0.3.0 installation in place, and receipts written by 0.3.0 still validate and uninstall. Setup with 0.3.0 moves ChatGPT, Kimi, Gemini and Grok back.
+
+Claude has a migration boundary in the downgrade direction. A 0.4.0 Claude receipt owns a third setting, `CLAUDE_CODE_SUBAGENT_EFFORT`, whenever the Coder effort is pinned, and every preset pins it. Version 0.3.0 does not know this setting, so its setup reports `INVALID_RECEIPT` and changes nothing. To move Claude back to 0.3.0, first remove its settings with 0.4.0: `npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy uninstall --client claude --apply`. Then set up with 0.3.0. This was checked with the 0.3.0 source in an isolated home. Removal restores the value that the setting had before setup, or removes it. Share links of 0.3.0 open on the 0.3.0 page.
+
+### Presets and model catalog
+
+Re-running setup applies these values. Installations keep their current values until then.
+
+- **Light, ChatGPT:** the Coder runs Luna at high instead of medium, the starting level OpenAI suggests for Luna. Luna stays the cheapest Codex model.
+- **Standard, ChatGPT:** the Docs writer uses GPT-6.1 Terra at medium instead of GPT-6.1 Sol. OpenAI positions Terra for clear writing, at half of Sol's usage.
+- **Top-tier, ChatGPT and Claude:** the Code explorer and Docs writer keep GPT-6.1 Sol and Opus 5.5 but run at medium instead of high. Implementation, review and tests stay at high.
+- **Top models switch, Claude:** Coder, Reviewer and Test writer use Opus 5.5 at xhigh instead of Fable 5.1 at high. Anthropic's own benchmarks put Opus 5.5 ahead of Fable 5.1 on every published coding benchmark at 2.5 times lower price, and Anthropic suggests a higher Opus effort before Fable. Fable 5.1 stays available in Custom. The switch now sets a model and an effort; ChatGPT and Kimi keep GPT-6 Astra and K3.1 Pro at high.
+
+The catalog snapshot is dated 2026-11-01:
+
+- GPT-5.5 is marked retired from Codex for ChatGPT sign-in on 2026-10-14; it remains for API-key sign-in.
+- GPT-6 Astra's native default effort is medium in the signed-in server catalog; the bundled value low is kept as `bundledDefaultEffort`. The hidden, undocumented `gpt-reserve` selector is excluded.
+- Claude Code 2.1.316, Kimi Code 2.4.1 and Antigravity 1.4.12 are the observed client versions. Opus 4.5 and Haiku 4.5 record their earliest retirement dates.
+- Kimi records plan requirements: K3 and K3.1 Pro need Plus or higher, and the 1M context of K3 needs Pro or higher.
+- Antigravity's Flash Lite tier is marked undocumented: the CLI accepts it, but the subagent documentation lists only inherit, Flash and Pro.
+- Grok 4.7's reasoning levels (low to xhigh) are recorded as API capabilities. APK still writes only a model for each Grok role, so subagents use the main session effort.
+
+Configuration checks are not model-quality evaluations.
 
 ### What changed
 
+- Claude: setup also writes `CLAUDE_CODE_SUBAGENT_EFFORT`, the effort for subagents that name none, from the Coder effort capped at high. Claude Code 2.1.316 added this setting; earlier versions ignore it. Before, those subagents kept the main session effort.
+- `agent-policy show` reports the stored Claude default subagent effort and a `CLAUDE_CODE_SUBAGENT_EFFORT` environment override.
+- The top models switch label shows each tool's model and effort.
 - The configurator shows a note when Gemini is selected: APK configures Antigravity, not Gemini CLI. The README and the compatibility documentation say the same.
 
 ## 0.3.0 — 2026-11-01

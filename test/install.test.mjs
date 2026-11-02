@@ -525,3 +525,20 @@ test('each client writes its own parallel limit and removal restores original se
  for(const client of ['chatgpt','claude','kimi','gemini'])await uninstall({...f,client,apply:true});
  assert.deepEqual(parseToml(await fs.readFile(path.join(f.home,'.kimi-code/config.toml'),'utf8')),parseToml(modelConfig));
 });
+
+test('Claude unnamed subagents get the Coder effort capped at high and uninstall restores the user value',async t=>{
+ const target=f=>path.join(f.home,'.claude/settings.json'),policy=async(f,effort)=>{const value=behaviorPolicy();value.clients={claude:{...value.clients.claude,code:{model:'claude-opus-5-5',effort}}};await fs.writeFile(f.policyPath,JSON.stringify(value));};
+ for(const [effort,expected] of [['medium','medium'],['high','high'],['xhigh','high'],['max','high']]){
+  const f=await fixture(t,'claude');await policy(f,effort);await applyInstall(await planInstall(f));
+  const env=JSON.parse(await fs.readFile(target(f))).env;assert.equal(env.CLAUDE_CODE_SUBAGENT_MODEL,'claude-opus-5-5');assert.equal(env.CLAUDE_CODE_SUBAGENT_EFFORT,expected,effort);
+ }
+ const native=await fixture(t,'claude');await policy(native,null);await applyInstall(await planInstall(native));
+ assert.ok(!('CLAUDE_CODE_SUBAGENT_EFFORT' in JSON.parse(await fs.readFile(target(native))).env),'a native-default Coder leaves the setting unowned');
+ await uninstall({...native,apply:true});
+ const own=await fixture(t,'claude'),original={model:'main',env:{CLAUDE_CODE_SUBAGENT_EFFORT:'low'}};await put(target(own),JSON.stringify(original));await policy(own,'xhigh');
+ await applyInstall(await planInstall(own));assert.equal(JSON.parse(await fs.readFile(target(own))).env.CLAUDE_CODE_SUBAGENT_EFFORT,'high');
+ const receipt=path.join(own.stateDir,'installations/claude.json'),record=JSON.parse(await fs.readFile(receipt)),ops=record.files.find(file=>file.type==='json').ops;
+ assert.deepEqual(ops.map(op=>op.path[1]),['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL','CLAUDE_CODE_SUBAGENT_EFFORT']);
+ ops[2].after='max';await fs.writeFile(receipt,JSON.stringify(record));await assert.rejects(uninstall({...own,apply:true}),{code:'INVALID_RECEIPT'});
+ ops[2].after='high';await fs.writeFile(receipt,JSON.stringify(record));await uninstall({...own,apply:true});assert.deepEqual(JSON.parse(await fs.readFile(target(own))),original);
+});

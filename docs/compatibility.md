@@ -3,10 +3,10 @@
 | AI assistant | Written native configuration | Limits |
 |---|---|---|
 | ChatGPT (Codex) | User role TOMLs, native subagent defaults/concurrency, routing instructions | Higher-priority project/explicit settings still follow Codex rules |
-| Claude (Claude Code) | User role Markdown with model/effort, native default/concurrency env, routing instructions | Force settings and native execution-path exceptions can override the intended mapping |
+| Claude (Claude Code) | User role Markdown with model/effort, native default model/effort/concurrency env (default effort needs Claude Code 2.1.316+), routing instructions | Force settings and native execution-path exceptions can override the intended mapping |
 | Kimi (Kimi Code) | User role Markdown, existing secondary-model pool, per-alias effort, routing instructions | Model-role selection and max concurrency are guidance; provisioned aliases/capabilities are required |
-| Gemini (Antigravity) | User role Markdown with Pro/Flash/Flash Lite/inherit tiers and routing instructions | No concrete provider pin, documented per-role effort, or universal native max-three cap |
-| Grok (Grok Build) | User role Markdown (read-only roles use permission_mode plan), per-role models and a general-purpose fallback in config.toml, native max_concurrent, routing instructions | No documented per-role effort; subagents use the main session effort. Higher-priority project/explicit settings still follow Grok Build rules |
+| Gemini (Antigravity) | User role Markdown with Pro/Flash/Flash Lite/inherit tiers and routing instructions | No concrete provider pin, per-role effort, or universal native max-three cap. Flash Lite is accepted by the CLI but not documented |
+| Grok (Grok Build) | User role Markdown (read-only roles use permission_mode plan), per-role models and a general-purpose fallback in config.toml, native max_concurrent, routing instructions | APK writes only a model per role; subagents use the main session effort. Higher-priority project/explicit settings still follow Grok Build rules |
 
 Gemini means Antigravity: APK detects the `agy` executable and writes Antigravity role settings. Gemini CLI also uses `~/.gemini`, but APK does not detect or configure it.
 

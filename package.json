@@ -1,6 +1,6 @@
 {
   "name": "agent-policy-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Configure native subagent settings across AI assistants, then exit",
   "type": "module",
   "license": "MIT",
@@ -65,5 +65,5 @@
   "bugs": {
     "url": "https://github.com/automatis-tools/agent-policy-kit/issues"
   },
-  "homepage": "https://agent-policy-kit.trymenow.io/v/0.3.0/"
+  "homepage": "https://agent-policy-kit.trymenow.io/v/0.4.0/"
 }

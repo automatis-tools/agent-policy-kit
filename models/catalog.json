@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-10-30",
+  "reviewedAt": "2026-11-01",
   "scope": "Documented/native coding-tool selectors at this release; account access and custom deployment IDs vary.",
   "clients": {
     "chatgpt": {
@@ -15,7 +15,7 @@
         "max"
       ],
       "observedClientVersion": "0.166.0",
-      "observation": "codex debug models --bundled: 9 visible selectors; 3 hidden specialized/utility entries excluded",
+      "observation": "codex debug models --bundled: 9 visible selectors; 3 hidden specialized/utility entries excluded. The signed-in server catalog (2026-11-01) lists 8 visible selectors without GPT-5.5, the hidden gpt-reserve entry and a medium default for GPT-6 Astra.",
       "models": [
         {
           "id": "gpt-6-astra",
@@ -27,7 +27,7 @@
             "xhigh",
             "max"
           ],
-          "defaultEffort": "low",
+          "defaultEffort": "medium",
           "source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
           "kind": "model",
           "apiEfforts": [
@@ -41,7 +41,8 @@
           "nativeSource": "https://learn.chatgpt.com/docs/models",
           "delegationModes": [
             "ultra"
-          ]
+          ],
+          "bundledDefaultEffort": "low"
         },
         {
           "id": "gpt-6.1-sol",
@@ -227,7 +228,7 @@
         },
         {
           "id": "gpt-5.5",
-          "label": "GPT-5.5",
+          "label": "GPT-5.5 (API key only)",
           "efforts": [
             "low",
             "medium",
@@ -245,7 +246,13 @@
             "xhigh"
           ],
           "apiDefaultEffort": "medium",
-          "nativeSource": "https://learn.chatgpt.com/docs/models"
+          "nativeSource": "https://learn.chatgpt.com/docs/models",
+          "lifecycle": {
+            "status": "retired",
+            "retirementDate": "2026-10-14",
+            "scope": "Codex with ChatGPT sign-in; API-key sign-in keeps access",
+            "source": "https://learn.chatgpt.com/docs/models"
+          }
         }
       ],
       "excluded": [
@@ -260,9 +267,13 @@
         {
           "id": "codex-auto-review",
           "reason": "hidden internal utility selector"
+        },
+        {
+          "id": "gpt-reserve",
+          "reason": "hidden undocumented selector in the server catalog"
         }
       ],
-      "note": "Efforts and defaults follow the bundled Codex CLI 0.166.0 catalog. API capabilities are separate apiEfforts/apiDefaultEffort metadata. Ultra is a delegating execution mode, recorded separately and not offered as ordinary subagent effort. An API-supported level absent from the native catalog is unverified for manual per-role configuration, not proven runtime-rejected."
+      "note": "Efforts follow the bundled Codex CLI 0.166.0 catalog. Defaults follow the signed-in server catalog of 2026-11-01 where it differs (bundledDefaultEffort keeps the bundled value). API capabilities are separate apiEfforts/apiDefaultEffort metadata. Ultra is a delegating execution mode, recorded separately and not offered as ordinary subagent effort. An API-supported level absent from the native catalog is unverified for manual per-role configuration, not proven runtime-rejected. GPT-5.5 left Codex for ChatGPT sign-in on 2026-10-14 and remains for API-key sign-in."
     },
     "claude": {
       "label": "Claude",
@@ -273,7 +284,7 @@
         "xhigh",
         "max"
       ],
-      "observedClientVersion": "2.1.312",
+      "observedClientVersion": "2.1.316",
       "models": [
         {
           "id": "sonnet",
@@ -500,7 +511,12 @@
             "high"
           ],
           "apiDefaultEffort": null,
-          "apiSource": "https://platform.claude.com/docs/en/build-with-claude/effort"
+          "apiSource": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "lifecycle": {
+            "status": "active",
+            "earliestRetirement": "2026-11-24",
+            "source": "https://platform.claude.com/docs/en/about-claude/model-deprecations"
+          }
         },
         {
           "id": "claude-sonnet-4-5-20250929",
@@ -522,7 +538,12 @@
           "efforts": [],
           "defaultEffort": null,
           "source": "https://code.claude.com/docs/en/model-config",
-          "kind": "model"
+          "kind": "model",
+          "lifecycle": {
+            "status": "active",
+            "earliestRetirement": "2026-10-15",
+            "source": "https://platform.claude.com/docs/en/about-claude/model-deprecations"
+          }
         },
         {
           "id": "inherit",
@@ -540,7 +561,7 @@
           "effortResolution": "Depends on the resolved model and provider; requested levels can be clamped or ignored by Claude Code."
         }
       ],
-      "note": "Full model IDs use the current Claude Code native effort table, which differs from API support for Opus 4.5. Alias/inherit efforts are possible requested levels, not a guarantee for every resolved provider model; unsupported levels can clamp or be ignored. Current account access and provider alias resolution vary.",
+      "note": "Full model IDs use the current Claude Code native effort table, which differs from API support for Opus 4.5. Alias/inherit efforts are possible requested levels, not a guarantee for every resolved provider model; unsupported levels can clamp or be ignored. Current account access and provider alias resolution vary. Claude Code 2.1.316 adds CLAUDE_CODE_SUBAGENT_EFFORT for subagents that name no effort; earlier versions ignore it. CLAUDE_CODE_EFFORT_LEVEL still overrides subagent effort frontmatter.",
       "excluded": [
         {
           "id": "best",
@@ -613,7 +634,8 @@
           "defaultEffort": "high",
           "source": "https://www.kimi.com/code/docs/en/kimi-code/models",
           "kind": "native-alias",
-          "upstreamModelId": "k3"
+          "upstreamModelId": "k3",
+          "planRequirement": "Plus (Moderato) or higher; 1M context requires Pro (Allegretto) or higher"
         },
         {
           "id": "kimi-code/k3-256k",
@@ -651,14 +673,14 @@
           "upstreamModelId": "kimi-for-coding-highspeed"
         }
       ],
-      "note": "Current Kimi Code docs list six model IDs; the older kimi.ai/help page still lists four. K3.1 Pro and Highspeed require thinking and support low/high/max, default high. These are preferred native aliases: setup resolves a missing preferred alias only to a unique provisioned match; no provider identity is invented. Account tier controls access.",
-      "observedClientVersion": "2.4.0",
-      "observation": "Kimi Code CLI 2.4.0: all six documented preferred aliases and native effort/default capabilities corroborated through whitelisted provisioned metadata; no credentials or custom account aliases retained."
+      "note": "Current Kimi Code docs list six model IDs; the older kimi.ai/help page still lists four. K3.1 Pro and Highspeed require thinking and support low/high/max, default high. These are preferred native aliases: setup resolves a missing preferred alias only to a unique provisioned match; no provider identity is invented. Account tier controls access. K3 and K3.1 Pro require the Plus (Moderato) plan or higher. The 1M context of K3 and every Highspeed model require Pro (Allegretto) or higher; on Plus, k3 stays at 256K context and uses about twice the quota of k3-256k. K2.7 Code HighSpeed uses about three times the quota.",
+      "observedClientVersion": "2.4.1",
+      "observation": "Kimi Code CLI 2.4.0 and 2.4.1: all six documented preferred aliases and native effort/default capabilities corroborated through whitelisted provisioned metadata; no credentials or custom account aliases retained."
     },
     "gemini": {
       "label": "Gemini",
       "efforts": [],
-      "observedClientVersion": "1.4.10",
+      "observedClientVersion": "1.4.12",
       "models": [
         {
           "id": "pro",
@@ -682,7 +704,9 @@
           "efforts": [],
           "defaultEffort": null,
           "source": "https://antigravity.google/docs/subagents?tab=cli",
-          "kind": "tier"
+          "kind": "tier",
+          "documented": false,
+          "nativeSource": "Antigravity CLI 1.4.12 agent-file parser"
         },
         {
           "id": "inherit",
@@ -693,7 +717,7 @@
           "kind": "tier"
         }
       ],
-      "note": "Native per-subagent selectors are tiers, not the session model inventory. CLI 1.4.10 parser explicitly accepts inherit/flash_lite/flash/pro, including Flash Lite absent from the shared docs App table. Per-role effort is not exposed by the agent-file schema."
+      "note": "Native per-subagent selectors are tiers, not the session model inventory. The CLI 1.4.12 parser accepts inherit/flash_lite/flash/pro; the public subagent documentation lists only inherit, flash and pro, so flash_lite is undocumented. Google does not document which Gemini model each tier uses; the server sets it per account. Per-role effort is not exposed by the agent-file schema; --effort and /effort apply to the whole session."
     },
     "grok": {
       "label": "Grok",
@@ -707,7 +731,14 @@
           "defaultEffort": null,
           "source": "https://docs.x.ai/developers/models",
           "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
-          "kind": "model"
+          "kind": "model",
+          "apiEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "apiDefaultEffort": "high"
         },
         {
           "id": "grok-4.6",
@@ -737,7 +768,7 @@
           "kind": "model"
         }
       ],
-      "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. Per-role effort is not exposed by the agent-file schema, so subagents use the main session effort. [subagents] max_concurrent is a native cap."
+      "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. Grok 4.7 supports low/medium/high/xhigh reasoning effort and Grok Build resolves subagent effort from a spawn override, role default, persona default and then the parent session. The [subagents.models] entries that APK writes carry only a model, so APK leaves effort to the main session. [subagents] max_concurrent is a native cap."
     }
   }
 }

@@ -36,12 +36,12 @@ test('current Kimi inventory includes both K3.1 Pro routes with native thinking 
 test('presets name how much of the plan subagents use and top models stay an explicit Top-tier opt-in',()=>{
  assert.deepEqual(PRESETS.map(preset=>[preset.id,preset.label]),[['fast','Light'],['balanced','Standard'],['quality','Top-tier']]);
  for(const preset of PRESETS)assert.ok(preset.description.length<=70,preset.id);
- const top={chatgpt:'gpt-6-astra',claude:'claude-fable-5-1',kimi:'kimi-code/k3.1-pro'},catalog=modelCatalog().clients;
+ const top={chatgpt:{model:'gpt-6-astra',effort:'high'},claude:{model:'claude-opus-5-5',effort:'xhigh'},kimi:{model:'kimi-code/k3.1-pro',effort:'high'}},catalog=modelCatalog().clients;
  assert.deepEqual(PRESETS.find(preset=>preset.id==='quality').topModels,top);
  assert.ok(PRESETS.filter(preset=>preset.id!=='quality').every(preset=>preset.topModels===undefined));
- for(const [client,model] of Object.entries(top))assert.ok(catalog[client].models.find(entry=>entry.id===model)?.efforts.includes('high'),client);
- // Native default subagent settings copy the Coder choice, so no slider position may silently select a top model.
- for(const id of ['fast','balanced','quality'])for(const [client,config] of Object.entries(presetPreferences(id).clients))for(const role of Object.keys(ROLES))assert.notEqual(rolePreference(config,role).model,top[client],`${id} ${client} ${role}`);
+ for(const [client,choice] of Object.entries(top))assert.ok(catalog[client].models.find(entry=>entry.id===choice.model)?.efforts.includes(choice.effort),client);
+ // Native default subagent settings copy the Coder choice, so no slider position may silently select a top choice.
+ for(const id of ['fast','balanced','quality'])for(const [client,config] of Object.entries(presetPreferences(id).clients))for(const role of Object.keys(ROLES))assert.notDeepEqual(rolePreference(config,role),top[client]??null,`${id} ${client} ${role}`);
  const quality=presetPreferences('quality').clients;
  for(const [client,model] of [['chatgpt','gpt-6.1-sol'],['claude','claude-opus-5-5'],['kimi','kimi-code/k3']])
   for(const role of ['worker','reviewer','tester'])assert.deepEqual(rolePreference(quality[client],role),{model,effort:'high'},`${client} ${role}`);
@@ -76,15 +76,19 @@ test('Fable is a documented Claude subagent alias with current native effort cho
 test('public recommendations never carry personal model bans',()=>{
  for(const preset of PRESETS)for(const [client,config]of Object.entries(presetPreferences(preset.id).clients))assert.deepEqual(config.avoidModels,[],`${preset.id}/${client} must leave model choice open`);
 });
-test('Top-tier offers frontier models for demanding implementation and review only as an opt-in',()=>{
+test('Top-tier offers stronger choices for demanding implementation and review only as an opt-in',()=>{
  const quality=presetPreferences('quality'),top=PRESETS.find(preset=>preset.id==='quality').topModels;
- assert.equal(top.chatgpt,'gpt-6-astra');assert.equal(top.claude,'claude-fable-5-1');
+ assert.equal(top.chatgpt.model,'gpt-6-astra');
+ // Anthropic's own benchmarks put Opus 5.5 ahead of Fable 5.1, so Claude's top choice is more reasoning on the same model.
+ assert.deepEqual(top.claude,{model:'claude-opus-5-5',effort:'xhigh'});
  for(const role of ['worker','reviewer']){
   assert.equal(rolePreference(quality.clients.chatgpt,role).model,'gpt-6.1-sol');
   assert.equal(rolePreference(quality.clients.claude,role).model,'claude-opus-5-5');
  }
  assert.notEqual(rolePreference(quality.clients.chatgpt,'routine').model,'gpt-6-astra');
- assert.notEqual(rolePreference(quality.clients.claude,'routine').model,'claude-fable-5-1');
+ assert.notDeepEqual(rolePreference(quality.clients.claude,'routine'),top.claude);
+ // Discovery and docs keep the Top-tier model at medium; verification roles keep high.
+ for(const client of ['chatgpt','claude'])for(const role of ['explorer','writer'])assert.equal(rolePreference(quality.clients[client],role).effort,'medium',`${client} ${role}`);
 });
 
 test('Grok presets use the fast coding model for light work and Grok 4.7 for stronger roles',()=>{
