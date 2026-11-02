@@ -34,24 +34,16 @@
     "claude": {
       "code": {
         "model": "claude-sonnet-5-5",
-        "effort": "medium"
+        "effort": "high"
       },
       "light": {
         "model": "claude-haiku-5-5",
         "effort": "low"
       },
       "roles": {
-        "reviewer": {
-          "model": "claude-sonnet-5-5",
-          "effort": "high"
-        },
         "explorer": {
           "model": "claude-haiku-5-5",
           "effort": "medium"
-        },
-        "tester": {
-          "model": "claude-sonnet-5-5",
-          "effort": "high"
         },
         "writer": {
           "model": "claude-sonnet-5-5",

@@ -65,7 +65,7 @@ Prompt: "Execute only the prescribed commands or clearly specified mechanical ed
 
 ## Permissions
 
-The Reviewer and the Code explorer are read-only roles. Their prompts tell them not to edit files. Three assistants also restrict them natively:
+The Reviewer and the Code explorer are read-only roles. Their prompts tell them not to edit files. Two assistants also restrict them natively:
 
 | Assistant | Native read-only setting for Reviewer and Code explorer |
 |---|---|
@@ -73,7 +73,7 @@ The Reviewer and the Code explorer are read-only roles. Their prompts tell them 
 | Claude | `tools: Read, Grep, Glob` |
 | Kimi | `tools: [Read, Grep, Glob]` |
 | Gemini | None. The prompt is the only restriction. |
-| Grok | `permission_mode: plan` |
+| Grok | None in effect. APK writes `permission_mode: plan`, but Grok Build 1.0.70 reads agent fields in camelCase and ignores this field. The prompt is the only restriction until #30 is fixed. |
 
 The other four roles get no tool restriction. They use the permissions of the native client.
 
@@ -87,7 +87,7 @@ For the file paths, see [AI assistants](assistants.md#files-written). Each file 
 | Claude | Markdown with frontmatter | `name`, `description`, `model`, `effort` (only when pinned), `tools` (read-only roles); the body is the prompt |
 | Kimi | Markdown with frontmatter | `name`, `description`, `tools` (read-only roles); the body is the prompt and a routing note |
 | Gemini | Markdown with frontmatter | `name`, `description`, `model` (the tier), `subagent: true`; the body is the prompt |
-| Grok | Markdown with frontmatter | `name`, `description`, `permission_mode: plan` (read-only roles); the body is the prompt |
+| Grok | Markdown with frontmatter | `name`, `description`, `effort` (only when pinned), `permission_mode: plan` (read-only roles); the body is the prompt |
 
 - Kimi frontmatter does not select a model. The routing note in the body names the pool alias and the requested effort. The parent selects the alias when it spawns the subagent.
 - Grok takes the model of each role from `[subagents.models]` in `config.toml`, not from the role file.
@@ -103,7 +103,7 @@ APK adds one block to the global instruction file of each assistant. The block s
    - ChatGPT and Claude: use the named role definitions for model and effort, which settings can override them, and that an omitted role effort uses the native default.
    - Kimi: the pool alias and effort for each role, that roles that share an alias share its effort, and that the concurrency limit is guidance.
    - Gemini: the tier for each role, and that per-role effort and a hard concurrency cap are not supported.
-   - Grok: use the named role definitions for model selection, and that subagents use the main session effort.
+   - Grok: use the named role definitions for model and effort, that a role effort applies only when its model supports effort, that a role without an effort uses the native default of its model, and which settings can override them.
 5. If the avoid list is not empty: "Avoid these models when delegating: …. This is routing guidance."
 
 ## Default subagent per assistant
@@ -116,7 +116,7 @@ A subagent can start without a named role. Most assistants then use a native def
 | Claude | `CLAUDE_CODE_SUBAGENT_MODEL` | `CLAUDE_CODE_SUBAGENT_EFFORT`, when pinned, capped at `high` |
 | Kimi | `secondary_model.default_model` (the alias) | The per-alias effort of that alias, when pinned |
 | Gemini | Not set | Not set |
-| Grok | `subagents.models.general-purpose` | Not set. Subagents use the main session effort. |
+| Grok | `subagents.models.general-purpose` | Not set. The pinned model runs at its default effort. |
 
 - **Claude cap:** a role effort of `xhigh` or `max` becomes `high` for the default subagent. The Claude top choice at `xhigh` therefore does not raise subagents without a named role. Claude Code 2.1.316 or later reads `CLAUDE_CODE_SUBAGENT_EFFORT`. Earlier versions ignore it, and those subagents keep the main session effort.
 - **Gemini:** APK writes no configuration file for Antigravity, so subagents without a role follow native Antigravity behavior.
@@ -132,7 +132,7 @@ Effort is the reasoning level that a model uses. An unpinned effort (`null`, or 
 | Claude | `effort` in the role file | `CLAUDE_CODE_EFFORT_LEVEL` overrides the `effort` field of subagents. Aliases and the resolved provider model can clamp or ignore a level. |
 | Kimi | `models.<alias>.overrides.default_effort` | One effort for each alias. See below. |
 | Gemini | None | `--effort` and `/effort` apply to the whole session. |
-| Grok | None | Grok Build resolves subagent effort from a spawn override, a role default, a persona default and then the parent session. APK writes only a model, so subagents use the main session effort. |
+| Grok | `effort` in the role file | Grok Build applies it only when the model supports effort. Without it, a role runs at the default effort of its pinned model (Grok 4.7: `high`), not at the main session effort. A spawn override from the harness or a Grok role with the same name as the agent wins over the field. See [AI assistants](assistants.md#grok-role-effort). |
 
 A known model accepts only the levels in the [model catalog](model-catalog.md). The page offers only those levels.
 

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import {constants} from 'node:fs';
 import path from 'node:path';
 import {parseToml} from './toml.mjs';
-import {CLIENTS} from './policy.mjs';
+import {CLIENTS,NATIVE_EFFORTS} from './policy.mjs';
 import {inspectConfiguration} from './install.mjs';
 
 const ROOTS={chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
@@ -151,9 +151,10 @@ async function rolesIn(directory,client,id,budget,models,depth=0){
     }
    }
    if(id==='grok'){
-    // The native per-subagent model override lives in config.toml, not in the agent file.
+    // The native per-subagent model override lives in config.toml, not in the agent file; the effort lives in the agent frontmatter.
     role.model=models.get(role.name)??role.model;
-    if(fields.effort!==undefined){role.effort=null;warning(client,failure('UNSUPPORTED_ROLE_EFFORT'));}
+    // Grok Build drops an agent whose frontmatter effort is not a level it accepts.
+    if(role.effort!==null&&!NATIVE_EFFORTS.grok.includes(role.effort))warning(client,failure('UNSUPPORTED_ROLE_EFFORT'));
    }
    if(id==='gemini'){
     if(role.model!==null&&!['pro','flash','flash_lite','inherit'].includes(role.model))throw failure('UNSUPPORTED_NATIVE_SETTING');

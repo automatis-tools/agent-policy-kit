@@ -14,11 +14,25 @@ test('release catalog carries dated sourced native selectors and compatible effo
  assert.ok(catalog.clients.claude.models.some(m=>m.id==='claude-haiku-5-5'));
 });
 
-test('Grok Build inventory lists documented xAI models without per-role effort',()=>{
+test('Grok Build inventory lists documented xAI models and the agent frontmatter effort levels',()=>{
  const grok=modelCatalog().clients.grok;
- assert.equal(grok.label,'Grok');assert.deepEqual(grok.efforts,[]);assert.deepEqual(grok.models.map(m=>m.id),['grok-4.7','grok-4.6','grok-4.5','grok-build-0.1']);
- for(const model of grok.models){assert.deepEqual(model.efforts,[]);assert.equal(model.defaultEffort,null);assert.equal(model.source,'https://docs.x.ai/developers/models');assert.match(model.nativeSource,/^https:\/\/github\.com\/xai-org\/grok-build\//);}
+ // Grok Build 1.0.70 agent frontmatter accepts these values; an invalid value drops the whole agent.
+ assert.equal(grok.label,'Grok');assert.deepEqual(grok.efforts,['low','medium','high','xhigh','max']);assert.deepEqual(grok.models.map(m=>m.id),['grok-4.7','grok-4.6','grok-4.5','grok-build-0.1']);
+ for(const model of grok.models){assert.equal(model.source,'https://docs.x.ai/developers/models');assert.match(model.nativeSource,/^https:\/\/github\.com\/xai-org\/grok-build\//);}
+ const g47=grok.models.find(m=>m.id==='grok-4.7');
+ assert.deepEqual(g47.efforts,['low','medium','high','xhigh']);assert.equal(g47.defaultEffort,'high');assert.ok(!g47.efforts.includes('max'));
+ assert.deepEqual(g47.apiEfforts,g47.efforts);assert.equal(g47.apiDefaultEffort,g47.defaultEffort);
+ for(const id of ['grok-4.6','grok-4.5','grok-build-0.1']){const model=grok.models.find(m=>m.id===id);assert.deepEqual(model.efforts,[],id);assert.equal(model.defaultEffort,null,id);}
+ assert.doesNotMatch(grok.note,/leaves effort to the main session|subagents use the main session effort/);assert.match(grok.note,/effort in the agent frontmatter/);
  assert.ok(!('grok' in PRESETS.find(preset=>preset.id==='quality').topModels));
+});
+
+test('Grok effort follows the catalog for known models and the client levels for custom IDs',()=>{
+ const policy=effort=>({schemaVersion:1,maxConcurrent:3,clients:{grok:{code:{model:'grok-4.7',effort},light:{model:'grok-build-0.1',effort:null},roles:{reviewer:{model:'custom-grok',effort:'max'}},avoidModels:[]}}});
+ for(const effort of [null,'low','medium','high','xhigh'])assert.doesNotThrow(()=>validatePolicy(policy(effort)),String(effort));
+ for(const effort of ['max','none','minimal','ultra'])assert.throws(()=>validatePolicy(policy(effort)),{code:'INVALID_POLICY'},effort);
+ for(const model of ['grok-4.6','grok-4.5','grok-build-0.1']){const value=policy(null);value.clients.grok.light={model,effort:'high'};assert.throws(()=>validatePolicy(value),{code:'INVALID_POLICY'},model);}
+ const custom=policy(null);custom.clients.grok.roles.reviewer.effort='minimal';assert.throws(()=>validatePolicy(custom),{code:'INVALID_POLICY'});
 });
 
 test('current Kimi inventory includes both K3.1 Pro routes with native thinking levels',()=>{
@@ -98,6 +112,7 @@ test('Grok presets use the fast coding model for light work and Grok 4.7 for str
   quality:{worker:strong,reviewer:strong,explorer:strong,tester:strong,writer:strong,routine:fast}};
  for(const [id,roles]of Object.entries(expected)){
   const grok=presetPreferences(id).clients.grok;assert.equal(grok.maxConcurrent,undefined,id);
+  // Reviewed for 0.5.0: Grok roles keep the native default effort (high for Grok 4.7) in every preset.
   for(const [role,model]of Object.entries(roles))assert.deepEqual(rolePreference(grok,role),{model,effort:null},`${id} ${role}`);
  }
  assert.ok(modelCatalog().clients.grok.models.some(model=>model.id===fast&&model.efforts.length===0));
@@ -123,4 +138,33 @@ test('docs preset tables match the preset data in every cell',()=>{
   }
   assert.equal(rows,6,preset.label);
  }
+});
+
+test('Standard Claude Coder runs Sonnet 5.5 at high and keeps the preset canonical (#29)',()=>{
+ const claude=presetPreferences('balanced').clients.claude,sonnet=effort=>({model:'claude-sonnet-5-5',effort}),haiku=effort=>({model:'claude-haiku-5-5',effort});
+ const expected={worker:sonnet('high'),reviewer:sonnet('high'),explorer:haiku('medium'),tester:sonnet('high'),writer:sonnet('medium'),routine:haiku('low')};
+ for(const [role,choice]of Object.entries(expected))assert.deepEqual(rolePreference(claude,role),choice,role);
+ assert.deepEqual(claude.code,sonnet('high'));assert.deepEqual(claude.light,haiku('low'));
+ // Overrides equal to the code or light fallback are dropped by the configurator, so the file must not carry them.
+ assert.deepEqual(Object.keys(claude.roles).sort(),['explorer','writer']);
+});
+
+test('Claude 4.5 lifecycle records what is true before the Sonnet 4.5 retirement (#28)',()=>{
+ const models=modelCatalog().clients.claude.models,find=id=>models.find(model=>model.id===id);
+ for(const model of models)if(model.lifecycle)assert.ok(['active','deprecated'].includes(model.lifecycle.status),model.id);
+ const sonnet=find('claude-sonnet-4-5-20250929');
+ assert.equal(sonnet.label,'Sonnet 4.5 (retires 2026-11-30)');
+ assert.equal(sonnet.lifecycle.status,'deprecated');assert.equal(sonnet.lifecycle.deprecationDate,'2026-09-30');
+ assert.equal(sonnet.lifecycle.retirementDate,'2026-11-30');assert.equal(sonnet.lifecycle.replacement,'claude-sonnet-5-5');
+ assert.ok(find(sonnet.lifecycle.replacement),'the replacement is in the catalog');
+ for(const platform of ['Claude API','Claude Platform on AWS','Anthropic managed','Microsoft Foundry'])assert.ok(sonnet.lifecycle.scope.includes(platform),platform);
+ const partner=(model,platform)=>model.lifecycle.partners.find(entry=>entry.platform===platform);
+ assert.deepEqual({...partner(sonnet,'Amazon Bedrock'),source:undefined},{platform:'Amazon Bedrock',status:'legacy',endOfLife:'2027-04-08',source:undefined});
+ const google=partner(sonnet,'Google Cloud (Google managed)');assert.equal(google.retirementDate,undefined);assert.match(google.note,/no retirement date/i);
+ const opus=find('claude-opus-4-5-20251101');assert.ok(!find('claude-opus-4-5-20251001'));
+ assert.equal(opus.lifecycle.status,'active');assert.equal(opus.lifecycle.earliestRetirement,'2026-11-24');assert.match(opus.lifecycle.note,/legacy.*no deprecation notice/i);
+ const haiku=find('claude-haiku-4-5-20251001');
+ assert.equal(haiku.lifecycle.status,'active');assert.equal(haiku.lifecycle.earliestRetirement,'2026-10-15');
+ assert.equal(partner(haiku,'Google Cloud (Google managed)').earliestRetirement,'2026-12-07');
+ for(const model of [sonnet,opus,haiku]){assert.match(model.lifecycle.source,/^https:\/\//);for(const entry of model.lifecycle.partners??[])assert.match(entry.source,/^https:\/\//,model.id);}
 });

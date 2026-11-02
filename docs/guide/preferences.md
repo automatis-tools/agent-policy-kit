@@ -18,7 +18,7 @@ Preferences apply only when the main agent decides to delegate. They do not turn
 1. Create a file with the Standard preset of the release:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy init --policy ./preferences.json
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy init --policy ./preferences.json
    ```
 
 2. Edit the file. Use the rules below.
@@ -96,7 +96,7 @@ This example configures three roles in Claude Code and Antigravity. The Claude R
 APK refuses preferences that break one of these rules:
 
 - `selectedRoles`, if present, is not empty, has no duplicates and contains only `worker`, `reviewer`, `explorer`, `tester`, `writer` and `routine`.
-- The effort is `null` or a native level of the assistant. Gemini and Grok accept only `null`. The [model catalog reference](../reference/model-catalog.md) lists the levels of each assistant.
+- The effort is `null` or a native level of the assistant. Gemini accepts only `null`. Grok accepts the levels that Grok Build reads from an agent file, limited by the catalog for a known model: Grok 4.7 accepts `low` to `xhigh`, and the other Grok models only `null`. The [model catalog reference](../reference/model-catalog.md) lists the levels of each assistant.
 - If the model is in the release catalog, the effort is a level of that model. A model that is not in the catalog can use any native level of the assistant. The assistant must still support it.
 - A Gemini model is a native tier: `pro`, `flash`, `flash_lite` or `inherit`.
 - A Kimi model is not `primary`.
@@ -112,7 +112,7 @@ Some conditions can only be checked against the native files, for example missin
 APK has no separate validation command. A preview checks the file and writes nothing:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --policy ./preferences.json
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup --policy ./preferences.json
 ```
 
 If the file is not valid, the command fails with `INVALID_POLICY`. The file must be a regular file of at most 64 KiB, not a symbolic link.
@@ -126,13 +126,13 @@ Use one of these methods.
 1. Preview the setup:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --policy ./preferences.json
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup --policy ./preferences.json
    ```
 
 2. Apply it:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --policy ./preferences.json --apply
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup --policy ./preferences.json --apply
    ```
 
 `--policy` is conservative. If APK already has a setup with other values, it stops with `INSTALLATION_CONFLICT` or `POLICY_CONFLICT`.
@@ -150,7 +150,7 @@ To replace saved values with the values of a file, send the file as `--config`:
 2. Preview the setup with the encoded value:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --config ENCODED_VALUE
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup --config ENCODED_VALUE
    ```
 
 3. Run the same command with `--apply`.

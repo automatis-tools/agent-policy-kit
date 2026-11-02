@@ -542,3 +542,10 @@ test('Claude unnamed subagents get the Coder effort capped at high and uninstall
  ops[2].after='max';await fs.writeFile(receipt,JSON.stringify(record));await assert.rejects(uninstall({...own,apply:true}),{code:'INVALID_RECEIPT'});
  ops[2].after='high';await fs.writeFile(receipt,JSON.stringify(record));await uninstall({...own,apply:true});assert.deepEqual(JSON.parse(await fs.readFile(target(own))),original);
 });
+test('the shipped Standard preset gives unnamed Claude subagents Sonnet 5.5 at high (#29)',async t=>{
+ const f=await fixture(t,'claude');await fs.copyFile(new URL('../policies/balanced.json',import.meta.url),f.policyPath);
+ await applyInstall(await planInstall(f));
+ const env=JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'))).env;
+ assert.equal(env.CLAUDE_CODE_SUBAGENT_MODEL,'claude-sonnet-5-5');assert.equal(env.CLAUDE_CODE_SUBAGENT_EFFORT,'high');
+ const worker=await fs.readFile(path.join(f.home,'.claude/agents/apk-worker.md'),'utf8');assert.match(worker,/^model: "claude-sonnet-5-5"$/m);assert.match(worker,/^effort: high$/m);
+});

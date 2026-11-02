@@ -11,7 +11,9 @@ const NOTES={
  'kimi-model-pool-routing-guidance':'Kimi: the parent selects the model alias for each role.',
  'gemini-concurrency-guidance-only':'Gemini: the concurrency limit is guidance.',
  'gemini-per-role-effort-unsupported':'Gemini: native tiers do not support per-role effort.',
- 'grok-per-role-effort-unsupported':'Grok: native agent settings do not support per-role effort.',
+ 'grok-effort-model-dependent':'Grok: a role effort applies only when its model supports effort; a role without one uses its model default.',
+ // Receipts written by 0.4.0 still carry this code; it is shown with the corrected text.
+ 'grok-per-role-effort-unsupported':'Grok: a role effort applies only when its model supports effort; a role without one uses its model default.',
  'grok-native-precedence-limits':'Project and explicit client settings can override these defaults.',
  'kimi-catalog-alias-resolved':'Kimi: an existing matching model alias was selected.',
 };

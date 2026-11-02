@@ -74,7 +74,7 @@ APK writes settings through native features. It does not run during agent work a
 | Claude | Native setting. It applies to ordinary Agent-tool spawns, with documented exceptions. | Role file | Role file | Session, project and managed settings, environment overrides and some spawn paths can override user settings. |
 | Kimi | Guidance only. No native cap is set. | Guidance only. The parent selects the pool alias when it spawns. | Per alias, not per role | Native Kimi rules |
 | Gemini | Guidance only. There is no universal native cap. | Native tier per role | None | Native Antigravity rules |
-| Grok | Native setting | `config.toml` per role | None. Subagents use the main session effort. | Project settings, explicit spawn settings and higher-priority instructions follow Grok Build rules. |
+| Grok | Native setting | `config.toml` per role | Role file. It applies only when the model supports effort. A role without an effort runs at the default effort of its model. | Project settings, explicit spawn settings, Grok roles with the same name and higher-priority instructions follow Grok Build rules. |
 
 Each assistant adds warning codes to the setup result. The codes tell the person or agent which limits apply:
 
@@ -84,7 +84,7 @@ Each assistant adds warning codes to the setup result. The codes tell the person
 | Claude | `claude-native-precedence-limits` |
 | Kimi | `kimi-concurrency-guidance-only`, `kimi-model-pool-routing-guidance` |
 | Gemini | `gemini-concurrency-guidance-only`, `gemini-per-role-effort-unsupported` |
-| Grok | `grok-per-role-effort-unsupported`, `grok-native-precedence-limits` |
+| Grok | `grok-effort-model-dependent`, `grok-native-precedence-limits`. Installs made by 0.4.0 keep the older code `grok-per-role-effort-unsupported` in their receipt; setup shows it with the same corrected note. |
 
 Other limits apply to all assistants:
 
@@ -111,6 +111,24 @@ These rules apply to all assistants except Gemini:
 - If `env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is `1`, setup returns `claude-force-model-conflict`. That setting forces one model for all subagents, so the role models cannot apply. Change the native setting first.
 - Claude Code 2.1.316 or later reads `CLAUDE_CODE_SUBAGENT_EFFORT`. Earlier versions ignore it.
 
+#### Claude model aliases on other providers
+
+APK writes a Claude alias such as `sonnet` or `haiku` as it is. Claude Code resolves the alias for each provider. The presets use versioned IDs, not aliases. A role that you set to an alias in Custom can resolve to an older model outside the Anthropic API. On 2026-11-02, the Claude Code documentation gave these resolutions:
+
+| Provider | `sonnet` | `haiku` |
+|---|---|---|
+| Anthropic API | Sonnet 5.5 | Haiku 5.5 |
+| Claude Platform on AWS | Sonnet 4.6 | Haiku 4.5 |
+| Amazon Bedrock, Google Cloud's Agent Platform | Sonnet 4.5 | Haiku 4.5 |
+| Microsoft Foundry | Sonnet 4.5 | Haiku 4.5 |
+
+- On Microsoft Foundry, the `default` model setting is also Sonnet 4.5.
+- Sonnet 4.5 is deprecated. On Bedrock and Agent Platform it stays available until the partner's own date: Bedrock lists it as Legacy with end of life on 2027-04-08, and Google announces no date. See [Model catalog](model-catalog.md#lifecycle).
+- Haiku 4.5 is active (legacy) and has no deprecation notice.
+- **Foundry risk after 2026-11-30:** Foundry follows the Claude API lifecycle, so Sonnet 4.5 retires there on 2026-11-30. Unless Claude Code changes its Foundry defaults, `sonnet` and `default` then name a retired model. Bedrock and Agent Platform show a notice and fall back to an earlier version of an unavailable alias default. Foundry has no such startup check, so Foundry users see errors instead.
+- On Foundry, pin a newer Sonnet before 2026-11-30: set `ANTHROPIC_DEFAULT_SONNET_MODEL` to a Sonnet 5.x or Sonnet 4.6 deployment, or choose a full model ID for each role and for the main model.
+- Claude Code warns when a requested model has a scheduled retirement date. The check also covers a `model` in subagent frontmatter, so it covers APK role files.
+
 ### Kimi (Kimi Code)
 
 Kimi needs provisioned model entries. APK never creates aliases, providers or credentials.
@@ -131,6 +149,17 @@ Kimi sets effort for each alias, not for each role. The effort rules and their r
 
 - Existing `[subagents]` or `[subagents.models]` values that are not tables, or a `max_concurrent` that is not a positive whole number, stop setup with `UNSUPPORTED_CONFIG`.
 - Grok Build reads `~/.claude/CLAUDE.md` by default. If Claude is also configured, Grok Build can therefore also read the Claude instruction block. APK does not change that behavior.
+
+#### Grok role effort
+
+Issue #27 tested whether a named agent such as `apk-reviewer` can have its own effort. It can. The result comes from the Grok Build source and from a check with Grok Build 1.0.70:
+
+- APK writes a role effort as `effort: <level>` in the frontmatter of `~/.grok/agents/apk-<role>.md`. A role with the native default gets no `effort` line.
+- Grok Build 1.0.70 accepts `low`, `medium`, `high`, `xhigh` and `max` in this field. For any other value, Grok Build drops the whole agent without a warning. `grok inspect --json` with an isolated `GROK_HOME` confirmed both cases. APK writes only the levels that the [model catalog](model-catalog.md#grok-grok-build) lists for a known model.
+- Grok Build applies the effort only when the model supports effort. Grok 4.7 lists `low`, `medium`, `high` and `xhigh`, with `high` as its default. Grok Build 0.1 has no effort setting, so Grok Build ignores an effort for it.
+- A role without an effort runs at the default effort of its model, not at the main session effort. The reason: APK pins the model of each role in `[subagents.models]`, and Grok Build gives a pinned model the default effort from its model list. For Grok 4.7 the default is `high`. Exceptions: the `--effort` option of Grok Build applies to all models, and `[models].default_reasoning_effort` applies to the default model.
+- Grok Build uses this order: a spawn override from the harness, then a Grok role with the same name as the agent (`[subagents.roles.apk-<role>]` or `~/.grok/roles/apk-<role>.toml`), then the agent frontmatter, then the default of the model. The parent model cannot select an effort when it spawns a subagent. APK writes no Grok roles.
+- Not checked: a live model task. Grok Build has no command that shows the resolved subagent effort without a model run. The source is a public sync from 2026-09-29, and the error and log text of these code paths occurs in the 1.0.70 program.
 
 ## Desktop apps
 
@@ -159,7 +188,7 @@ These desktop features are not configured:
 ## Sources
 
 - [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- [Claude Code subagents](https://code.claude.com/docs/en/sub-agents)
+- [Claude Code subagents](https://code.claude.com/docs/en/sub-agents), [Claude Code model configuration](https://code.claude.com/docs/en/model-config) and [Claude in Microsoft Foundry](https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry)
 - [Kimi configuration files](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/configuration/config-files.md) and [Kimi agent definitions](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/agents.md)
 - [Antigravity subagents](https://antigravity.google/docs/subagents?tab=cli)
 - [Grok Build subagents](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md), observed with Grok Build 1.0.70 and an isolated `GROK_HOME`

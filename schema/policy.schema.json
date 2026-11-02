@@ -395,7 +395,14 @@
           "$ref": "#/$defs/identifier"
         },
         "effort": {
-          "type": "null"
+          "enum": [
+            null,
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
         }
       }
     },

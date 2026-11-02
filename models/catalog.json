@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-11-01",
+  "reviewedAt": "2026-11-02",
   "scope": "Documented/native coding-tool selectors at this release; account access and custom deployment IDs vary.",
   "clients": {
     "chatgpt": {
@@ -515,20 +515,44 @@
           "lifecycle": {
             "status": "active",
             "earliestRetirement": "2026-11-24",
+            "scope": "Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Microsoft Foundry",
+            "note": "Legacy model with no deprecation notice. The date is a floor, not a scheduled retirement; Anthropic gives at least 60 days' notice.",
+            "partners": [
+              {
+                "platform": "Google Cloud (Google managed)",
+                "earliestRetirement": "2026-11-24",
+                "source": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/deprecations/partner-models"
+              }
+            ],
             "source": "https://platform.claude.com/docs/en/about-claude/model-deprecations"
           }
         },
         {
           "id": "claude-sonnet-4-5-20250929",
-          "label": "Sonnet 4.5 (deprecated)",
+          "label": "Sonnet 4.5 (retires 2026-11-30)",
           "efforts": [],
           "defaultEffort": null,
           "source": "https://code.claude.com/docs/en/model-config",
           "kind": "model",
           "lifecycle": {
             "status": "deprecated",
+            "deprecationDate": "2026-09-30",
             "retirementDate": "2026-11-30",
-            "scope": "Anthropic-operated platforms; partner lifecycles differ",
+            "replacement": "claude-sonnet-5-5",
+            "scope": "Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Microsoft Foundry",
+            "partners": [
+              {
+                "platform": "Amazon Bedrock",
+                "status": "legacy",
+                "endOfLife": "2027-04-08",
+                "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html"
+              },
+              {
+                "platform": "Google Cloud (Google managed)",
+                "note": "No retirement date announced. The earliest retirement date, 2026-09-29, passed.",
+                "source": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/claude/sonnet-4-5"
+              }
+            ],
             "source": "https://platform.claude.com/docs/en/about-claude/model-deprecations"
           }
         },
@@ -542,6 +566,15 @@
           "lifecycle": {
             "status": "active",
             "earliestRetirement": "2026-10-15",
+            "scope": "Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Microsoft Foundry",
+            "note": "Legacy model with no deprecation notice. The earliest retirement date passed without an announcement.",
+            "partners": [
+              {
+                "platform": "Google Cloud (Google managed)",
+                "earliestRetirement": "2026-12-07",
+                "source": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/deprecations/partner-models"
+              }
+            ],
             "source": "https://platform.claude.com/docs/en/about-claude/model-deprecations"
           }
         },
@@ -721,14 +754,25 @@
     },
     "grok": {
       "label": "Grok",
-      "efforts": [],
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
       "observedClientVersion": "1.0.70",
       "models": [
         {
           "id": "grok-4.7",
           "label": "Grok 4.7",
-          "efforts": [],
-          "defaultEffort": null,
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
           "source": "https://docs.x.ai/developers/models",
           "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
           "kind": "model",
@@ -768,7 +812,7 @@
           "kind": "model"
         }
       ],
-      "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. Grok 4.7 supports low/medium/high/xhigh reasoning effort and Grok Build resolves subagent effort from a spawn override, role default, persona default and then the parent session. The [subagents.models] entries that APK writes carry only a model, so APK leaves effort to the main session. [subagents] max_concurrent is a native cap."
+      "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. APK writes a role effort as effort in the agent frontmatter (agents/apk-<role>.md); Grok Build 1.0.70 accepts low/medium/high/xhigh/max there and drops the whole agent for any other value. The effort applies only when the model supports effort: Grok 4.7 lists low/medium/high/xhigh with default high, Grok Build 0.1 has no configurable effort, and the effort levels of Grok 4.6 and 4.5 are not verified. A role without an effort runs at the default effort of its pinned model, not at the main session effort; a role named like the agent ([subagents.roles.<agent>] reasoning_effort) or a harness spawn override wins over the frontmatter. [subagents] max_concurrent is a native cap."
     }
   }
 }

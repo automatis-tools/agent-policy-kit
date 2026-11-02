@@ -40,6 +40,8 @@ Make sure that you have:
 10. Run the full command, with `--apply`.
 11. Open a new session in each configured assistant. A session that was open before setup can keep the old settings.
 
+You can undo the setup later. Step 4 of the page shows the `uninstall` command for its release. The removal restores the settings that you had before APK and keeps your unrelated edits. See [Remove APK settings after other changes](#remove-apk-settings-after-other-changes).
+
 For each control on the page, see [Configurator](configurator.md).
 
 ## Check the result
@@ -47,13 +49,13 @@ For each control on the page, see [Configurator](configurator.md).
 1. Run `doctor` to verify the configuration that APK owns:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy doctor
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy doctor
    ```
 
 2. Run `show` to read the subagent settings that your assistants use now, including settings that you made yourself:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy show
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy show
    ```
 
 A verified configuration does not prove that a provider runs a specific model. For all command options, see [Commands](commands.md).
@@ -89,7 +91,7 @@ Each assistant gets its own native role files and instructions. No central servi
 Run setup with the release input mode:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --release
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup --release
 ```
 
 This previews the Standard mode. Add `--preset fast` for Light or `--preset quality` for Top-tier. Add `--apply` to write the files. For details, see [Commands](commands.md#release-presets---release-and---preset).

@@ -25,6 +25,11 @@ Many programmers use Grok Build next to Codex, Claude Code, Kimi Code and Antigr
 - Explicit command: `--grok`, `--grok-max-concurrent`, `--avoid-grok`, following the existing per-tool pattern.
 - Ownership, drift refusal, receipts and uninstall follow the existing adapters; TOML edits are surgical, like Codex.
 
+## Later corrections
+
+- 0.5.0: Grok Build 1.0.70 does read a per-role effort from the `effort` field of an agent file, and a model pinned in `[subagents.models]` runs at that model's default effort, not at the main session's effort (#27). APK now writes `effort` when a role pins one. See the AI assistants reference.
+- Grok Build reads agent fields in camelCase, so it ignores `permission_mode: plan`. The Reviewer and Code explorer roles are therefore not read-only in Grok (#30).
+
 ## Out of scope
 
 Personas, roles TOML, plugin agents, project-level `.grok/` files, live model execution and any change to the main session's model or effort.
