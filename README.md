@@ -2,28 +2,35 @@
 
 Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-maximenko/).
 
-**Stop subagents from burning your plan limits.** APK gives each subagent role a model that fits the task and your plan in ChatGPT, Claude, Kimi, Gemini and Grok. One command, then it exits.
+**Stop subagents from burning your plan limits.** Agent Policy Kit (APK) gives each subagent role a model that fits the task and your plan in ChatGPT, Claude, Kimi, Gemini and Grok. You run one command, and then APK exits.
 
 ![One weekly limit: 5.3 h vs 25 h of work](docs/assets/subagent-limits.svg)
 
-<sub>My own Codex logs; tasks differed between the runs. [How it was measured](docs/limits-evidence.md).</sub>
+<sub>My own Codex logs; tasks differed between the runs. [How it was measured](docs/research/limits-evidence.md).</sub>
 
 ## Set it up
 
-1. Open the [configurator](https://agent-policy-kit.trymenow.io/). Pick roles, your AI assistants and a mode: **Light**, **Standard** or **Top-tier**, by how much of your plan subagents may use.
-2. Copy the command and run it. Remove the last `--apply` line to preview first; nothing is written without it.
+1. Open the [configurator](https://agent-policy-kit.trymenow.io/). Select roles, your AI assistants and a mode: **Light**, **Standard** or **Top-tier**. The mode sets how much of your plan subagents can use.
+2. Copy the command and run it. To preview first, delete the last line (`--apply`) and the ` \` at the end of the line before it. Without `--apply`, APK writes nothing.
 
 ![Configurator: models and effort for each subagent role, and the setup command](docs/assets/configurator.png)
 
+[Getting started](docs/guide/getting-started.md) shows the full path, from the configurator to removal.
+
 ## Good to know
 
-- Your main agent and its model stay unchanged. It still decides when to delegate.
-- APK configures the coding agent of each assistant: Codex in ChatGPT, Claude Code in Claude, Kimi Code, Antigravity for Gemini and Grok Build. Plain chats do not change, and Gemini CLI is not configured.
-- Desktop apps on macOS work too. APK finds the Codex that ChatGPT Desktop includes and the Claude Code in the Code tab of Claude Desktop. Both read the same settings as their CLIs. Claude Cowork reads its settings from your Claude account, so APK does not change Cowork.
-- No proxy and no background process. Delete the npm package after setup.
-- `npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove APK's settings and keep yours.
+- Your main agent and its model do not change. The main agent still decides when to delegate.
+- APK configures the coding agent of each assistant: Codex in ChatGPT, Claude Code in Claude, Kimi Code, Antigravity for Gemini, and Grok Build. Plain chats do not change. [Assistants](docs/reference/assistants.md) lists the details, also for the desktop apps.
+- APK adds no proxy and no background process. You can delete the npm package after setup.
+- `npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy show` reads your current settings. Use `uninstall --apply` instead of `show` to remove the APK settings and keep yours.
+- Apart from the npm download, APK makes no network requests. [Privacy](docs/guide/privacy.md) tells what it reads and writes.
 
-[Model catalog](docs/model-catalog.md) · [Release notes](CHANGELOG.md) · [AI operator guide](AGENT_INSTALL.md) · [Support](docs/compatibility.md) · [Privacy](docs/privacy.md)
+## Documentation
+
+- [Documentation index](docs/README.md)
+- [Presets](docs/reference/presets.md)
+- [Release notes](CHANGELOG.md)
+- [AI operator guide](AGENT_INSTALL.md)
 
 ## Related projects
 

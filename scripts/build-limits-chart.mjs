@@ -1,5 +1,5 @@
 // Builds the weekly-limit illustration used by the README and the configuration page.
-// The hours come from the author's Codex logs; docs/limits-evidence.md describes the method.
+// The hours come from the author's Codex logs; docs/research/limits-evidence.md describes the method.
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';

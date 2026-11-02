@@ -47,7 +47,8 @@ Configuration checks are not model-quality evaluations.
 - Claude: setup also writes `CLAUDE_CODE_SUBAGENT_EFFORT`, the effort for subagents that name none, from the Coder effort capped at high. Claude Code 2.1.316 added this setting; earlier versions ignore it. Before, those subagents kept the main session effort.
 - `agent-policy show` reports the stored Claude default subagent effort and a `CLAUDE_CODE_SUBAGENT_EFFORT` environment override.
 - The top models switch label shows each tool's model and effort.
-- The configurator shows a note when Gemini is selected: APK configures Antigravity, not Gemini CLI. The README and the compatibility documentation say the same.
+- The configurator shows a note when Gemini is selected: APK configures Antigravity, not Gemini CLI. The README and the AI assistants reference say the same.
+- The documentation is reorganized into independent documents by audience: `docs/guide/` for people who use APK, `docs/reference/` for facts about assistants, roles, presets, the catalog and ownership, `docs/research/` for the evidence behind presets, and `docs/maintainers/` for development, releases and the website. [docs/README.md](docs/README.md) is the index. Old `docs/*.md` paths are removed without redirects. The 2026-11-01 model review is documented in [docs/research/2026-11-01-model-review.md](docs/research/2026-11-01-model-review.md).
 
 ## 0.3.0 — 2026-11-01
 
@@ -138,9 +139,9 @@ Use a common approach to optional delegation across Codex, Claude Code, Kimi and
 
 ### What it configures
 
-Six focused roles cover implementation, read-only review, code discovery, test creation, documentation and prescribed execution. Each preset assigns a model and supported effort to every role; the [preset matrix](docs/model-catalog.md#how-the-presets-are-designed) explains the choices.
+Six focused roles cover implementation, read-only review, code discovery, test creation, documentation and prescribed execution. Each preset assigns a model and supported effort to every role; the [preset matrix](docs/reference/presets.md) explains the choices.
 
-These are starting preferences, not model-quality benchmarks. Native model formats and alias behavior were reviewed against the official sources linked in [support](docs/compatibility.md) and [model maintenance](docs/model-updates.md). Model availability must be checked before applying. Provider aliases and tiers may resolve differently over time.
+These are starting preferences, not model-quality benchmarks. Native model formats and alias behavior were reviewed against the official sources linked in [support](docs/reference/assistants.md) and [model maintenance](docs/maintainers/model-review.md). Model availability must be checked before applying. Provider aliases and tiers may resolve differently over time.
 
 ### Presets and model catalog
 
@@ -180,7 +181,7 @@ People who want consistent subagent preferences across their installed coding to
 npx --yes --ignore-scripts --package agent-policy-kit@0.1.0 agent-policy setup --release --apply
 ```
 
-Without --apply the same command previews the changes. The page-generated explicit tool arguments apply the visible choices using this release's native templates. See [release usage](docs/releases.md).
+Without --apply the same command previews the changes. The page-generated explicit tool arguments apply the visible choices using this release's native templates. See [release usage](docs/guide/updates-and-removal.md).
 
 ### Migration and limits
 

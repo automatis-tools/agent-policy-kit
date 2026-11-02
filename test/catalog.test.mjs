@@ -104,7 +104,7 @@ test('Grok presets use the fast coding model for light work and Grok 4.7 for str
 });
 
 test('docs preset tables match the preset data in every cell',()=>{
- const doc=fs.readFileSync(new URL('../docs/model-catalog.md',import.meta.url),'utf8').split('\n'),catalog=modelCatalog().clients;
+ const doc=fs.readFileSync(new URL('../docs/reference/presets.md',import.meta.url),'utf8').split('\n'),catalog=modelCatalog().clients;
  const roleIds={'Coder':'worker','Reviewer':'reviewer','Code explorer':'explorer','Test writer':'tester','Docs writer':'writer','Task runner':'routine'};
  const norm=value=>value.replace(/GPT-6(?:\.1)? /,'').replace('K3 · 256K','K3 256K').replace(/\s+/g,' ').trim();
  for(const preset of PRESETS){
