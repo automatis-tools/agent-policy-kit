@@ -14,7 +14,21 @@ A configuration check does not prove native loading. Native loading does not pro
 
 Each record names the platform and the date. Browser evidence, temporary homes, raw configuration fixtures and logs stay outside Git and npm.
 
-No record exists yet for 0.4.0.
+## 0.4.0
+
+macOS arm64, 2026-11-01.
+
+| Layer | Evidence |
+|---|---|
+| Full Node 26.5.1 suite | PASS: 371/371. The suite includes the real-tarball tests with source access denied, the Claude default subagent effort capped at high and its receipt ownership, top choices with a model and an effort in share links and link restore, and the host guard for `src/release.mjs` |
+| Hosted CI | PASS on main 8bf7681: macOS Node 22.13.0 and Ubuntu Node 24 suites and the site build ([run](https://github.com/automatis-tools/agent-policy-kit/actions/runs/41368583940)) |
+| Two synthetic releases | PASS: the actual 0.4.0 tarball and a synthetic next-version tarball. A to B to A, mixed applied versions, drift safety and restoration of the original user values |
+| Published 0.3.0 to 0.4.0 | PASS in isolated homes with the npm 0.3.0 package and the 0.4.0 tarball, Top-tier preset. ChatGPT, Gemini and Grok upgrade to 0.4.0 and move back to 0.3.0 in place. Claude upgrades in place; `doctor` reports release 0.4.0, source `release`, preset `quality`. The Claude move back to 0.3.0 reports `INVALID_RECEIPT` and changes nothing; after `uninstall --client claude --apply` with 0.4.0, setup with 0.3.0 succeeds. Kimi NOT CHECKED with a provisioned model pool: both versions return a prerequisite in an empty home |
+| Written values | PASS: after the upgrade, ChatGPT `apk-explorer` has `model_reasoning_effort = "medium"`; Claude `apk-worker` has Opus 5.5 at high, `apk-explorer` Opus 5.5 at medium, and `settings.json` has `CLAUDE_CODE_SUBAGENT_EFFORT` = `high` |
+| Browser | PASS in a local Chromium preview: the Top-tier mode with the top models switch off and on, its label with model and effort, and the Claude details with Opus 5.5 at XHigh for code, review and tests |
+| Native ChatGPT, Claude, Kimi, Gemini and Grok loading and provider execution | NOT CHECKED for 0.4.0. No live model tasks were used as configuration proof |
+| npm packaging | PASS: `npm pack --dry-run` and `npm publish --dry-run` list 50 files. No private evidence or configuration |
+| Model catalog | Reviewed on 2026-11-01; see the [model review](../research/2026-11-01-model-review.md). Configuration tests do not establish account access or model quality |
 
 ## 0.3.0
 
