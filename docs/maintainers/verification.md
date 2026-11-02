@@ -14,6 +14,21 @@ A configuration check does not prove native loading. Native loading does not pro
 
 Each record names the platform and the date. Browser evidence, temporary homes, raw configuration fixtures and logs stay outside Git and npm.
 
+## 0.5.1
+
+macOS arm64, 2026-11-01.
+
+| Layer | Evidence |
+|---|---|
+| Full Node 26.5.1 suite | PASS: 387/387. New tests cover the Grok read-only role files, 0.4.0 and 0.5.0 Grok installs that verify, update in place and uninstall, the `show` capability warning, and the assistant notes on the page |
+| Hosted CI | PASS on main 6691f94: macOS Node 22.13.0 and Ubuntu Node 24 suites and the site build ([run](https://github.com/automatis-tools/agent-policy-kit/actions/runs/41381777278)) |
+| Published 0.5.0 to 0.5.1 | PASS in isolated homes with the npm 0.5.0 package and the 0.5.1 tarball, Standard preset. ChatGPT, Claude, Gemini and Grok upgrade to 0.5.1 and move back to 0.5.0 in place. The Grok `apk-reviewer.md` has `capabilityMode: read-only` with 0.5.1 and `permission_mode: plan` again after the move back. Kimi NOT CHECKED with a provisioned model pool: both versions return a prerequisite in an empty home |
+| Grok read-only roles | PASS by source reading and a non-live `grok inspect --json` of Grok Build 1.0.70 with an isolated profile: `capabilityMode` is parsed (an invalid value drops the agent) and `read-only` is listed. A live model task with a read-only role is NOT CHECKED |
+| Browser | PASS in a local Chromium preview: the Kimi, Gemini and Grok notes in their details views, none for ChatGPT and the All view (#33) |
+| Native ChatGPT, Claude, Kimi, Gemini and Grok loading and provider execution | NOT CHECKED for 0.5.1. No live model tasks were used as configuration proof |
+| npm packaging | PASS: `npm pack --dry-run` lists 50 files. No private evidence or configuration |
+| Model catalog | Unchanged from 0.5.0 |
+
 ## 0.5.0
 
 macOS arm64, 2026-11-01.
