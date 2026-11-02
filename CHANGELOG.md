@@ -6,13 +6,34 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ### Why this release
 
+Three follow-ups from the 2026-11-01 model review needed released configuration changes. Primary Anthropic data showed that Sonnet 5.5 at medium is too weak for the Standard Coder (#29). Grok Build turned out to accept a reasoning effort per role, and APK described its Grok effort behavior wrongly (#27). Claude 4.5 models approach retirement, and the `sonnet` alias still points at Sonnet 4.5 on some providers (#28). The release also makes undo visible, so people can apply a setup without fear, and keeps the share link short until a setup is complete.
+
 ### Who should update
+
+- Anyone who uses the Standard preset with Claude.
+- Anyone who uses Grok Build and wants a different effort per role.
+- Everyone else can update for the clearer undo guidance and the corrected Grok and Claude information. Light and Top-tier values do not change.
 
 ### Migration and rollback
 
+Assistant IDs, preset ids, share-link format v2 and receipt format v4 are unchanged. Setup with 0.5.0 replaces a 0.4.0 installation in place, and setup with 0.4.0 moves back in place, for ChatGPT, Claude, Gemini and Grok. A Grok role effort written by 0.5.0 is removed when 0.4.0 writes its role files. Kimi was not checked with a provisioned model pool. The Claude boundary to 0.3.0 and earlier from 0.4.0 still applies to receipts from 0.5.0: see the [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries).
+
 ### Presets and model catalog
 
+- **Standard, Claude:** the Coder uses Sonnet 5.5 at high instead of medium (#29). Anthropic's per-effort data puts Sonnet 5.5 at medium 8.6 to 14.2 points below high on Terminal-Bench 4.0, FrontierCode and CursorBench, and Opus 5.5 at medium costs more per solved task on every measurement. Claude subagents without a named role in Standard also move from medium to high, so they use more of the plan. Reviewer and Test writer keep Sonnet 5.5 at high.
+- **Grok:** Grok 4.7 lists the native levels low, medium, high and xhigh, with high as its default. Grok 4.6, Grok 4.5 and Grok Build 0.1 offer no effort. Grok presets keep the native default, and there is still no Grok top choice (#27).
+- **Claude lifecycle:** Sonnet 4.5 is labelled "Sonnet 4.5 (retires 2026-11-30)" and records its deprecation date, its replacement and the partner schedules: Bedrock Legacy with end of life 2027-04-08, and no date on Google managed. Opus 4.5 and Haiku 4.5 stay active as legacy models without a deprecation notice (#28). The catalog review date is 2026-11-02.
+
+Configuration checks are not model-quality evaluations.
+
 ### What changed
+
+- Grok: each role can pin a reasoning effort. Setup writes `effort: <level>` in `~/.grok/agents/apk-<role>.md`; a role without an effort gets no line. `--grok` accepts `role=model:effort` and `role=model:native`; `role=model` still means the native default and produces the same files as before. The configurator offers effort buttons for Grok 4.7 and custom model IDs, share links keep a Grok effort, and `agent-policy show` reports the effort of each Grok agent.
+- Fixed: APK no longer says that Grok subagents use the main session effort. APK pins each role's model, so a role without an effort runs at that model's default (Grok 4.7: high). The setup warning `grok-per-role-effort-unsupported` is replaced by `grok-effort-model-dependent`.
+- The README and step 4 of the configurator show how to undo a setup: the uninstall command pinned to the release, with a copy button and a preview hint. Removal restores the settings you had before APK and keeps your unrelated edits.
+- The configurator puts a `#setup=` share link in the address only when steps 1–3 are complete. Opening the page, Reset form, or a change that leaves a step incomplete removes the link. Existing links, including links to unfinished forms, still open as before.
+- Docs: the AI assistants reference shows which 4.5 models the Claude `sonnet`, `haiku` and `default` aliases resolve to on Bedrock, Google Agent Platform, Microsoft Foundry and Claude Platform on AWS, and tells Foundry users to pin a newer Sonnet before 2026-11-30. The model review cites primary sources for the Opus 5.5 and Sonnet 5.5 equal-effort numbers and records the Standard Claude Coder decision.
+- Docs: Grok Build ignores the `permission_mode` field that APK writes for read-only roles, so the Grok Reviewer and Code explorer are not read-only yet (#30).
 
 ## 0.4.0 — 2026-11-01
 

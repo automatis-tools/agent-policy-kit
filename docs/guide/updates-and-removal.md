@@ -76,13 +76,13 @@ These boundaries are known:
 
 | Assistant | Change | Setup without removal | Remove with |
 |---|---|---|---|
-| Claude | From 0.4.0 to 0.3.0 or earlier | `INVALID_RECEIPT` | 0.4.0 |
+| Claude | From 0.4.0 or later to 0.3.0 or earlier | `INVALID_RECEIPT` | The installed release, 0.4.0 or later |
 | ChatGPT and Gemini | From 0.2.0 or earlier to 0.3.0 or later | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.2.0 |
 | ChatGPT and Gemini | From 0.3.0 or later to 0.2.0 or earlier | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.4.0 |
 
-**Claude, 0.4.0 to an older release.** A 0.4.0 Claude receipt owns `CLAUDE_CODE_SUBAGENT_EFFORT` when the effort of the default subagent role is pinned. Every preset pins it. Releases 0.3.0 and earlier do not know this setting, so they refuse the receipt. To move Claude back to 0.3.0:
+**Claude, 0.4.0 or later to 0.3.0 or earlier.** A Claude receipt from 0.4.0 or later owns `CLAUDE_CODE_SUBAGENT_EFFORT` when the effort of the default subagent role is pinned. Every preset pins it. Releases 0.3.0 and earlier do not know this setting, so they refuse the receipt. To move Claude back to 0.3.0:
 
-1. Remove the Claude settings with 0.4.0:
+1. Remove the Claude settings with the installed release (0.4.0 or later), for example:
 
    ```sh
    npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy uninstall --client claude --apply
@@ -143,7 +143,7 @@ Uninstall uses the receipts in the state directory. It needs no assistant execut
 You do not need the release that you used for setup. Any release that can read the receipt can remove it. There are two known exceptions:
 
 - Releases 0.3.0 and later do not read the ChatGPT and Gemini receipts of 0.2.0 and earlier. Remove these settings with the release that created them.
-- Releases 0.3.0 and earlier cannot read a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`. Remove these settings with 0.4.0.
+- Releases 0.3.0 and earlier cannot read a Claude receipt from 0.4.0 or later that owns `CLAUDE_CODE_SUBAGENT_EFFORT`. Remove these settings with 0.4.0 or a later release.
 
 See [Migration boundaries](#migration-boundaries) and the [ownership reference](../reference/ownership.md#receipt-formats).
 

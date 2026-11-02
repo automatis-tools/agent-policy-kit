@@ -65,7 +65,7 @@ Prompt: "Execute only the prescribed commands or clearly specified mechanical ed
 
 ## Permissions
 
-The Reviewer and the Code explorer are read-only roles. Their prompts tell them not to edit files. Three assistants also restrict them natively:
+The Reviewer and the Code explorer are read-only roles. Their prompts tell them not to edit files. Two assistants also restrict them natively:
 
 | Assistant | Native read-only setting for Reviewer and Code explorer |
 |---|---|
@@ -73,7 +73,7 @@ The Reviewer and the Code explorer are read-only roles. Their prompts tell them 
 | Claude | `tools: Read, Grep, Glob` |
 | Kimi | `tools: [Read, Grep, Glob]` |
 | Gemini | None. The prompt is the only restriction. |
-| Grok | `permission_mode: plan` |
+| Grok | None in effect. APK writes `permission_mode: plan`, but Grok Build 1.0.70 reads agent fields in camelCase and ignores this field. The prompt is the only restriction until #30 is fixed. |
 
 The other four roles get no tool restriction. They use the permissions of the native client.
 
