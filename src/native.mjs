@@ -25,10 +25,12 @@ export function nativeRoles(client,config,selectedRoles=ROLE_IDS) {
     if(client==='chatgpt') return Object.entries({name,description,model:selected.model,...(selected.effort===null?{}:{model_reasoning_effort:selected.effort}),developer_instructions:prompt}).map(([k,v])=>`${k} = ${JSON.stringify(v)}\n`).join('');
     const fields=[`name: ${name}`,`description: ${JSON.stringify(description)}`];
     // Grok selects the model from config.toml [subagents.models] and reads a role effort from the agent frontmatter;
-    // a null effort writes nothing, so the role keeps its model's native default. Read-only roles use the bundled plan permission mode.
+    // a null effort writes nothing, so the role keeps its model's native default. Grok Build reads camelCase agent fields:
+    // capabilityMode read-only removes the edit, write, delete and shell tools when a subagent of this type starts.
+    // Releases 0.4.0 and 0.5.0 wrote `permission_mode: plan`, which Grok Build ignores; `permissionMode: plan` has no effect at spawn.
     if(client==='grok') {
       if(selected.effort!==null)fields.push(`effort: ${selected.effort}`);
-      if(['reviewer','explorer'].includes(role))fields.push('permission_mode: plan');
+      if(['reviewer','explorer'].includes(role))fields.push('capabilityMode: read-only');
     } else if(client==='kimi') {
       if(['reviewer','explorer'].includes(role))fields.push('tools: [Read, Grep, Glob]');
     } else {

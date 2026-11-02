@@ -43,7 +43,7 @@ async function readFile(file,budget){
  finally{await handle?.close();}
 }
 function warning(client,error){
- const allowed=['UNSAFE_FILE','INSPECTION_LIMIT','CONFIG_CHANGED_DURING_READ','UNSUPPORTED_NATIVE_SETTING','UNSUPPORTED_ROLE_FORMAT','UNSUPPORTED_ROLE_EFFORT','INVALID_TOML','INVALID_JSON','EACCES','EPERM','NATIVE_CAP_CONFLICT','EXTERNAL_ROLE_REFERENCES_NOT_READ'];
+ const allowed=['UNSAFE_FILE','INSPECTION_LIMIT','CONFIG_CHANGED_DURING_READ','UNSUPPORTED_NATIVE_SETTING','UNSUPPORTED_ROLE_FORMAT','UNSUPPORTED_ROLE_EFFORT','UNSUPPORTED_ROLE_CAPABILITY','INVALID_TOML','INVALID_JSON','EACCES','EPERM','NATIVE_CAP_CONFLICT','EXTERNAL_ROLE_REFERENCES_NOT_READ'];
  const code=allowed.includes(error?.code)?error.code:'NATIVE_READ_FAILED';
  if(!client.warnings.includes(code))client.warnings.push(code);
  client.status='attention';
@@ -56,7 +56,9 @@ function scalar(value){
  if(!match)throw failure('UNSUPPORTED_ROLE_FORMAT');
  return match[1];
 }
-function frontmatter(text){
+// Values that Grok Build 1.0.70 accepts for capabilityMode (serde kebab-case names and aliases of SubagentCapabilityMode).
+const GROK_CAPABILITY_MODES=['read-only','readonly','readOnly','read_only','ReadOnly','read-write','readwrite','readWrite','read_write','ReadWrite','execute','Execute','EXECUTE','all','All','ALL'];
+function frontmatter(text,id){
  const match=text.replace(/^\uFEFF/,'').match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
  if(!match)throw failure('UNSUPPORTED_ROLE_FORMAT');
  const fields={};
@@ -64,13 +66,17 @@ function frontmatter(text){
   // YAML merges, quoted keys and flow mappings can supply model fields that
   // this deliberately small scalar reader cannot resolve safely.
   if(/^(?:<<\s*:|["'{\[])/.test(line))throw failure('UNSUPPORTED_ROLE_FORMAT');
-  const field=line.match(/^(name|model|effort|subagent)[ \t]*:\s*(.*)$/);
+  const field=line.match(id==='grok'?/^(name|model|effort|subagent|capabilityMode)[ \t]*:\s*(.*)$/:/^(name|model|effort|subagent)[ \t]*:\s*(.*)$/);
   if(!field)continue;
   if(Object.hasOwn(fields,field[1]))throw failure('UNSUPPORTED_ROLE_FORMAT');
   if(field[1]==='subagent'){
    const boolean=field[2].trim().match(/^(true|false)(?:\s+#.*)?$/);
    if(!boolean)throw failure('UNSUPPORTED_ROLE_FORMAT');
    fields.subagent=boolean[1]==='true';
+  }else if(field[1]==='capabilityMode'){
+   // Keep a value Grok Build would reject without echoing it; it only selects a warning.
+   const raw=field[2].trim().replace(/\s+#.*$/,''),quoted=raw.match(/^(["'])(.*)\1$/),value=quoted?quoted[2]:raw;
+   fields.capabilityMode=GROK_CAPABILITY_MODES.includes(value)?value:null;
   }else fields[field[1]]=scalar(field[2]);
  }
  if(!fields.name)throw failure('UNSUPPORTED_ROLE_FORMAT');
@@ -139,7 +145,7 @@ async function rolesIn(directory,client,id,budget,models,depth=0){
    }
    if(!entry.name.endsWith(id==='chatgpt'?'.toml':'.md'))continue;
    const body=await readFile(file,budget);if(body===null)throw failure('CONFIG_CHANGED_DURING_READ');
-   const fields=id==='chatgpt'?parseToml(body):frontmatter(body);
+   const fields=id==='chatgpt'?parseToml(body):frontmatter(body,id);
    const role={name:safeString(fields.name,namePattern),model:optionalString(fields.model),effort:optionalString(id==='chatgpt'?fields.model_reasoning_effort:fields.effort)};
    if(id==='kimi'){
     // APK's Markdown role files contain explicit routing guidance, not a
@@ -155,6 +161,8 @@ async function rolesIn(directory,client,id,budget,models,depth=0){
     role.model=models.get(role.name)??role.model;
     // Grok Build drops an agent whose frontmatter effort is not a level it accepts.
     if(role.effort!==null&&!NATIVE_EFFORTS.grok.includes(role.effort))warning(client,failure('UNSUPPORTED_ROLE_EFFORT'));
+    // It also drops an agent whose capabilityMode is not a mode it accepts. The snake_case key is not a Grok field.
+    if(fields.capabilityMode===null)warning(client,failure('UNSUPPORTED_ROLE_CAPABILITY'));
    }
    if(id==='gemini'){
     if(role.model!==null&&!['pro','flash','flash_lite','inherit'].includes(role.model))throw failure('UNSUPPORTED_NATIVE_SETTING');

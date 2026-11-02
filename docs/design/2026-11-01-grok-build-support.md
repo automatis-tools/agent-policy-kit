@@ -28,7 +28,8 @@ Many programmers use Grok Build next to Codex, Claude Code, Kimi Code and Antigr
 ## Later corrections
 
 - 0.5.0: Grok Build 1.0.70 does read a per-role effort from the `effort` field of an agent file, and a model pinned in `[subagents.models]` runs at that model's default effort, not at the main session's effort (#27). APK now writes `effort` when a role pins one. See the AI assistants reference.
-- Grok Build reads agent fields in camelCase, so it ignores `permission_mode: plan`. The Reviewer and Code explorer roles are therefore not read-only in Grok (#30).
+- 0.5.0: Grok Build reads agent fields in camelCase, so it ignores `permission_mode: plan`. The Reviewer and Code explorer roles are therefore not read-only in Grok (#30).
+- 0.5.1: APK writes `capabilityMode: read-only` for the Reviewer and the Code explorer instead of `permission_mode: plan` (#30). Grok Build applies this field when it starts the subagent and removes the built-in tools that edit, write, delete or move files and the shell tool. `permissionMode: plan` has no effect at spawn, so APK does not write it. The bundled read-only agents mentioned above use the same ignored snake_case key. See the AI assistants reference.
 
 ## Out of scope
 
