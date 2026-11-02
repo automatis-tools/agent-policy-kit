@@ -1,6 +1,6 @@
 # Presets
 
-This document lists the three presets of release 0.4.0: Light, Standard and Top-tier. It gives the model and effort that each preset selects for each role and AI assistant, the top models switch, the parallel limits and the design principles. It is for everyone who chooses a preset or wants to know why a preset has its values.
+This document lists the three presets of release 0.5.0: Light, Standard and Top-tier. It gives the model and effort that each preset selects for each role and AI assistant, the top models switch, the parallel limits and the design principles. It is for everyone who chooses a preset or wants to know why a preset has its values.
 
 A preset is a named set of preferences that the release supplies. The data is in `policies/fast.json` (Light), `policies/balanced.json` (Standard) and `policies/quality.json` (Top-tier). The CLI uses the ids `fast`, `balanced` and `quality`. The page and this document use the labels. For the roles, see [Roles](roles.md). For model IDs, efforts and access requirements, see [Model catalog](model-catalog.md). The detailed evidence is in the [model review of 2026-11-01](../research/2026-11-01-model-review.md).
 

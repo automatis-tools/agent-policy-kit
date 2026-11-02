@@ -1,6 +1,6 @@
 # Model catalog
 
-This document describes `models/catalog.json`, the model catalog of release 0.4.0. It explains the fields, lists the models and effort levels for each AI assistant, and records defaults, lifecycle dates and access requirements. It is for everyone who chooses a model in Custom or wants to know which values a release accepts.
+This document describes `models/catalog.json`, the model catalog of release 0.5.0. It explains the fields, lists the models and effort levels for each AI assistant, and records defaults, lifecycle dates and access requirements. It is for everyone who chooses a model in Custom or wants to know which values a release accepts.
 
 ## What the catalog is
 
