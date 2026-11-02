@@ -14,8 +14,10 @@ Open an issue with a minimal reproduction in a temporary profile. Never attach c
 
 A vulnerability is a problem that can expose private data or corrupt settings. Do not describe it in a public issue.
 
-GitHub private vulnerability reporting is not enabled for this repository.
+Report it privately through GitHub:
 
-1. Open an [issue](https://github.com/automatis-tools/agent-policy-kit/issues) that asks for a private contact. Do not include details of the problem in that issue.
-2. Wait for the maintainer to give you a private channel.
-3. Send the details only through the private channel.
+1. Open the [new security advisory form](https://github.com/automatis-tools/agent-policy-kit/security/advisories/new). You can also open the repository's **Security** tab and select **Report a vulnerability**.
+2. Describe the problem, the affected version and the steps to reproduce it in a temporary profile.
+3. Do not attach credentials, account configurations, backups or private state.
+
+Only you and the maintainers can see the report until the maintainers publish an advisory.
