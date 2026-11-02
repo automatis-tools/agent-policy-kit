@@ -9,10 +9,10 @@ APK needs Node.js 22.13 or later in the 22 line, or Node.js 24 or later.
 Run a pinned release with `npx`:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy <command> [options]
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy <command> [options]
 ```
 
-- `--package agent-policy-kit@0.5.1` selects the configuration release. The package version is the release version.
+- `--package agent-policy-kit@0.5.2` selects the configuration release. The package version is the release version.
 - `--ignore-scripts` prevents npm install scripts.
 - `--yes` lets npx download the package without a prompt.
 

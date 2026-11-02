@@ -20,7 +20,7 @@ Obey these rules in every step:
 In the steps below, `agent-policy` means the pinned command for the requested release:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy
 ```
 
 ## Step 1: Select the release
@@ -30,7 +30,7 @@ The package version is the configuration release. Use the version that the owner
 1. Read the release notes:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy release --json
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy release --json
    ```
 
 2. Read the entry for this version in [CHANGELOG.md](CHANGELOG.md): what changed, why, and the migration limits.
@@ -41,7 +41,7 @@ The package version is the configuration release. Use the version that the owner
 For several commands, you can install the package into a temporary or user-owned prefix:
 
 ```sh
-npm install --prefix PREFIX agent-policy-kit@0.5.1 --ignore-scripts --no-audit --no-fund
+npm install --prefix PREFIX agent-policy-kit@0.5.2 --ignore-scripts --no-audit --no-fund
 ```
 
 Then run `PREFIX/node_modules/.bin/agent-policy`. If the owner gives you a verified local `.tgz` file of a version that is not on npm, install that file in the same way. You need no sudo, no fixed prefix and no shell profile change.
@@ -51,7 +51,7 @@ More: [updates and removal](docs/guide/updates-and-removal.md), [presets](docs/r
 ## Step 2: Detect
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy detect --json
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy detect --json
 ```
 
 1. Read the status of each assistant: `detected`, `not_found`, `invalid` or `timeout`.
@@ -112,7 +112,7 @@ APK updates owned files in a transaction for each client, without a removal gap.
 1. Run `doctor`:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy doctor --json
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy doctor --json
    ```
 
    Each client reports its saved release, source and preset from its receipt, independent of the version that runs `doctor`. `verified` means that the owned files match the receipt.
@@ -120,7 +120,7 @@ APK updates owned files in a transaction for each client, without a removal gap.
 2. Run `show` to read the current user-level subagent settings, including manual edits:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy show --json
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy show --json
    ```
 
    `show` does not resolve project, managed or session settings. It exits with code 3 when a client needs attention, and it keeps the results of the other clients.
@@ -134,7 +134,7 @@ A verified configuration does not prove that a model runs. After verification, y
 1. Plan the removal:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy uninstall --json
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --json
    ```
 
 2. Review the plan.
