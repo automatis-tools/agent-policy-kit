@@ -672,3 +672,37 @@ test('selecting Gemini explains that only Antigravity is configured, not Gemini 
  assert.match(template,/<p class="notice tools-notice" id="tools-notice" role="note" hidden><\/p>/);
  assert.match(script,/\$\('tools-notice'\)/);
 });
+
+const ASSISTANT_NOTES={
+ kimi:'Kimi sets one effort for each model alias. Roles that use the same alias share it, so an effort change applies to all of them.',
+ gemini:'Gemini uses its native tiers only. Effort cannot be set for each role.',
+ grok:'Grok applies an effort only when the model supports it: Grok 4.7 offers low to xhigh; Grok 4.6, Grok 4.5 and Grok Build 0.1 offer none. A role without an effort runs at the default effort of its model.'
+};
+
+test('the individual details view shows the note of Kimi, Gemini and Grok with its exact text',()=>{
+ for(const client of ['chatgpt','claude','kimi','gemini','grok']){
+  const state=api.applyPreset({...api.initialState(preferences,'balanced'),active:client},{id:'balanced',preferences});
+  assert.equal(api.assistantNote(state),ASSISTANT_NOTES[client]??'',client);
+ }
+ for(const text of Object.values(ASSISTANT_NOTES))assert.ok(text.split(/(?<=\.)\s/).length<=2&&text.length<=220,text);
+});
+
+test('assistant notes appear only in the individual view after a mode is chosen, not in All',()=>{
+ const state=api.initialState(preferences,'balanced');
+ assert.equal(state.active,'all');assert.equal(api.assistantNote(state),'','All shows no assistant note');
+ assert.equal(api.assistantNote({...state,active:null}),'');
+ const empty=api.initialState(preferences,'balanced',{empty:true});empty.selected=['kimi'];empty.active='kimi';
+ assert.equal(api.assistantNote(empty),'','no note before a mode is chosen, because the model table is hidden');
+ assert.equal(api.assistantNote(api.applyPreset(empty,{id:'balanced',preferences})),ASSISTANT_NOTES.kimi);
+});
+
+test('the assistant note sits with the model table and describes its model and effort controls',()=>{
+ assert.match(template,/<h3>Models &amp; effort<\/h3><p class="notice assistant-note" id="assistant-note" role="note" hidden><\/p><div id="editor"><\/div>/);
+ const renderEditor=template.slice(template.indexOf(' function renderEditor('),template.indexOf(' function freshForm('));
+ assert.match(renderEditor,/note\.hidden=true;note\.textContent='';/,'the note is cleared before the early return of the All view');
+ assert.match(renderEditor,/const noteText=A\.assistantNote\(state\),/);
+ assert.match(renderEditor,/'data-model-role':role\.id,\.\.\.described/,'model select is described by the note');
+ assert.match(renderEditor,/'aria-label':`\$\{role\.name\} effort`,\.\.\.described/,'effort group is described by the note');
+ assert.match(renderEditor,/described=noteText\?\{'aria-describedby':'assistant-note'\}:\{\}/);
+ assert.doesNotMatch(template,/const NOTES\s*=/,'no unused note constant');
+});
