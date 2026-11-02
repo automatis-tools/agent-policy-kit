@@ -111,6 +111,24 @@ These rules apply to all assistants except Gemini:
 - If `env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is `1`, setup returns `claude-force-model-conflict`. That setting forces one model for all subagents, so the role models cannot apply. Change the native setting first.
 - Claude Code 2.1.316 or later reads `CLAUDE_CODE_SUBAGENT_EFFORT`. Earlier versions ignore it.
 
+#### Claude model aliases on other providers
+
+APK writes a Claude alias such as `sonnet` or `haiku` as it is. Claude Code resolves the alias for each provider. The presets use versioned IDs, not aliases. A role that you set to an alias in Custom can resolve to an older model outside the Anthropic API. On 2026-11-02, the Claude Code documentation gave these resolutions:
+
+| Provider | `sonnet` | `haiku` |
+|---|---|---|
+| Anthropic API | Sonnet 5.5 | Haiku 5.5 |
+| Claude Platform on AWS | Sonnet 4.6 | Haiku 4.5 |
+| Amazon Bedrock, Google Cloud's Agent Platform | Sonnet 4.5 | Haiku 4.5 |
+| Microsoft Foundry | Sonnet 4.5 | Haiku 4.5 |
+
+- On Microsoft Foundry, the `default` model setting is also Sonnet 4.5.
+- Sonnet 4.5 is deprecated. On Bedrock and Agent Platform it stays available until the partner's own date: Bedrock lists it as Legacy with end of life on 2027-04-08, and Google announces no date. See [Model catalog](model-catalog.md#lifecycle).
+- Haiku 4.5 is active (legacy) and has no deprecation notice.
+- **Foundry risk after 2026-11-30:** Foundry follows the Claude API lifecycle, so Sonnet 4.5 retires there on 2026-11-30. Unless Claude Code changes its Foundry defaults, `sonnet` and `default` then name a retired model. Bedrock and Agent Platform show a notice and fall back to an earlier version of an unavailable alias default. Foundry has no such startup check, so Foundry users see errors instead.
+- On Foundry, pin a newer Sonnet before 2026-11-30: set `ANTHROPIC_DEFAULT_SONNET_MODEL` to a Sonnet 5.x or Sonnet 4.6 deployment, or choose a full model ID for each role and for the main model.
+- Claude Code warns when a requested model has a scheduled retirement date. The check also covers a `model` in subagent frontmatter, so it covers APK role files.
+
 ### Kimi (Kimi Code)
 
 Kimi needs provisioned model entries. APK never creates aliases, providers or credentials.
@@ -159,7 +177,7 @@ These desktop features are not configured:
 ## Sources
 
 - [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- [Claude Code subagents](https://code.claude.com/docs/en/sub-agents)
+- [Claude Code subagents](https://code.claude.com/docs/en/sub-agents), [Claude Code model configuration](https://code.claude.com/docs/en/model-config) and [Claude in Microsoft Foundry](https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry)
 - [Kimi configuration files](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/configuration/config-files.md) and [Kimi agent definitions](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/agents.md)
 - [Antigravity subagents](https://antigravity.google/docs/subagents?tab=cli)
 - [Grok Build subagents](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md), observed with Grok Build 1.0.70 and an isolated `GROK_HOME`

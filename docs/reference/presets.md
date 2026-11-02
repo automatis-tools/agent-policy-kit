@@ -48,7 +48,7 @@ Light uses light models for every role, so plan limits last longest. It suits en
 
 | Role | ChatGPT | Claude | Kimi | Gemini | Grok |
 |---|---|---|---|---|---|
-| Coder | Sol · medium | Sonnet 5.5 · medium | K3 256K · high | Pro | Grok 4.7 |
+| Coder | Sol · medium | Sonnet 5.5 · high | K3 256K · high | Pro | Grok 4.7 |
 | Reviewer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro | Grok 4.7 |
 | Code explorer | Luna · high | Haiku 5.5 · medium | K2.8 Preview · low | Flash | Grok Build 0.1 |
 | Test writer | Sol · high | Sonnet 5.5 · high | K3 256K · high | Pro | Grok 4.7 |
@@ -58,6 +58,8 @@ Light uses light models for every role, so plan limits last longest. It suits en
 Standard uses stronger models for implementation, review, test creation and documentation. It uses light models for fact gathering and mechanical work.
 
 - ChatGPT runs GPT-6.1 Sol for code, review and tests. Luna runs at high for exploration. GPT-6.1 Terra runs at medium for docs: OpenAI positions Terra for clear writing, at half of Sol's usage.
+- Claude runs Sonnet 5.5 at high for code, review and tests. Anthropic's own per-effort results put Sonnet 5.5 at medium far behind high on agentic coding: 28.8% against 43.0% on Terminal-Bench 4.0. Opus 5.5 at medium scores higher than Sonnet 5.5 at high, but it costs 1.5 to 2.3 times more per task and more per solved task on every measurement. That is a Top-tier trade, not a balance. See [the decision of 2026-11-02](../research/2026-11-01-model-review.md#what-this-means-for-the-standard-claude-coder).
+- The Claude Coder effort is also the effort of Claude subagents that have no named role (capped at high). In Standard these subagents therefore also run at high, and they use more of the plan than at medium. See [Roles](roles.md#default-subagent-per-assistant).
 - Claude's Haiku 5.5 explorer uses medium, its native default.
 - Kimi uses K3 256K for code, review, tests and docs. Its quota footprint is smaller than that of the full-context K3. Larger-context choices stay editable.
 - Gemini uses Flash for exploration and docs.
@@ -116,7 +118,7 @@ These values are product defaults, not benchmark results. A limit does not start
 These are short reasons. The sources and the detailed comparisons are in the [model review of 2026-11-01](../research/2026-11-01-model-review.md).
 
 - **OpenAI (ChatGPT):** OpenAI positions Astra for demanding work, Sol for a balance of capability and usage, Terra for fast, clear writing and Luna for focused, efficient work. In Codex credits per token, Astra costs 5 times Sol, Terra costs half of Sol and Luna costs a tenth of Terra. OpenAI's subagent guide suggests Sol for demanding agents, Luna for lighter subagent work, high for Luna, and names reviewer or security-focused agents as examples for high. The reviewer example of the same guide uses Sol at medium.
-- **Anthropic (Claude):** Anthropic suggests Sonnet for most coding, Opus for complex architectural work and Haiku for simple subagent tasks. Anthropic suggests Fable only when Opus 5.5 at a higher effort still falls short. Anthropic describes high as the level for work where verification matters and xhigh as deeper reasoning at higher token spend. Anthropic reports that Sonnet 5.5 scored lower at max than at xhigh, because it started review subagents more often.
+- **Anthropic (Claude):** Anthropic suggests Sonnet for most coding, Opus for complex architectural work and Haiku for simple subagent tasks. Anthropic suggests Fable only when Opus 5.5 at a higher effort still falls short. Anthropic describes high as the level for work where verification matters, such as fixing a bug in an existing codebase, and xhigh as deeper reasoning at higher token spend. For Sonnet 5.5 in agentic coding, Anthropic suggests medium for well-specified tasks and high for harder or longer ones. The Standard Coder uses high because Anthropic's per-effort benchmark data puts Sonnet 5.5 at medium 8.6 to 14.2 points below high on Terminal-Bench 4.0, FrontierCode and CursorBench. Anthropic reports that Sonnet 5.5 scored lower at max than at xhigh, because it started review subagents more often.
 - **Moonshot (Kimi):** Kimi describes K2.8 Preview as efficient thinking and K3 256K as a smaller quota footprint than K3. Moonshot recommends K3 256K for routine feature work and K3 for large-codebase analysis and multi-file refactoring. K3.1 Pro Highspeed has the same capabilities as K3.1 Pro at a quota premium, so no preset uses it.
 - **Google (Gemini):** The presets use only the native role tiers of Antigravity. The tiers do not fix the underlying model, and there is no per-role effort.
 - **xAI (Grok):** Grok Build 0.1 is xAI's fast coding model and serves light work. Grok 4.7 is the flagship and serves code, review, tests and docs. Grok 4.6 and 4.5 stay available in Custom.

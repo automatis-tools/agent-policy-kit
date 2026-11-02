@@ -6,7 +6,7 @@ This document describes `models/catalog.json`, the model catalog of release 0.4.
 
 The model catalog is a dated snapshot of the native subagent selectors that each AI assistant accepts. A selector is the value that a native role setting takes: a model ID, an alias or a tier. The catalog ships inside the package. One package version has one catalog, as with presets (see [Presets](presets.md)).
 
-- The snapshot date is `reviewedAt`: 2026-11-01 UTC. The review checked the installed native clients and the current vendor documentation. No vendor released or retired a subagent model between the previous check on 2026-10-30 and this one.
+- The snapshot date is `reviewedAt`: 2026-11-02 UTC. On that date the lifecycle of the Claude 4.5 models was checked again. See [Lifecycle](#lifecycle). The full review of 2026-11-01 checked the installed native clients and the current vendor documentation. No vendor released or retired a subagent model between the previous check on 2026-10-30 and this one.
 - The configurator page and the preferences validation use the same data. For the validation rules, see [Preferences](../guide/preferences.md).
 - APK never fetches a catalog at run time. Normal agent work never reads the catalog.
 - The catalog is not a live inventory and not a list of what one account can use. Account access and custom deployment IDs vary.
@@ -48,7 +48,7 @@ Some entries have optional fields:
 | `delegationModes` | Execution modes such as `ultra`. These are not effort levels. |
 | `nativeSource` | A second source for the native behavior. |
 | `effortResolution` | How an alias or `inherit` resolves effort. |
-| `lifecycle` | Status (`active`, `deprecated` or `retired`), a retirement date or earliest retirement date, the scope and the source. |
+| `lifecycle` | Status (`active`, `deprecated` or `retired`), a retirement date (`retirementDate`) or earliest retirement date (`earliestRetirement`), the scope and the source. Optional: the deprecation date (`deprecationDate`), the recommended replacement ID (`replacement`), a `note`, and `partners`, a list of partner platforms that set their own schedule. Each partner entry has `platform`, `source` and, where announced, the partner's own `status`, `earliestRetirement` or `endOfLife`, or a `note`. |
 | `upstreamModelId`, `thinkingRequired`, `planRequirement` | Kimi: the upstream model, whether thinking must be on, and the plan that the model needs. |
 | `documented` | `false` when the native client accepts a selector that the vendor documentation does not list. |
 
@@ -98,7 +98,7 @@ The inventory has 14 versioned IDs, 4 family aliases and `inherit`. The review c
 | `claude-opus-4-6` | Opus 4.6 | low, medium, high, max | high |
 | `claude-sonnet-4-6` | Sonnet 4.6 | low, medium, high, max | high |
 | `claude-opus-4-5-20251101` | Opus 4.5 | none | not documented |
-| `claude-sonnet-4-5-20250929` | Sonnet 4.5 (deprecated) | none | not documented |
+| `claude-sonnet-4-5-20250929` | Sonnet 4.5 (retires 2026-11-30) | none | not documented |
 | `claude-haiku-4-5-20251001` | Haiku 4.5 | none | not documented |
 | `fable` | Fable (alias) | low, medium, high, xhigh, max | high |
 | `opus` | Opus (alias) | low, medium, high, xhigh, max | not documented |
@@ -162,11 +162,22 @@ The Grok 4.7 levels are API capabilities. APK writes only a model for each Grok 
 | Model | Status | Date | Scope |
 |---|---|---|---|
 | GPT-5.5 | retired | 2026-10-14 | Codex with ChatGPT sign-in. API-key sign-in keeps access. |
-| Sonnet 4.5 | deprecated | retirement 2026-11-30 | Anthropic-operated platforms. Partner schedules differ. |
-| Opus 4.5 | active | earliest retirement 2026-11-24 | Anthropic model lifecycle |
-| Haiku 4.5 | active | earliest retirement 2026-10-15 | Anthropic model lifecycle |
+| Sonnet 4.5 | deprecated since 2026-09-30 | retirement 2026-11-30 | Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Microsoft Foundry. Replacement: `claude-sonnet-5-5`. |
+| Opus 4.5 | active (legacy) | earliest retirement 2026-11-24 | Anthropic-operated platforms and Microsoft Foundry. No deprecation notice. |
+| Haiku 4.5 | active (legacy) | earliest retirement 2026-10-15 | Anthropic-operated platforms and Microsoft Foundry. No deprecation notice. |
 
-The earliest retirement date of Haiku 4.5, 2026-10-15, passed without an announced deprecation. This was the state on the review date, 2026-11-01.
+Partner platforms set their own schedules:
+
+| Model | Amazon Bedrock | Google Cloud (Google managed) |
+|---|---|---|
+| Sonnet 4.5 | Legacy. End of life 2027-04-08. | No retirement date announced. The earliest retirement date, 2026-09-29, passed. |
+| Opus 4.5 | Not on the legacy list | Earliest retirement 2026-11-24 |
+| Haiku 4.5 | Not on the legacy list | Earliest retirement 2026-12-07 |
+
+- This is the state on 2026-11-02. Sonnet 4.5 still works for organizations that already have access, so the catalog records it as deprecated, not retired. The Anthropic Models API describes a deprecated model as closed to new adopters, so a new account can already fail with it.
+- The page offers Sonnet 4.5 with the label "Sonnet 4.5 (retires 2026-11-30)". After that date, a role that names `claude-sonnet-4-5-20250929` fails on the Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Microsoft Foundry. Choose Sonnet 5.5 instead.
+- Anthropic gives at least 60 days' notice before it retires a model. Opus 4.5 and Haiku 4.5 had no deprecation notice, so their earliest retirement dates are floors, not scheduled dates. The date for Haiku 4.5, 2026-10-15, passed without an announcement.
+- The Claude Code aliases `sonnet`, `haiku` and `default` can resolve to these 4.5 models on some providers. See [AI assistants](assistants.md#claude-model-aliases-on-other-providers).
 
 A release does not keep a retired model available. See [Updates and removal](../guide/updates-and-removal.md).
 
@@ -186,7 +197,7 @@ A catalog entry does not grant access. The account plan and the provider decide 
 Each entry has a `source` URL in `models/catalog.json`. The main sources are:
 
 - ChatGPT: [OpenAI models](https://learn.chatgpt.com/docs/models) and the Codex CLI 0.166.0 bundled and server catalogs.
-- Claude: [Claude Code model configuration](https://code.claude.com/docs/en/model-config) and [model lifecycle](https://platform.claude.com/docs/en/about-claude/model-deprecations).
+- Claude: [Claude Code model configuration](https://code.claude.com/docs/en/model-config), [model lifecycle](https://platform.claude.com/docs/en/about-claude/model-deprecations), [Bedrock legacy models](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html) and [Google partner model deprecations](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/deprecations/partner-models).
 - Kimi: [Kimi Code models](https://www.kimi.com/code/docs/en/kimi-code/models) and [membership](https://www.kimi.com/code/docs/en/kimi-code/membership.html).
 - Gemini: [Antigravity subagents](https://antigravity.google/docs/subagents?tab=cli) and the CLI 1.4.12 parser.
 - Grok: [xAI models](https://docs.x.ai/developers/models) and [Grok Build subagents](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md).

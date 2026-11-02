@@ -124,3 +124,32 @@ test('docs preset tables match the preset data in every cell',()=>{
   assert.equal(rows,6,preset.label);
  }
 });
+
+test('Standard Claude Coder runs Sonnet 5.5 at high and keeps the preset canonical (#29)',()=>{
+ const claude=presetPreferences('balanced').clients.claude,sonnet=effort=>({model:'claude-sonnet-5-5',effort}),haiku=effort=>({model:'claude-haiku-5-5',effort});
+ const expected={worker:sonnet('high'),reviewer:sonnet('high'),explorer:haiku('medium'),tester:sonnet('high'),writer:sonnet('medium'),routine:haiku('low')};
+ for(const [role,choice]of Object.entries(expected))assert.deepEqual(rolePreference(claude,role),choice,role);
+ assert.deepEqual(claude.code,sonnet('high'));assert.deepEqual(claude.light,haiku('low'));
+ // Overrides equal to the code or light fallback are dropped by the configurator, so the file must not carry them.
+ assert.deepEqual(Object.keys(claude.roles).sort(),['explorer','writer']);
+});
+
+test('Claude 4.5 lifecycle records what is true before the Sonnet 4.5 retirement (#28)',()=>{
+ const models=modelCatalog().clients.claude.models,find=id=>models.find(model=>model.id===id);
+ for(const model of models)if(model.lifecycle)assert.ok(['active','deprecated'].includes(model.lifecycle.status),model.id);
+ const sonnet=find('claude-sonnet-4-5-20250929');
+ assert.equal(sonnet.label,'Sonnet 4.5 (retires 2026-11-30)');
+ assert.equal(sonnet.lifecycle.status,'deprecated');assert.equal(sonnet.lifecycle.deprecationDate,'2026-09-30');
+ assert.equal(sonnet.lifecycle.retirementDate,'2026-11-30');assert.equal(sonnet.lifecycle.replacement,'claude-sonnet-5-5');
+ assert.ok(find(sonnet.lifecycle.replacement),'the replacement is in the catalog');
+ for(const platform of ['Claude API','Claude Platform on AWS','Anthropic managed','Microsoft Foundry'])assert.ok(sonnet.lifecycle.scope.includes(platform),platform);
+ const partner=(model,platform)=>model.lifecycle.partners.find(entry=>entry.platform===platform);
+ assert.deepEqual({...partner(sonnet,'Amazon Bedrock'),source:undefined},{platform:'Amazon Bedrock',status:'legacy',endOfLife:'2027-04-08',source:undefined});
+ const google=partner(sonnet,'Google Cloud (Google managed)');assert.equal(google.retirementDate,undefined);assert.match(google.note,/no retirement date/i);
+ const opus=find('claude-opus-4-5-20251101');assert.ok(!find('claude-opus-4-5-20251001'));
+ assert.equal(opus.lifecycle.status,'active');assert.equal(opus.lifecycle.earliestRetirement,'2026-11-24');assert.match(opus.lifecycle.note,/legacy.*no deprecation notice/i);
+ const haiku=find('claude-haiku-4-5-20251001');
+ assert.equal(haiku.lifecycle.status,'active');assert.equal(haiku.lifecycle.earliestRetirement,'2026-10-15');
+ assert.equal(partner(haiku,'Google Cloud (Google managed)').earliestRetirement,'2026-12-07');
+ for(const model of [sonnet,opus,haiku]){assert.match(model.lifecycle.source,/^https:\/\//);for(const entry of model.lifecycle.partners??[])assert.match(entry.source,/^https:\/\//,model.id);}
+});
