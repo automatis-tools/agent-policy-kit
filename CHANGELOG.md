@@ -23,7 +23,7 @@ Assistant IDs, preset ids, share-link format v2 and receipt format v4 are unchan
 - Grok: APK does not write `permissionMode: plan`. Grok Build reads this field, but at spawn it uses only `bypassPermissions`.
 - `show` reports `UNSUPPORTED_ROLE_CAPABILITY` for a Grok agent file whose `capabilityMode` Grok Build does not accept. Grok Build drops such an agent without a warning.
 - Not checked: a live Grok model task with a read-only role.
-- **Configuration page:** when you edit Kimi, Gemini or Grok alone, a short note above the model table tells how that assistant applies effort. Kimi shares one effort among the roles that use the same model alias. Gemini has native tiers only and no effort per role. Grok applies an effort only for models that support it, and a role without one runs at its model default. The **All** view shows no note. The unused note text in the page source is removed (#21).
+- Configuration page: when you edit Kimi, Gemini or Grok alone, a short note above the model table tells how that assistant applies effort. Kimi shares one effort among the roles that use the same model alias. Gemini has native tiers only and no effort per role. Grok applies an effort only for models that support it, and a role without one runs at its model default. The **All** view shows no note. The unused note text in the page source is removed (#21).
 
 ## 0.5.0 — 2026-11-01
 
