@@ -49,13 +49,13 @@ For each control on the page, see [Configurator](configurator.md).
 1. Run `doctor` to verify the configuration that APK owns:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy doctor
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy doctor
    ```
 
 2. Run `show` to read the subagent settings that your assistants use now, including settings that you made yourself:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy show
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy show
    ```
 
 A verified configuration does not prove that a provider runs a specific model. For all command options, see [Commands](commands.md).
@@ -91,7 +91,7 @@ Each assistant gets its own native role files and instructions. No central servi
 Run setup with the release input mode:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy setup --release
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy setup --release
 ```
 
 This previews the Standard mode. Add `--preset fast` for Light or `--preset quality` for Top-tier. Add `--apply` to write the files. For details, see [Commands](commands.md#release-presets---release-and---preset).

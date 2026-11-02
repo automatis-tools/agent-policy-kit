@@ -21,7 +21,7 @@ Installing or updating the npm package does not change your native files. Only `
 2. Show the release and its notes with the `release` command:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy release
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy release
    ```
 
 3. Check the installed versions of your assistants and the models that your account can use.
@@ -37,7 +37,7 @@ A release that is not published yet has the heading `VERSION — Unreleased` in 
 1. Preview the setup with the release that you want:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy setup --release
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy setup --release
    ```
 
 2. To select another preset, add `--preset fast` (Light) or `--preset quality` (Top-tier). The default is `balanced` (Standard).
@@ -77,6 +77,7 @@ These boundaries are known:
 | Assistant | Change | Setup without removal | Remove with |
 |---|---|---|---|
 | Claude | From 0.4.0 or later to 0.3.0 or earlier | `INVALID_RECEIPT` | The installed release, 0.4.0 or later |
+| ChatGPT, Kimi and Grok, only if `config.toml` did not end with a line break before setup | From 0.5.2 or later to 0.5.1 or earlier | `INVALID_RECEIPT` | The installed release, 0.5.2 or later |
 | ChatGPT and Gemini | From 0.2.0 or earlier to 0.3.0 or later | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.2.0 |
 | ChatGPT and Gemini | From 0.3.0 or later to 0.2.0 or earlier | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.4.0 |
 
@@ -85,12 +86,24 @@ These boundaries are known:
 1. Remove the Claude settings with the installed release (0.4.0 or later), for example:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy uninstall --client claude --apply
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --client claude --apply
    ```
 
 2. Set up Claude with 0.3.0.
 
 ChatGPT, Kimi, Gemini and Grok move from 0.4.0 to 0.3.0 in place.
+
+**ChatGPT, Kimi and Grok, 0.5.2 or later to 0.5.1 or earlier.** If `config.toml` did not end with a line break before setup, APK adds one before its first new line. Since 0.5.2, the receipt records this as `addedLineBreak`, so that uninstall can remove the line break again (#34). Releases 0.5.1 and earlier do not know this field, so they refuse the receipt. To move such an assistant back to 0.5.1:
+
+1. Remove its settings with the installed release (0.5.2 or later), for example:
+
+   ```sh
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --client grok --apply
+   ```
+
+2. Set up that assistant with 0.5.1.
+
+If `config.toml` ended with a line break, the receipt has no such field, and these assistants move from 0.5.2 to 0.5.1 in place.
 
 **ChatGPT and Gemini, 0.2.0 and 0.3.0.** Release 0.3.0 renamed the assistant IDs `codex` to `chatgpt` and `agy` to `gemini`. Releases 0.3.0 and later do not read receipts under the old IDs, and releases 0.2.0 and earlier do not know the new IDs. To move from 0.2.0 to a later release:
 
@@ -124,14 +137,14 @@ APK has no background updater and requests no live model catalog. Your configure
 1. Preview the removal:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy uninstall
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall
    ```
 
 2. Read the preview.
 3. Remove the configuration:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy uninstall --apply
+   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --apply
    ```
 
 4. Run `show` to check the current settings.
