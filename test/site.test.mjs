@@ -637,8 +637,8 @@ test('Reset form clears the share address and the step-4 area offers a pinned un
  assert.match(setup,/<div class="undo" role="group" aria-labelledby="undo-title" aria-describedby="undo-text">/);
  assert.match(setup,/<code id="undo-command"><\/code><button type="button" class="quiet-button" id="copy-undo" aria-label="Copy the uninstall command">Copy<\/button>/);
  assert.match(setup,/restores the settings you had before APK/);assert.match(setup,/keeps your unrelated edits/);
- assert.match(setup,/without <code>--apply<\/code>/);assert.match(setup,/~\/\.agent-policy-kit/);
- assert.match(setup,/href="__APK_REMOVAL_GUIDE_URL__"/);
+ // The box holds only the reassurance and the command; the preview, state and exceptions details live in the guide.
+ assert.doesNotMatch(setup,/undo-hint|__APK_REMOVAL_GUIDE_URL__/);
  assert.ok(setup.indexOf('class="undo"')>setup.indexOf('class="output"'),'undo follows the setup command');
  assert.match(setup,/You can undo the setup/);
  assert.match(template,/const undoCommand=`npx --yes --ignore-scripts --package \$\{RELEASE\.packageSpec\} agent-policy uninstall --apply`;/);
@@ -647,7 +647,6 @@ test('Reset form clears the share address and the step-4 area offers a pinned un
  const page=fs.readFileSync(new URL('../site/index.html',import.meta.url),'utf8');
  const version=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
  assert.match(page,new RegExp(`"packageSpec":"agent-policy-kit@${version.replaceAll('.','\\.')}"`));
- assert.match(page,/href="https:\/\/github\.com\/automatis-tools\/agent-policy-kit\/blob\/main\/docs\/guide\/updates-and-removal\.md#remove-apk"/);
 });
 
 test('parallel limits belong to individual tool profiles and preset selection restores only that tool',()=>{
