@@ -185,7 +185,7 @@ function scalar(op,target,type) {
   fields(op,['kind','path','before','after','addedTable','addedLineBreak']);
   if(op.kind!=='scalar'||!equal(op.path,target)||(op.addedTable&&!equal(op.addedTable,target.slice(0,-1))))fail('INVALID_RECEIPT');
   // Written since 0.5.2 only when setup ended a last line that had no line break (#34).
-  if(op.addedLineBreak!==undefined&&(op.addedLineBreak!==true||op.before!==null))fail('INVALID_RECEIPT');
+  if(op.addedLineBreak!==undefined&&(typeof op.addedLineBreak!=='string'||!/^[a-f0-9]{64}$/.test(op.addedLineBreak)||op.before!==null))fail('INVALID_RECEIPT');
   literalValue(op.before,type,true);
   return literalValue(op.after,type);
 }

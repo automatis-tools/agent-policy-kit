@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from '../src/toml.mjs';
+const lineHash=line=>createHash('sha256').update(line).digest('hex');
 
 test('scalar updates preserve quoted keys, comments, multiline strings and unrelated bytes', () => {
   const input = '# secret comment\nmodel = "main"\ntext = """hello\n[agents]\nworld"""\n["agents"]\n"max_threads" = 12 # retain\n';
@@ -66,8 +68,9 @@ test('a line break APK added is recorded only when the file did not end with one
  assert.equal(setTomlValue('model = "main"\n',['agents','max'],3).ownership.addedLineBreak,undefined);
  assert.equal(setTomlValue('[agents]\nx = 1\n',['agents','max'],3).ownership.addedLineBreak,undefined);
  assert.equal(setTomlValue('',['agents','max'],3).ownership.addedLineBreak,undefined);
- assert.equal(setTomlValue('model = "main"',['agents','max'],3).ownership.addedLineBreak,true);
- assert.equal(setTomlValue('[agents]',['agents','max'],3).ownership.addedLineBreak,true);
+ // The record is a hash of the last line that got the line break, so the receipt keeps no config text.
+ assert.equal(setTomlValue('model = "main"',['agents','max'],3).ownership.addedLineBreak,lineHash('model = "main"'));
+ assert.equal(setTomlValue('[agents]',['agents','max'],3).ownership.addedLineBreak,lineHash('[agents]'));
  // Content added later after the owned lines keeps the line break, because TOML needs it between statements.
  const edit=setTomlValue('model = "main"',['agents','max'],3);
  assert.equal(restoreTomlValue(edit.text+'\n[later]\nx = 1\n',edit.ownership),'model = "main"\n\n[later]\nx = 1\n');
@@ -85,4 +88,21 @@ test('ownership written before 0.5.2 has no line break record and still restores
 test('the empty line before an added table stays while the user keeps a key in that table',()=>{
  const edit=setTomlValue('model = "main"\n',['agents','max'],3),later=edit.text+'mine = 1\n';
  assert.equal(restoreTomlValue(later,edit.ownership),'model = "main"\n\n[agents]\nmine = 1\n');
+});
+
+test('a user line added after the line that got APK line break keeps its own line break (PR #37 review)',()=>{
+ const edit=setTomlValue('model = "main"',['agents','max'],3);
+ assert.equal(edit.text,'model = "main"\n\n[agents]\nmax = 3\n');
+ const userEdit=edit.text.replace('model = "main"\n','model = "main"\nnew = 1\n');
+ assert.equal(restoreTomlValue(userEdit,edit.ownership),'model = "main"\nnew = 1\n');
+ assert.equal(restoreTomlValue(edit.text,edit.ownership),'model = "main"');
+});
+
+test('uninstall removes the separator APK wrote, not an empty line the user added with another line ending (PR #37 review)',()=>{
+ const edit=setTomlValue('model = "main"\n',['agents','max'],3);
+ assert.equal(edit.text,'model = "main"\n\n[agents]\nmax = 3\n');
+ const userEdit=edit.text.replace('\n\n[agents]','\n\n\r\n[agents]');
+ assert.equal(restoreTomlValue(userEdit,edit.ownership),'model = "main"\n\r\n');
+ const crlf=setTomlValue('model = "main"\r\n',['agents','max'],3),userLf=crlf.text.replace('\r\n\r\n[agents]','\r\n\r\n\n[agents]');
+ assert.equal(restoreTomlValue(userLf,crlf.ownership),'model = "main"\r\n\n');
 });

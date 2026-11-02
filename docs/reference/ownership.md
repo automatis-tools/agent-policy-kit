@@ -58,7 +58,7 @@ Each file entry records only what APK owns in that file:
 | `role` | `apk-<role>` role files | The SHA-256 hash of the content that APK wrote. A role file never existed before APK. |
 | `instructions` | The global instruction file | The exact block between the markers and the line breaks that APK added before it. |
 | `json` | Claude `settings.json` | Each owned `env` value: its key, whether it existed, its old value and its new value. Also whether APK created the `env` object. |
-| `toml` | `config.toml` of ChatGPT, Kimi and Grok | Each owned value: its key path, its old value and its new value. Whether APK added the table of the value (`addedTable`). Since 0.5.2, whether APK added a line break at the end of a file that did not end with one (`addedLineBreak`). For Kimi, also a value that APK removed. |
+| `toml` | `config.toml` of ChatGPT, Kimi and Grok | Each owned value: its key path, its old value and its new value. Whether APK added the table of the value (`addedTable`). Since 0.5.2, when APK added a line break at the end of a file that did not end with one, a SHA-256 hash of that last line (`addedLineBreak`); the receipt keeps no config text. For Kimi, also a value that APK removed. |
 
 ### Receipt formats
 

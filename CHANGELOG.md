@@ -20,14 +20,14 @@ Uninstall did not give back `config.toml` byte for byte when APK had added a tab
 Assistant IDs, preset ids, share-link format v2 and receipt format v4 are unchanged. `doctor`, `show`, setup and `uninstall` of 0.5.2 read receipts from 0.4.0, 0.5.0 and 0.5.1. These releases wrote the same file layout, so uninstall of 0.5.2 also removes the empty line before a table that they added. This was checked for Grok with the published 0.4.0, 0.5.0 and 0.5.1 packages in isolated homes.
 
 - An empty line that a replacing setup of 0.5.1 or earlier already left in the file stays. APK cannot tell it from your own lines. Remove it by hand if you want.
-- If your `config.toml` did not end with a line break, APK must add one before it writes the first new line. 0.5.2 records this in the receipt as `addedLineBreak` and removes the line break again on uninstall. Releases 0.5.1 and earlier do not know this field and stop with `INVALID_RECEIPT`. To move such an assistant back to 0.5.1, first remove it with 0.5.2: `npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --client grok --apply`. Then set up with 0.5.1. A receipt from 0.5.1 or earlier for such a file has no record, so uninstall keeps the line break at the end of the file.
+- If your `config.toml` did not end with a line break, APK must add one before it writes the first new line. 0.5.2 records this in the receipt as `addedLineBreak`, a hash of that last line, and removes the line break again on uninstall when the file ends with that line again. A line that you added after it keeps its line break. Releases 0.5.1 and earlier do not know this field and stop with `INVALID_RECEIPT`. To move such an assistant back to 0.5.1, first remove it with 0.5.2: `npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --client grok --apply`. Then set up with 0.5.1. A receipt from 0.5.1 or earlier for such a file has no record, so uninstall keeps the line break at the end of the file.
 - All other 0.5.2 receipts have the same fields as before. Setup with 0.5.1 moves them back in place, and uninstall with 0.5.1 removes them, with the old empty line behavior.
 
 See the [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries).
 
 ### What changed
 
-- Fixed: uninstall and replacing setups remove the empty line that APK wrote before a table it added, together with the table (#34). A setup, any number of replacing setups and an uninstall give back the original bytes of `config.toml` for Grok, ChatGPT and Kimi. Empty lines that you added stay.
+- Fixed: uninstall and replacing setups remove the empty line that APK wrote before a table it added, together with the table (#34). APK removes the empty line with the line ending of the table header, so an empty line that you added with another line ending stays. A setup, any number of replacing setups and an uninstall give back the original bytes of `config.toml` for Grok, ChatGPT and Kimi. Empty lines that you added stay.
 - Fixed: uninstall removes a line break that APK added at the end of a `config.toml` that did not end with one. If you added lines after the APK settings, the line break stays, because TOML needs it.
 - A replacing setup writes the same `config.toml` bytes as a first setup on the original file.
 

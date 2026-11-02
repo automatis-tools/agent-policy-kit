@@ -1,5 +1,6 @@
 import { parseForESLint, getStaticTOMLValue } from 'toml-eslint-parser';
 import { isDeepStrictEqual } from 'node:util';
+import { createHash } from 'node:crypto';
 
 function fail(code) { throw Object.assign(new Error(code), {code}); }
 function ast(text) {
@@ -39,11 +40,21 @@ function statementRange(text, node) {
 }
 function removeStatement(text, node) { return replace(text, ...statementRange(text, node), ''); }
 // setTomlValue writes one empty line before a table that it adds. Return the start of that line, or `start` when the line before is not empty.
-function emptyLineBefore(text, start) {
-  if (start === 0) return start;
-  const previous = start < 2 ? 0 : text.lastIndexOf('\n', start - 2) + 1;
-  return /^\r?\n$/.test(text.slice(previous, start)) ? previous : start;
+// The separator that setTomlValue wrote before a table uses the same line ending as the table header.
+// Among the empty lines directly before the header, remove the nearest one with that line ending,
+// so an empty line that the user added with another line ending stays.
+function separatorBefore(text, start, ending) {
+  let at = start;
+  while (at > 0) {
+    const previous = at < 2 ? 0 : text.lastIndexOf('\n', at - 2) + 1, line = text.slice(previous, at);
+    if (!/^\r?\n$/.test(line)) return null;
+    if (line === ending) return [previous, at];
+    at = previous;
+  }
+  return null;
 }
+// A hash identifies the last line that got an added line break without keeping config text in the receipt.
+const lineHash = line => createHash('sha256').update(line).digest('hex');
 
 export function setTomlValue(text, target, value) {
   const tree = ast(text);
@@ -61,13 +72,13 @@ export function setTomlValue(text, target, value) {
   if (table) {
     const at = endLine(text, table.key.range[1]);
     const separator = at === text.length && !text.endsWith('\n') ? nl : '';
-    if (separator) ownership.addedLineBreak = true;
+    if (separator) ownership.addedLineBreak = lineHash(text.slice(text.lastIndexOf('\n') + 1));
     text = replace(text, at, at, separator + entry);
   } else if (tablePath.length === 0) {
     text = entry + text;
   } else {
     const prefix = text.length && !text.endsWith('\n') ? nl : '';
-    if (prefix) ownership.addedLineBreak = true;
+    if (prefix) ownership.addedLineBreak = lineHash(text.slice(text.lastIndexOf('\n') + 1));
     text += `${prefix}${nl}[${tablePath.map(keyText).join('.')}]${nl}${entry}`;
     ownership.addedTable = tablePath;
   }
@@ -93,14 +104,21 @@ export function restoreTomlValue(text, ownership) {
     if (table && table.body.length === 0) {
       // Remove the header and the empty line that setTomlValue wrote before it. Releases 0.3.0 to 0.5.1 wrote the same empty line.
       [start, end] = statementRange(text, table);
-      start = emptyLineBefore(text, start);
+      const header = text.slice(start, end), ending = header.endsWith('\r\n') ? '\r\n' : header.endsWith('\n') ? '\n' : newline(text);
+      const separator = separatorBefore(text, start, ending);
+      if (separator && separator[1] === start) start = separator[0];
       text = replace(text, start, end, '');
+      if (separator && separator[1] < start) { text = replace(text, separator[0], separator[1], ''); start -= separator[1] - separator[0]; }
     }
   }
-  // setTomlValue ended a last line that had no line break. Remove that line break when nothing follows the removed lines.
-  if (ownership.addedLineBreak && start === text.length) {
-    const nl = newline(text);
-    if (text.endsWith(nl)) text = text.slice(0, -nl.length);
+  // setTomlValue ended a last line that had no line break. Remove that line break only when nothing follows
+  // the removed lines and the file again ends with that same line, so a line the user added keeps its line break.
+  if (typeof ownership.addedLineBreak === 'string' && start === text.length) {
+    const nl = text.endsWith('\r\n') ? '\r\n' : '\n';
+    if (text.endsWith(nl)) {
+      const body = text.slice(0, -nl.length);
+      if (lineHash(body.slice(body.lastIndexOf('\n') + 1)) === ownership.addedLineBreak) text = body;
+    }
   }
   ast(text);
   return text;
