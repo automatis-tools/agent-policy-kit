@@ -14,6 +14,20 @@ A configuration check does not prove native loading. Native loading does not pro
 
 Each record names the platform and the date. Browser evidence, temporary homes, raw configuration fixtures and logs stay outside Git and npm.
 
+## 0.5.2
+
+macOS arm64, 2026-11-01.
+
+| Layer | Evidence |
+|---|---|
+| Full Node 26.5.1 suite | PASS: 398/398. New byte-for-byte tests cover TOML round trips for nine originals (including CRLF, empty and comment-only files and files without a final line break), one to three Grok setups for seven originals, ChatGPT with and without `[agents]`, user lines next to APK's separator and line break, and forged `addedLineBreak` values |
+| Hosted CI | PASS on main c6b0434: macOS Node 22.13.0 and Ubuntu Node 24 suites and the site build ([run](https://github.com/automatis-tools/agent-policy-kit/actions/runs/41386000485)) |
+| Published 0.5.1 to 0.5.2 | PASS in isolated homes with the npm 0.5.1 package and the 0.5.2 tarball, Standard and Light presets. ChatGPT, Claude, Gemini and Grok upgrade to 0.5.2, move back to 0.5.1 and upgrade again in place. Kimi NOT CHECKED with a provisioned model pool: both versions return a prerequisite in an empty home |
+| Byte-for-byte restoration | PASS: 0.5.1 setup, 0.5.2 upgrade, 0.5.2 replacing setup and 0.5.2 uninstall give back the original Grok and ChatGPT `config.toml` (`cmp`). A sequence that includes a replacing setup of 0.5.1 keeps the one empty line that 0.5.1 left, as the release notes describe |
+| Native ChatGPT, Claude, Kimi, Gemini and Grok loading and provider execution | NOT CHECKED for 0.5.2. No live model tasks were used as configuration proof |
+| npm packaging | PASS: `npm pack --dry-run` lists 50 files. No private evidence or configuration |
+| Model catalog | Unchanged from 0.5.0 |
+
 ## 0.5.1
 
 macOS arm64, 2026-11-01.
