@@ -523,7 +523,7 @@ test('each client writes its own parallel limit and removal restores original se
  assert.equal(JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'),'utf8')).env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS,'2');
  assert.match(await fs.readFile(path.join(f.home,'.kimi-code/AGENTS.md'),'utf8'),/at most 4 subagents/);assert.match(await fs.readFile(path.join(f.home,'.gemini/AGENTS.md'),'utf8'),/at most 6 subagents/);
  for(const client of ['chatgpt','claude','kimi','gemini'])await uninstall({...f,client,apply:true});
- assert.deepEqual(parseToml(await fs.readFile(path.join(f.home,'.kimi-code/config.toml'),'utf8')),parseToml(modelConfig));
+ assert.equal(await fs.readFile(path.join(f.home,'.kimi-code/config.toml'),'utf8'),modelConfig);
 });
 
 test('Claude unnamed subagents get the Coder effort capped at high and uninstall restores the user value',async t=>{
@@ -548,4 +548,20 @@ test('the shipped Standard preset gives unnamed Claude subagents Sonnet 5.5 at h
  const env=JSON.parse(await fs.readFile(path.join(f.home,'.claude/settings.json'))).env;
  assert.equal(env.CLAUDE_CODE_SUBAGENT_MODEL,'claude-sonnet-5-5');assert.equal(env.CLAUDE_CODE_SUBAGENT_EFFORT,'high');
  const worker=await fs.readFile(path.join(f.home,'.claude/agents/apk-worker.md'),'utf8');assert.match(worker,/^model: "claude-sonnet-5-5"$/m);assert.match(worker,/^effort: high$/m);
+});
+
+// Issue #34: ChatGPT writes into an existing [agents] table, so it restored bytes before the fix; without that table it adds one like Grok.
+test('ChatGPT setups, replacing setups and an uninstall restore config.toml byte for byte (#34)',async t=>{
+ const originals={'an [agents] table':'# user codex settings\nmodel = "gpt"\n[agents]\nenabled = true\n','no [agents] table':'# user codex settings\nmodel = "gpt"\n','no line break at the end':'model = "gpt"','an empty file':''};
+ const steps=[[3,'gpt-6.1-sol','high'],[2,'gpt-6-luna','low'],[5,'gpt-6.1-sol','medium']];
+ for(const [name,text] of Object.entries(originals))for(const count of [1,2,3]){
+  const f=await fixture(t),target=path.join(f.home,'.codex/config.toml');await put(target,text);
+  for(const [i,[cap,model,effort]] of steps.slice(0,count).entries()){
+   const policy=behaviorPolicy();policy.maxConcurrent=cap;policy.clients={chatgpt:{...policy.clients.chatgpt,code:{model,effort}}};
+   await fs.writeFile(f.policyPath,JSON.stringify(policy));await applyInstall(await planInstall({...f,replace:i>0}));
+   assert.equal(parseToml(await fs.readFile(target,'utf8')).agents.max_concurrent_threads_per_session,cap);
+  }
+  await uninstall({...f,apply:true});
+  assert.equal(await fs.readFile(target,'utf8'),text,`${name}, ${count} setups`);
+ }
 });

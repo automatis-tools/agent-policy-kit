@@ -58,7 +58,7 @@ Each file entry records only what APK owns in that file:
 | `role` | `apk-<role>` role files | The SHA-256 hash of the content that APK wrote. A role file never existed before APK. |
 | `instructions` | The global instruction file | The exact block between the markers and the line breaks that APK added before it. |
 | `json` | Claude `settings.json` | Each owned `env` value: its key, whether it existed, its old value and its new value. Also whether APK created the `env` object. |
-| `toml` | `config.toml` of ChatGPT, Kimi and Grok | Each owned value: its key path, its old value and its new value. For Kimi, also a value that APK removed. |
+| `toml` | `config.toml` of ChatGPT, Kimi and Grok | Each owned value: its key path, its old value and its new value. Whether APK added the table of the value (`addedTable`). Since 0.5.2, whether APK added a line break at the end of a file that did not end with one (`addedLineBreak`). For Kimi, also a value that APK removed. |
 
 ### Receipt formats
 
@@ -74,6 +74,7 @@ APK 0.4.0 writes format v4. It can read, check and remove v2, v3 and v4.
 - Grok receipts exist only in v4.
 - A Claude v4 receipt owns two or three `env` values. The third, `CLAUDE_CODE_SUBAGENT_EFFORT`, is new in 0.4.0. It is present only when the effort of the first selected role is pinned. Receipts from 0.3.0 without it stay valid.
 - An older APK version can reject a v4 receipt that a newer version wrote. For example, APK 0.3.0 accepts only two owned `env` values in a Claude receipt, so it stops with `INVALID_RECEIPT` on a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`. Use a version that supports the receipt before you downgrade. For example, remove the Claude settings with 0.4.0 and then run setup with 0.3.0. [Migration boundaries](../guide/updates-and-removal.md#migration-boundaries) lists the known cases.
+- A `toml` value has `addedLineBreak` only when `config.toml` did not end with a line break before setup. APK 0.5.1 and earlier stop with `INVALID_RECEIPT` on such a receipt.
 
 APK refuses these receipts:
 
@@ -165,6 +166,7 @@ A prerequisite or drift leaves the applied release unchanged. A late failure rol
 - It deletes the owned role files.
 - It removes the owned instruction block and the line breaks that APK added. It deletes the instruction file if APK created it and the file is then empty.
 - It restores each owned value to its old value, or removes it if it did not exist. It deletes a configuration file if APK created it and the file is then empty.
+- When a table that APK added to `config.toml` has no values left, it removes the table header and the empty line that APK wrote before the header. It also removes a line break that APK added at the end of the file, if no lines follow. A `config.toml` then has its original bytes again, also after several updates (since 0.5.2, #34).
 - It deletes the receipt.
 
 Removal restores the values from before the first APK setup, also after several updates. It keeps later edits that are not owned. It keeps `policy.json` and the backups. Without `--client`, `uninstall` processes each assistant that has a receipt.

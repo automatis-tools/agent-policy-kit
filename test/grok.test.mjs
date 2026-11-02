@@ -81,7 +81,7 @@ test('uninstall restores original settings and keeps user agent files',async t=>
  await applyInstall(await planInstall(f));
  const preview=await uninstall(f);assert.equal(preview.status,'planned');assert.ok(parseToml(await fs.readFile(configPath(f),'utf8')).subagents.models);
  await uninstall({...f,apply:true});
- assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
+ assert.equal(await fs.readFile(configPath(f),'utf8'),original);
  assert.equal(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8'),'User rules.\n');
  for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
  assert.ok(await fs.stat(path.join(f.home,'.grok/agents/mine.md')));
@@ -96,7 +96,7 @@ test('pre-existing owned-key values are restored on removal',async t=>{
  const f=await fixture(t);const text='[subagents]\nmax_concurrent = 9\n[subagents.models]\n"apk-worker" = "mine"\ngeneral-purpose = "grok-4.5"\nother = "keep"\n';
  await put(configPath(f),text);await applyInstall(await planInstall(f));
  assert.equal(parseToml(await fs.readFile(configPath(f),'utf8')).subagents.max_concurrent,3);
- await uninstall({...f,apply:true});assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(text));
+ await uninstall({...f,apply:true});assert.equal(await fs.readFile(configPath(f),'utf8'),text);
 });
 
 test('drift in an owned setting, role file or instruction block refuses destructive removal',async t=>{
@@ -160,7 +160,7 @@ test('a pinned effort is written to the agent frontmatter only for that role and
  assert.deepEqual(c.roles.find(r=>r.name==='apk-worker'),{name:'apk-worker',model:'grok-4.7',effort:null});
  assert.match(formatResult('show',{schemaVersion:1,scope:'user',modelExecution:'not_checked',clients:{grok:c}}),/apk-reviewer\s+grok-4\.7 · xhigh/);
  await uninstall({...f,apply:true});
- assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
+ assert.equal(await fs.readFile(configPath(f),'utf8'),original);
  for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
 });
 
@@ -185,7 +185,7 @@ test('an install made by 0.4.0 still inspects, updates in place with an effort a
  assert.match(await fs.readFile(rolePath(f,'reviewer'),'utf8'),/^effort: medium$/m);await readOnlyRoles(f);
  assert.doesNotMatch(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8'),/main session effort/);
  await uninstall({...f,apply:true});
- assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
+ assert.equal(await fs.readFile(configPath(f),'utf8'),original);
  assert.equal(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8'),'User rules.\n');
  for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
 });
@@ -206,7 +206,7 @@ test('an install made by 0.5.0 still inspects, updates in place with read-only r
  assert.match(await fs.readFile(rolePath(f,'reviewer'),'utf8'),/^---\nname: apk-reviewer\ndescription: ".+"\neffort: xhigh\ncapabilityMode: read-only\n---\n/);
  const updated=await inspectConfiguration(f);assert.equal(updated.status,'verified');assert.equal(updated.releaseVersion,PACKAGE_VERSION);
  await uninstall({...f,apply:true});
- assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
+ assert.equal(await fs.readFile(configPath(f),'utf8'),original);
  assert.equal(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8'),'User rules.\n');
  for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
 });
@@ -215,7 +215,7 @@ test('an install made by 0.5.0 uninstalls without an update',async t=>{
  const f=await fixture(t);await put(configPath(f),original);
  await applyInstall(await planInstall({...f,releaseVersion:'0.5.0'}));await legacyReadOnlyRoles(f);
  assert.equal((await uninstall(f)).status,'planned');await uninstall({...f,apply:true});
- assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
+ assert.equal(await fs.readFile(configPath(f),'utf8'),original);
  for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
 });
 
@@ -272,4 +272,52 @@ test('a nonstandard GROK_HOME is a prerequisite for automatic setup and not a co
  assert.equal((await setupDetected({...f,apply:true,client:'grok'})).results[0].status,'unchanged');
  assert.match(formatResult('setup',done,{apply:true}),/Grok\s+Configuration applied/);
  const summary=formatResult('setup',done,{apply:true});assert.match(summary,/Grok: a role effort applies only when its model supports effort/);assert.doesNotMatch(summary,/do not support per-role effort|main session/);
+});
+
+// Issue #34: a setup, any number of replacing setups and an uninstall give back config.toml byte for byte.
+// Each step changes the cap and the models, as a change of preset does.
+const steps=[{maxConcurrent:3},{maxConcurrent:2,code:{model:'grok-build-0.1',effort:null},light:{model:'grok-build-0.1',effort:null},roles:{}},{maxConcurrent:4,code:{model:'grok-4.6',effort:null},roles:{reviewer:{model:'grok-4.7',effort:'high'}}}];
+async function setupSequence(f,count) {
+ const base=JSON.parse(await fs.readFile(f.policyPath,'utf8'));let previous=null;
+ for(const [i,step] of steps.slice(0,count).entries()){
+  const {maxConcurrent,...grok}=step;
+  await fs.writeFile(f.policyPath,JSON.stringify({...base,maxConcurrent,clients:{grok:{...base.clients.grok,...grok}}}));
+  await applyInstall(await planInstall({...f,replace:i>0}));
+  const text=await fs.readFile(configPath(f),'utf8');assert.notEqual(text,previous);assert.equal(parseToml(text).subagents.max_concurrent,maxConcurrent);previous=text;
+ }
+}
+const grokOriginals={
+ 'the issue reproduction':original,
+ 'no [subagents] table':'# user grok settings\nmodel = "main-grok"\n',
+ 'an empty line at the end':original+'\n',
+ 'no line break at the end':'# user grok settings\nmodel = "main-grok"',
+ 'a [subagents] header at the end without a line break':'model = "main-grok"\n[subagents]',
+ 'CRLF line breaks':'# user grok settings\r\nmodel = "main-grok"\r\n[subagents]\r\nenabled = true\r\n',
+ 'an empty file':'',
+};
+
+test('a setup, replacing setups and an uninstall restore config.toml byte for byte (#34)',async t=>{
+ for(const [name,text] of Object.entries(grokOriginals))for(const count of [1,2,3]){
+  const f=await fixture(t);await put(configPath(f),text);
+  await setupSequence(f,count);await uninstall({...f,apply:true});
+  assert.equal(await fs.readFile(configPath(f),'utf8'),text,`${name}, ${count} setups`);
+ }
+});
+
+test('without a config.toml, replacing setups and an uninstall leave no config.toml (#34)',async t=>{
+ for(const count of [1,2,3]){
+  const f=await fixture(t);await setupSequence(f,count);
+  assert.doesNotMatch(await fs.readFile(configPath(f),'utf8'),/\n\n\n/);
+  await uninstall({...f,apply:true});await assert.rejects(fs.stat(configPath(f)),{code:'ENOENT'});
+ }
+});
+
+test('a replacing setup writes the same config.toml bytes as a first setup (#34)',async t=>{
+ const first=await fixture(t),replaced=await fixture(t);
+ for(const f of [first,replaced])await put(configPath(f),original);
+ await setupSequence(replaced,2);
+ const base=JSON.parse(await fs.readFile(first.policyPath,'utf8')),{maxConcurrent,...grok}=steps[1];
+ await fs.writeFile(first.policyPath,JSON.stringify({...base,maxConcurrent,clients:{grok:{...base.clients.grok,...grok}}}));
+ await applyInstall(await planInstall(first));
+ assert.equal(await fs.readFile(configPath(replaced),'utf8'),await fs.readFile(configPath(first),'utf8'));
 });

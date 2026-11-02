@@ -30,12 +30,19 @@ function locate(tree, target) {
 function replace(text, start, end, value) { return text.slice(0, start) + value + text.slice(end); }
 function newline(text) { return text.includes('\r\n') ? '\r\n' : '\n'; }
 function endLine(text, position) { const i = text.indexOf('\n', position); return i === -1 ? text.length : i + 1; }
-function removeStatement(text, node) {
+function statementRange(text, node) {
   const startLine = text.lastIndexOf('\n', node.range[0] - 1) + 1;
   const start = /^\s*$/.test(text.slice(startLine, node.range[0])) ? startLine : node.range[0];
   const end = endLine(text, node.range[1]);
   const tail = text.slice(node.range[1], end);
-  return replace(text, start, /^\s*$/.test(tail) ? end : node.range[1], '');
+  return [start, /^\s*$/.test(tail) ? end : node.range[1]];
+}
+function removeStatement(text, node) { return replace(text, ...statementRange(text, node), ''); }
+// setTomlValue writes one empty line before a table that it adds. Return the start of that line, or `start` when the line before is not empty.
+function emptyLineBefore(text, start) {
+  if (start === 0) return start;
+  const previous = start < 2 ? 0 : text.lastIndexOf('\n', start - 2) + 1;
+  return /^\r?\n$/.test(text.slice(previous, start)) ? previous : start;
 }
 
 export function setTomlValue(text, target, value) {
@@ -54,11 +61,13 @@ export function setTomlValue(text, target, value) {
   if (table) {
     const at = endLine(text, table.key.range[1]);
     const separator = at === text.length && !text.endsWith('\n') ? nl : '';
+    if (separator) ownership.addedLineBreak = true;
     text = replace(text, at, at, separator + entry);
   } else if (tablePath.length === 0) {
     text = entry + text;
   } else {
     const prefix = text.length && !text.endsWith('\n') ? nl : '';
+    if (prefix) ownership.addedLineBreak = true;
     text += `${prefix}${nl}[${tablePath.map(keyText).join('.')}]${nl}${entry}`;
     ownership.addedTable = tablePath;
   }
@@ -77,10 +86,21 @@ export function restoreTomlValue(text, ownership) {
   }
   if (!found || text.slice(...found.value.range) !== ownership.after) fail('OWNED_DRIFT');
   if (ownership.before !== null) return replace(text, ...found.value.range, ownership.before);
-  text = removeStatement(text, found);
+  let [start, end] = statementRange(text, found);
+  text = replace(text, start, end, '');
   if (ownership.addedTable) {
     const table = ast(text).body[0].body.find(n => n.type === 'TOMLTable' && n.kind === 'standard' && same(n.resolvedKey, ownership.addedTable));
-    if (table && table.body.length === 0) text = removeStatement(text, table);
+    if (table && table.body.length === 0) {
+      // Remove the header and the empty line that setTomlValue wrote before it. Releases 0.3.0 to 0.5.1 wrote the same empty line.
+      [start, end] = statementRange(text, table);
+      start = emptyLineBefore(text, start);
+      text = replace(text, start, end, '');
+    }
+  }
+  // setTomlValue ended a last line that had no line break. Remove that line break when nothing follows the removed lines.
+  if (ownership.addedLineBreak && start === text.length) {
+    const nl = newline(text);
+    if (text.endsWith(nl)) text = text.slice(0, -nl.length);
   }
   ast(text);
   return text;
