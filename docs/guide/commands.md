@@ -99,7 +99,7 @@ agent-policy setup \
   --claude 'reviewer=claude-sonnet-5-5:high,explorer=claude-haiku-5-5:native' \
   --claude-max-concurrent 2 \
   --gemini 'reviewer=pro,explorer=flash' \
-  --grok 'reviewer=grok-4.7,explorer=grok-4.7'
+  --grok 'reviewer=grok-4.7:xhigh,explorer=grok-4.7'
 ```
 
 | Option | Value | Rules |
@@ -108,7 +108,7 @@ agent-policy setup \
 | `--max-concurrent` | A whole number from 1 to 32 | Required. The shared parallel limit. |
 | `--chatgpt`, `--claude`, `--kimi` | `ROLE=MODEL:EFFORT,...` | One entry for each role in `--roles`, exactly once. |
 | `--gemini` | `ROLE=TIER,...` | `TIER` is `pro`, `flash`, `flash_lite` or `inherit`. No effort. |
-| `--grok` | `ROLE=MODEL,...` | No effort. A model that ends with `:` and an effort word is refused. |
+| `--grok` | `ROLE=MODEL,...`, `ROLE=MODEL:EFFORT,...` or a mix | `ROLE=MODEL` sets no effort, the same as `:native`. APK reads a trailing `:` and an effort word or `native` as the effort. For a model ID that itself ends like that, add `:native`. |
 | `--TOOL-max-concurrent` | A whole number from 1 to 32 | Optional. Replaces `--max-concurrent` for one assistant. Needs the `--TOOL` option. |
 | `--avoid-TOOL` | Comma-separated model IDs | Optional. At most 32 models. Routing guidance only. Needs the `--TOOL` option. |
 

@@ -22,12 +22,15 @@ const raw=json=>'#setup='+Buffer.from(typeof json==='string'?json:JSON.stringify
 const payload=()=>({v:1,release:PACKAGE_VERSION,roles:['reviewer'],tools:[{id:'chatgpt',mode:'balanced',base:'balanced',choices:{reviewer:{model:'gpt-6.1-sol',effort:'high'}}}],scope:'chatgpt',maxConcurrent:3});
 const invalid=fn=>assert.throws(fn,{code:'INVALID_SHARE_LINK'});
 
-test('a Grok Build selection with the preset model round-trips and refuses a pinned effort',()=>{
+test('a Grok Build selection round-trips the preset model, a pinned effort and refuses unknown levels',()=>{
  const input=snapshot(['worker','reviewer'],['grok']);
  const decoded=decodeFormState(encodeFormState(input,release),release);
  assert.deepEqual(decoded.tools[0].choices.worker,{model:'grok-4.7',effort:null});
  input.state.profiles.grok.custom=true;input.state.jobs.grok.reviewer={model:'grok-4.5',effort:null};
  assert.deepEqual(decodeFormState(encodeFormState(input,release),release).tools[0].choices.reviewer,{model:'grok-4.5',effort:null});
+ input.state.jobs.grok.worker={model:'grok-4.7',effort:'xhigh'};
+ assert.deepEqual(decodeFormState(encodeFormState(input,release),release).tools[0].choices.worker,{model:'grok-4.7',effort:'xhigh'});
+ for(const effort of ['none','minimal','ultra']){input.state.jobs.grok.worker.effort=effort;invalid(()=>encodeFormState(input,release));}
 });
 
 test('empty and unrelated fragments carry no setup',()=>{
@@ -180,7 +183,7 @@ test('generic native effort levels are accepted for drafts; Antigravity is alway
   const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer={model:'draft',effort};
   assert.equal(decodeFormState(encodeFormState(input,release),release).tools[0].choices.reviewer.effort,effort);
  }
- for(const [id,effort] of [['chatgpt','ultra'],['claude','none'],['kimi','minimal'],['gemini','high'],['grok','high']]){const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer.effort=effort;invalid(()=>encodeFormState(input,release));}
+ for(const [id,effort] of [['chatgpt','ultra'],['claude','none'],['kimi','minimal'],['gemini','high'],['grok','minimal']]){const input=snapshot(['reviewer'],[id]);input.state.profiles[id].custom=true;input.state.jobs[id].reviewer.effort=effort;invalid(()=>encodeFormState(input,release));}
 });
 
 test('encoding refuses accessors, symbols and prototype surprises without running getters',()=>{

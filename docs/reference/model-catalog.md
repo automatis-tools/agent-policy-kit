@@ -148,14 +148,19 @@ The native role field takes a tier, not a model ID. The review checked the Antig
 
 The inventory has 4 model IDs from the documented xAI model list. The review checked Grok Build 1.0.70.
 
-| ID | Label | Native efforts | API efforts |
-|---|---|---|---|
-| `grok-4.7` | Grok 4.7 | none | low, medium, high (default), xhigh |
-| `grok-4.6` | Grok 4.6 | none | not recorded |
-| `grok-4.5` | Grok 4.5 | none | not recorded |
-| `grok-build-0.1` | Grok Build 0.1 | none | not recorded |
+The client `efforts` list is `low`, `medium`, `high`, `xhigh` and `max`: the values that Grok Build 1.0.70 accepts in the `effort` field of an agent file. A custom model ID can request these levels. Grok Build drops an agent with any other value.
 
-The Grok 4.7 levels are API capabilities. APK writes only a model for each Grok role, so the catalog has no native efforts for Grok. For how Grok Build resolves subagent effort, see [Roles](roles.md#how-effort-applies).
+| ID | Label | Native efforts | Native default |
+|---|---|---|---|
+| `grok-4.7` | Grok 4.7 | low, medium, high, xhigh | high |
+| `grok-4.6` | Grok 4.6 | not verified, none offered | not documented |
+| `grok-4.5` | Grok 4.5 | not verified, none offered | not documented |
+| `grok-build-0.1` | Grok Build 0.1 | none | none |
+
+- The Grok 4.7 levels and default come from the Grok Build model list (`supports_reasoning_effort`, `reasoning_efforts`) of 1.0.70. They are the same as the API levels in `apiEfforts`. `max` is not listed for Grok 4.7, so APK does not write it for that model.
+- Grok Build 0.1 has no effort setting. Grok Build ignores an effort for a model without effort support.
+- The levels of Grok 4.6 and 4.5 were not verified, so the catalog offers no effort for them.
+- For where APK writes the effort and how Grok Build applies it, see [Roles](roles.md#how-effort-applies).
 
 ## Lifecycle
 

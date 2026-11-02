@@ -754,14 +754,25 @@
     },
     "grok": {
       "label": "Grok",
-      "efforts": [],
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
       "observedClientVersion": "1.0.70",
       "models": [
         {
           "id": "grok-4.7",
           "label": "Grok 4.7",
-          "efforts": [],
-          "defaultEffort": null,
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
           "source": "https://docs.x.ai/developers/models",
           "nativeSource": "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md",
           "kind": "model",
@@ -801,7 +812,7 @@
           "kind": "model"
         }
       ],
-      "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. Grok 4.7 supports low/medium/high/xhigh reasoning effort and Grok Build resolves subagent effort from a spawn override, role default, persona default and then the parent session. The [subagents.models] entries that APK writes carry only a model, so APK leaves effort to the main session. [subagents] max_concurrent is a native cap."
+      "note": "Per-subagent models are set in config.toml [subagents.models]; model IDs follow the documented xAI model list and account access varies. APK writes a role effort as effort in the agent frontmatter (agents/apk-<role>.md); Grok Build 1.0.70 accepts low/medium/high/xhigh/max there and drops the whole agent for any other value. The effort applies only when the model supports effort: Grok 4.7 lists low/medium/high/xhigh with default high, Grok Build 0.1 has no configurable effort, and the effort levels of Grok 4.6 and 4.5 are not verified. A role without an effort runs at the default effort of its pinned model, not at the main session effort; a role named like the agent ([subagents.roles.<agent>] reasoning_effort) or a harness spawn override wins over the frontmatter. [subagents] max_concurrent is a native cap."
     }
   }
 }

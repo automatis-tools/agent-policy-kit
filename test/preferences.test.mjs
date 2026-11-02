@@ -28,10 +28,15 @@ test('agy preferences use native tiers without fabricated per-role effort', () =
   assert.equal(validatePolicy(p).clients.gemini.code.model,'pro');
   p.clients.gemini.code.effort='high';assert.throws(()=>validatePolicy(p));
 });
-test('grok preferences accept any model identifier without per-role effort', () => {
+test('grok preferences accept any model identifier and only the catalog efforts of known models', () => {
   const p=preferences();p.clients.grok={code:{model:'grok-4.7',effort:null},light:{model:'grok-4.5',effort:null},avoidModels:[]};
   assert.equal(validatePolicy(p).clients.grok.light.model,'grok-4.5');
-  p.clients.grok.code.effort='high';assert.throws(()=>validatePolicy(p));
+  p.clients.grok.code.effort='xhigh';assert.equal(validatePolicy(p).clients.grok.code.effort,'xhigh');
+  p.clients.grok.code.effort='max';assert.throws(()=>validatePolicy(p));
+  p.clients.grok.code.effort=null;p.clients.grok.light.effort='high';assert.throws(()=>validatePolicy(p));
+  p.clients.grok.light={model:'grok-custom',effort:'max'};assert.equal(validatePolicy(p).clients.grok.light.effort,'max');
+  p.clients.grok.light={model:'grok-custom',effort:'none'};assert.throws(()=>validatePolicy(p));
+  p.clients.grok.light={model:'grok-4.5',effort:null};
   p.clients.grok.code={model:'grok-4.7',effort:null};p.clients.grok.avoidModels=['grok-4.7'];assert.throws(()=>validatePolicy(p));
 });
 test('the bundled preset uses the same shared preference contract', () => {
