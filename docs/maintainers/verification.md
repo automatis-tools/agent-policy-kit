@@ -14,6 +14,21 @@ A configuration check does not prove native loading. Native loading does not pro
 
 Each record names the platform and the date. Browser evidence, temporary homes, raw configuration fixtures and logs stay outside Git and npm.
 
+## 0.5.0
+
+macOS arm64, 2026-11-01.
+
+| Layer | Evidence |
+|---|---|
+| Full Node 26.5.1 suite | PASS: 381/381. New tests cover the Grok role effort (frontmatter, explicit `role=model:effort`, share links, `show`, a rebuilt 0.4.0 install), the Standard Claude Coder at high and its default subagent effort, the Claude 4.5 lifecycle data, the undo box and the share-address rule |
+| Hosted CI | PASS on main 19844f5: macOS Node 22.13.0 and Ubuntu Node 24 suites and the site build ([run](https://github.com/automatis-tools/agent-policy-kit/actions/runs/41377664489)) |
+| Published 0.4.0 to 0.5.0 | PASS in isolated homes with the npm 0.4.0 package and the 0.5.0 tarball, Standard preset. ChatGPT, Claude, Gemini and Grok upgrade to 0.5.0 and move back to 0.4.0 in place. Kimi NOT CHECKED with a provisioned model pool: both versions return a prerequisite in an empty home |
+| Grok role effort | PASS: an explicit `worker=grok-4.7:xhigh` writes `effort: xhigh` in `apk-worker.md`; moving back to 0.4.0 removes the line. A non-live `grok inspect --json` with an isolated profile lists the generated agents. That the effort reaches a model request is NOT CHECKED with a live task |
+| Browser | PASS in a local Chromium preview: no share fragment on first load or with steps 1–2 only, a fragment after a mode is chosen, none after Reset form; Standard Claude Coder at Sonnet 5.5 high; Grok 4.7 effort buttons; the undo box with the 0.5.0 uninstall command and its copy button |
+| Native ChatGPT, Claude, Kimi, Gemini and Grok loading and provider execution | NOT CHECKED for 0.5.0. No live model tasks were used as configuration proof |
+| npm packaging | PASS: `npm pack --dry-run` lists 50 files. No private evidence or configuration |
+| Model catalog | Reviewed on 2026-11-02; see the [model review](../research/2026-11-01-model-review.md). Configuration tests do not establish account access or model quality |
+
 ## 0.4.0
 
 macOS arm64, 2026-11-01.
