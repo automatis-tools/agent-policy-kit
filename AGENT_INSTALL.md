@@ -1,79 +1,160 @@
-# Agent Policy Kit — AI operator guide
+# Agent Policy Kit — runbook for AI agents
 
-APK is configuration-only. Native files remain independent after npm package/source removal. There is no hook, proxy, launcher, plugin, daemon, runtime audit or background updater. Subagent preferences apply only if the main agent chooses to delegate; preserve ordinary direct work and disabled delegation features.
+This runbook is for an AI agent that installs, updates or removes Agent Policy Kit (APK) settings for its owner. It gives the steps in order: select the release, detect, choose the input, plan, apply, verify, remove and report. Flags, output fields and per-assistant details are in the linked documents. `agent-policy instructions` prints this runbook.
 
-Perform authorized technical setup/removal yourself; do not hand the owner a shell checklist. Use JSON plans/results, preserve main models, credentials, permissions, unrelated settings and later edits. Never log in, collect credentials, accept terms, start model tasks, publish, weaken sandboxes or bypass trust to force installation success. Private backups can contain existing secrets; keep state private.
+## Rules
 
-Captured output stays JSON. Use --json explicitly when a terminal is attached. Interactive users receive a readable summary. Run show to inspect existing user-level native subagent settings without APK receipts or client executables. Show reads current supported fields, including manual edits, but does not resolve project, managed or session precedence. An incomplete read exits with code 3 while retaining independent client results. Doctor remains the owned-configuration integrity check.
+APK is configuration-only. It writes native files and exits. It adds no hook, proxy, launcher, plugin, daemon, runtime audit or background updater. The native files stay independent after the npm package and the source are removed.
 
-## 1. Select the requested release
+Obey these rules in every step:
 
-Package version is configuration-release version. Read that version's CHANGELOG.md or release output for what changed, why and migration limits. Check the installed tool versions, actual provisioned model aliases and current official model/effort documentation before applying. Preserve explicit user choices; a newer package/model is not an instruction to switch silently. See [model maintenance](docs/model-updates.md) and the dated [model catalog/presets](docs/model-catalog.md).
+1. Do the authorized setup or removal yourself. Do not give the owner a shell checklist.
+2. Preserve main models, credentials, permissions, unrelated settings and later user edits.
+3. Subagent preferences apply only when the main agent decides to delegate. Do not require delegation. Do not enable a disabled delegation feature.
+4. Never log in, collect credentials, accept terms, start model tasks or publish anything.
+5. Never weaken a sandbox or bypass a trust check to make an installation succeed. Never add a runtime gate to replace a missing native feature.
+6. Read JSON. Add `--json` to every command. Captured output is JSON without the flag, but a terminal gets readable text.
+7. Read every per-client result. One client can succeed while another fails. Never report a partial result as a full update.
+8. Keep the state directory private. Its backups can contain existing secrets.
 
-After publication, pinned invocation is supported:
-
-```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy release
-npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy setup --release
-```
-
-Before publication, replace the registry spec with the verified local .tgz. For several commands, install to a temporary or user-owned prefix with npm install --prefix PREFIX TARBALL --ignore-scripts --no-audit --no-fund, then invoke PREFIX/node_modules/.bin/agent-policy. No stable runtime prefix, sudo or shell-profile changes are needed.
-
-## 2. Choose the input
-
-The page always prints explicit arguments, including when a preset filled the form:
+In the steps below, `agent-policy` means the pinned command for the requested release:
 
 ```sh
-agent-policy setup \
-  --roles reviewer,explorer \
-  --max-concurrent 3 \
-  --chatgpt 'reviewer=gpt-6.1-sol:high,explorer=gpt-6-luna:high' \
-  --avoid-chatgpt 'gpt-6-astra' \
-  --claude 'reviewer=sonnet:high,explorer=haiku:high' \
-  --avoid-claude 'opus,fable' \
-  --apply
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy
 ```
 
-Use --chatgpt, --claude, --kimi, --gemini and/or --grok to select AI assistants. Each tool must list every selected role exactly once. --roles and --max-concurrent are required in this mode. :native means effort null. Gemini accepts role=tier and Grok accepts role=model, both without an effort. Split the model/effort pair at its last colon. Keep the visible shell quotes and line continuations. The optional --avoid-TOOL lists preserve routing guidance. An omitted list is empty.
+## Step 1: Select the release
 
-Optional --chatgpt-max-concurrent, --claude-max-concurrent, --kimi-max-concurrent, --gemini-max-concurrent and --grok-max-concurrent override --max-concurrent for their selected tool. They accept whole numbers from 1 to 32 and require the corresponding tool argument. JSON preferences can instead set clients[tool].maxConcurrent. Omitted overrides use the top-level fallback.
+The package version is the configuration release. Use the version that the owner names, or the version in the command from the configurator.
 
-Explicit arguments are setup/install-only and cannot combine with --client, --release, --preset, --policy or --config. Duplicate flags and incomplete role maps fail before writes. Omit --apply to plan first. Explicit commands allow deliberate owned replacement and record custom source with no named preset provenance. The native files do not retain a dependency on the codec or package.
+1. Read the release notes:
 
-Other supported inputs remain available:
+   ```sh
+   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy release --json
+   ```
 
-- setup --release --preset balanced explicitly applies this executable's named preset and templates (fast/quality are alternatives). It is the supported pinned-release upgrade/downgrade path.
-- setup --config BASE64URL explicitly applies custom choices through this version's templates. This legacy encoded input remains supported. Decode/inspect the JSON; it must contain preferences only, never credentials or executable content.
-- init --policy FILE creates editable defaults without overwriting. setup --policy FILE is a conservative advanced workflow; ordinary mismatching setup refuses replacement. To deliberately replace saved choices from a file, validate it, encode its JSON with Buffer.from(JSON.stringify(preferences)).toString('base64url'), and use --config.
+2. Read the entry for this version in [CHANGELOG.md](CHANGELOG.md): what changed, why, and the migration limits.
+3. Check the installed tool versions, the model aliases that the account actually has, and the current official model and effort documentation.
+4. Keep the explicit choices of the owner. A newer package or a newer model is not an instruction to switch.
 
-Explicit arguments, --release/--preset, --config and --policy are alternative input modes. The --config JSON is canonical unpadded base64url, at most 64 KiB decoded. APK validates it before target mutation and removes its temporary input file afterward.
+For several commands, you can install the package into a temporary or user-owned prefix:
 
-Optional top-level selectedRoles selects worker, reviewer, explorer, tester, writer and/or routine. It must be nonempty and contain no duplicates. Omit it to configure all six roles in that release. Optional client roles overrides the selected roles' code/light recommendations. A selected subset creates only those native files and routing instructions. Unselected aliases do not require provisioning or receive effort pins. The first selected role in catalog order supplies the native subagent default.
+```sh
+npm install --prefix PREFIX agent-policy-kit@0.4.0 --ignore-scripts --no-audit --no-fund
+```
 
-Use model-supported native effort levels. null means no explicit pin. A known catalog model rejects unsupported explicit effort. Keep at most one non-null pin per selected Kimi alias. Preset identity and custom source are reported separately. Tools omitted from clients are not selected.
+Then run `PREFIX/node_modules/.bin/agent-policy`. If the owner gives you a verified local `.tgz` file of a version that is not on npm, install that file in the same way. You need no sudo, no fixed prefix and no shell profile change.
 
-Run detect and inspect the setup plan. Working executable identity is required; stale directories are not presence. On macOS, detect also checks the CLIs bundled in ChatGPT Desktop and Claude Desktop after PATH; such a client reports origin desktop_app and uses the standard native root. Automatic targets use standard native roots. Nondefault CODEX_HOME/CLAUDE_CONFIG_DIR/KIMI_CODE_HOME/GROK_HOME returns a per-client zero-write prerequisite rather than configuring a dormant folder. Explicit --home selects the standard layout under that intended base; preserve exact --home/--state-dir for later inspection/removal. It does not remap arbitrary native roots.
+More: [updates and removal](docs/guide/updates-and-removal.md), [presets](docs/reference/presets.md), [model review](docs/maintainers/model-review.md).
 
-## 3. Apply the concrete reviewed plan
+## Step 2: Detect
 
-Already-authorized configuration needs no repeat confirmation. Add --apply to the same selected-release or custom-config command. APK updates existing owned files transactionally without an uninstall gap. It verifies old ownership, virtually restores the original user baseline, then commits the target files/receipt/requested snapshot. Drift or a native prerequisite leaves the existing release intact; a late failure rolls it back. Preserve unrelated edits.
+```sh
+npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy detect --json
+```
 
-Run doctor afterward. It reports each client's actual saved release/source independently of the current executable, bundle, external source or canonical preferences. A verified config is not model execution proof. Native clients may need a fresh session to load changes; do not terminate active user sessions automatically.
+1. Read the status of each assistant: `detected`, `not_found`, `invalid` or `timeout`.
+2. APK needs a working executable. A leftover settings folder is not an installed assistant.
+3. On macOS, `origin: desktop_app` means the CLI inside ChatGPT Desktop or Claude Desktop. It uses the standard native folder.
+4. If `CODEX_HOME`, `CLAUDE_CONFIG_DIR`, `KIMI_CODE_HOME` or `GROK_HOME` points to a nonstandard folder, setup returns a prerequisite for that client and writes nothing. Do not change the variable to force a setup.
+5. `--home PATH` selects the standard layout under another base folder. If you use `--home` or `--state-dir`, use the same values in every later command.
 
-Per-client transactions are independent. A missing/blocked client can retain an older applied release while another advances. Read all results; never label a partial outcome fully updated. stateDir/policy.json is the latest requested snapshot, not the applied truth. Receipts are the applied truth. Canonical preferences may therefore differ from an older client's snapshot. Ordinary saved-file setup still detects unsafe mismatch. Explicit tool arguments and --release/--config are deliberate replacement operations.
+More: [assistants](docs/reference/assistants.md).
 
-Kimi needs provisioned aliases/provider metadata and supported effort; do not invent them. K3.1 Pro variants require thinking: explicit native thinking.enabled=false returns a prerequisite even if every requested effort is null. Do not change the main thinking setting to force helper installation. If a selected alias also serves the main model, a changed effort default without a valid explicit global override returns kimi-main-effort-conflict. Use a compatible separate native alias or deliberately prepare a native variant while preserving main behavior. Reserved primary cannot be a pool key. Claude force-model conflicts require an explicit native setting decision rather than a false per-role success.
+## Step 3: Choose the input
 
-The available role names are apk-worker/apk-reviewer/apk-explorer/apk-tester/apk-writer/apk-routine. APK creates only the selected names. Changing the selected role set through explicit arguments or --config safely replaces the earlier owned role set. APK preserves unowned files and refuses removal of edited owned roles. Only when delegation is chosen do model/effort/routing/parallelism preferences apply. Native files must not execute/import the package or depend on its executable/npm/source/state path. After verification you may remove the npm package. Keep private receipts for future owned undo.
+Use exactly one input mode. A combination fails before any write.
 
-## 4. Native limits
+| Input | Use it when |
+|---|---|
+| Explicit tool arguments (`--roles`, `--max-concurrent`, `--chatgpt`, `--claude`, `--kimi`, `--gemini`, `--grok` and their options) | The owner gives a command from the configurator. Keep its shell quotes and line continuations |
+| `setup --release --preset fast`, `balanced` or `quality` | The owner wants a named preset of this release. This is the supported path to upgrade or downgrade to a pinned release |
+| `setup --config BASE64URL` | The owner gives encoded preferences. Decode and inspect the JSON first. It must contain preferences only, never credentials or executable content |
+| `setup --policy FILE` | The owner keeps a preferences file. This mode does not replace different saved choices. To replace them deliberately, validate the file and pass it as `--config` |
 
-ChatGPT (Codex) and Claude (Claude Code) have native defaults/caps with higher-priority setting and execution-path exceptions. Kimi role-to-pool selection and concurrency are guidance. Claude Code 2.1.316+ reads the default subagent effort from CLAUDE_CODE_SUBAGENT_EFFORT, which APK sets to the Coder effort capped at high; earlier versions ignore it. Gemini (Antigravity) uses native Pro/Flash/Flash Lite/inherit tiers (Flash Lite is accepted by the CLI but undocumented), with no per-role effort or universal hard cap. Grok Build writes agents/apk-ROLE.md, per-role models and a general-purpose fallback in config.toml [subagents.models], and a native [subagents] max_concurrent cap. These entries carry only a model, so subagents use the main session effort. avoidModels is guidance. A pinned configuration does not prove provider identity, entitlement, task quality or unchanged alias resolution. Never add a runtime gate to strengthen a missing native feature.
+The configurator command lists every selected role for every selected assistant. The tools that it does not name are not configured.
 
-## 5. Removal and incompatible formats
+More: [commands](docs/guide/commands.md), [preferences](docs/guide/preferences.md).
 
-Run uninstall, review it, then uninstall --apply. Receipts verify ownership without canonical/source preferences or the native executable. Final removal restores original user settings, including after supported release changes, and keeps unrelated later edits. Do not restore stale whole-file backups or force-delete locks/pending journals.
+## Step 4: Plan
 
-Current native receipt v4 records selectedRoles and their bounded fixed filenames. It verifies that the owned file set matches the role selection. Historical v3 and v2 native receipts remain inspectable and removable. v2 has unknown release provenance. Older executables can reject v4. Use an executable that supports the receipt before an incompatible downgrade. Unknown formats/layouts fail safely and require a documented compatible migration. Experimental runtime v1 receipts need their original owned uninstall first. Never delete arbitrary hooks by matching text.
+1. Run the chosen setup command without `--apply`.
+2. Read the overall `status` and each entry in `results`.
+3. Read each entry in `requiredActions`.
 
-Return concise per-client detected/configured/applied-release/source results, prerequisites, new-session needs and unchecked model/provider evidence. No public release, deployment or live model task is part of configuration acceptance.
+Exit code 3 means one of these conditions:
+
+- No selected assistant was detected.
+- At least one selected assistant returned a prerequisite, an error, or an invalid or timed-out detection.
+
+The other clients still have valid results.
+
+Resolve a prerequisite only in a way that preserves the main behavior:
+
+- Kimi needs provisioned aliases, provider metadata and supported efforts. Do not invent them. Do not change the main thinking setting to install a helper.
+- If a selected Kimi alias also serves the main model, a changed effort default returns `kimi-main-effort-conflict`. Use a separate compatible alias, or prepare a native variant that keeps the main behavior.
+- `claude-force-model-conflict` means that the Claude settings force one subagent model. It needs an explicit decision about that native setting from the owner.
+
+More: [commands](docs/guide/commands.md), [assistants](docs/reference/assistants.md).
+
+## Step 5: Apply
+
+1. Add `--apply` to the same command that you planned. A configuration that the owner already authorized needs no second confirmation.
+2. Read each result. `configured` and `unchanged` are successful results.
+
+APK updates owned files in a transaction for each client, without a removal gap. Drift or a missing prerequisite keeps the existing release of that client. A late failure rolls that client back.
+
+## Step 6: Verify
+
+1. Run `doctor`:
+
+   ```sh
+   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy doctor --json
+   ```
+
+   Each client reports its saved release, source and preset from its receipt, independent of the version that runs `doctor`. `verified` means that the owned files match the receipt.
+
+2. Run `show` to read the current user-level subagent settings, including manual edits:
+
+   ```sh
+   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy show --json
+   ```
+
+   `show` does not resolve project, managed or session settings. It exits with code 3 when a client needs attention, and it keeps the results of the other clients.
+
+3. Tell the owner that a native client can need a new session to load the changes. Do not stop active sessions.
+
+A verified configuration does not prove that a model runs. After verification, you can remove the npm package or the temporary prefix. Keep the state directory: its receipts are necessary for a later owned removal.
+
+## Step 7: Remove
+
+1. Plan the removal:
+
+   ```sh
+   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy uninstall --json
+   ```
+
+2. Review the plan.
+3. Run the same command with `--apply`.
+
+The receipts verify ownership. Removal restores the original user settings and keeps unrelated later edits. APK refuses to remove an owned file that someone edited.
+
+- Do not restore old whole-file backups.
+- Do not delete locks or pending journals by force.
+- Do not delete hooks by text match.
+- Use an executable that supports the receipt format. Older versions can reject receipt v4. Installations of ChatGPT and Gemini from 0.2.0 need removal with 0.2.0.
+
+More: [ownership](docs/reference/ownership.md), [updates and removal](docs/guide/updates-and-removal.md).
+
+## Step 8: Report
+
+Give the owner a short result for each client:
+
+- Detection: status, version and origin.
+- Result: the status, for example `configured`, `unchanged`, `prerequisite` or `error`, and its codes.
+- Applied release, source and preset, from `doctor`.
+- Required actions that remain.
+- Whether a new session is necessary.
+- What is not checked: model execution, provider identity, entitlement and alias resolution.
+
+Receipts are the applied truth. `policy.json` in the state directory is only the latest requested snapshot, so it can differ from an older client. Kimi and Gemini limits and all avoid lists are guidance, not hard caps. A public release, a deployment or a live model task is not part of this work.

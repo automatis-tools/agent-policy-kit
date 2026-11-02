@@ -1,7 +1,19 @@
-# Security reports
+# Security
 
-This tool changes local native configuration. Native role instructions are guidance, not a universal security or billing boundary. Higher-priority settings and explicit client options can override them.
+This document tells people how to report a security problem in Agent Policy Kit (APK), the published npm package `agent-policy-kit`. It is for users and security researchers.
 
-Report ordinary defects with a minimal temporary-profile reproduction. Never attach credentials, account configs, backups or private state.
+## What APK can affect
 
-For a vulnerability exposing private data or corrupting settings, use the public repository's private reporting channel once enabled. If none is available, request a private contact without disclosing sensitive material. No reporting endpoint is configured before publication.
+APK changes local native configuration files of AI coding assistants. The role files and routing instructions that it writes are guidance for the main agent. They are not a universal security boundary or billing boundary. Higher-priority settings and explicit client options can override them.
+
+## Report a defect
+
+Open an issue with a minimal reproduction in a temporary profile. Never attach credentials, account configurations, backups or private state.
+
+## Report a vulnerability
+
+A vulnerability is a problem that can expose private data or corrupt settings. Do not describe it in a public issue.
+
+1. If the repository offers GitHub private vulnerability reporting, use it.
+2. If it does not, open an issue that asks for a private contact. Do not include details of the problem in that issue.
+3. Send the details only through the private channel.
