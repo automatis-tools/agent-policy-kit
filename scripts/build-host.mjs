@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {renderConfigurationPage} from './build-site.mjs';
 
 const repositoryRoot=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const sensitiveFiles=['policies/fast.json','policies/balanced.json','policies/quality.json','models/catalog.json','src/roles.mjs','src/explicit.mjs','src/policy.mjs','schema/policy.schema.json'];
+const sensitiveFiles=['policies/fast.json','policies/balanced.json','policies/quality.json','models/catalog.json','src/roles.mjs','src/release.mjs','src/explicit.mjs','src/policy.mjs','schema/policy.schema.json'];
 const semver=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
 const validVersion=value=>typeof value==='string'&&value.length<=128&&semver.test(value);
 function fail(code){throw Object.assign(new Error(code),{code});}

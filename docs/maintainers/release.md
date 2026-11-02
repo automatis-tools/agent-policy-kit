@@ -33,10 +33,12 @@ The configuration-sensitive files are:
 
 - `policies/fast.json`, `policies/balanced.json`, `policies/quality.json`
 - `models/catalog.json`
-- `src/roles.mjs`, `src/explicit.mjs`, `src/policy.mjs`
+- `src/roles.mjs`, `src/release.mjs`, `src/explicit.mjs`, `src/policy.mjs`
 - `schema/policy.schema.json`
 
-The guard compares only these files. A change to the native templates (`src/native.mjs`, `src/install.mjs`) or to the top models switch (`PRESETS` in `src/release.mjs`) also changes the release, but the guard does not detect it. Bump the version for these changes too.
+These files define what the page embeds and which commands the published package accepts. `src/release.mjs` holds the preset labels and the top models switch (`PRESETS`).
+
+The native templates (`src/native.mjs`, `src/install.mjs`) are not in the list. The page does not embed them, and the pinned command always runs the templates of the published package, so the page cannot disagree with them. A template change still reaches people only through a new version: bump the version to publish it.
 
 Interface changes to the page template do not need a release. The latest root page is rebuilt from `main`.
 
