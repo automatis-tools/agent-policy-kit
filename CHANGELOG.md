@@ -2,6 +2,10 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
+## Unreleased
+
+- **Configuration page:** when you edit Kimi, Gemini or Grok alone, a short note above the model table tells how that assistant applies effort. Kimi shares one effort among the roles that use the same model alias. Gemini has native tiers only and no effort per role. Grok applies an effort only for models that support it, and a role without one runs at its model default. The **All** view shows no note. The unused note text in the page source is removed (#21).
+
 ## 0.5.0 — 2026-11-01
 
 ### Why this release
