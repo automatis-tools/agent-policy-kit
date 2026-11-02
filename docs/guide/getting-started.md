@@ -40,6 +40,8 @@ Make sure that you have:
 10. Run the full command, with `--apply`.
 11. Open a new session in each configured assistant. A session that was open before setup can keep the old settings.
 
+You can undo the setup later. Step 4 of the page shows the `uninstall` command for its release. The removal restores the settings that you had before APK and keeps your unrelated edits. See [Remove APK settings after other changes](#remove-apk-settings-after-other-changes).
+
 For each control on the page, see [Configurator](configurator.md).
 
 ## Check the result

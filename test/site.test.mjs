@@ -122,7 +122,7 @@ test('the footer offers a quiet copy button for the read-only show command',()=>
 test('Reset form sits with the form result, not in the site header',()=>{
  const header=template.match(/<header>[\s\S]*?<\/header>/)[0];
  assert.doesNotMatch(header,/reset-form/);
- assert.match(template,/<div class="setup-footer"><p class="release-status" id="release-status"><\/p><button type="button" class="reset-form" id="reset-form">Reset form<\/button><\/div><\/section>/);
+ assert.match(template,/<div class="setup-footer"><p class="release-status" id="release-status"><\/p><button type="button" class="reset-form" id="reset-form">Reset form<\/button><\/div><div class="undo" /);
 });
 
 test('tools whose presets share models get an honest mode note instead of the generic description',()=>{
@@ -569,8 +569,85 @@ test('a bad parallel limit or model blocks the command while role selection stay
 
 test('step progress follows the generated command and parallel edits clear a stale link error',()=>{
  assert.equal(api.stepCompletion,undefined);
- assert.match(template,/const complete=\[helpers\.length>0,pickedTools\.length>0,!!currentCommand,copied\];/);
+ assert.match(template,/const complete=\[\.\.\.progress\.steps,copied\];/);
+ assert.match(template,/progress=A\.stepProgress\(state,RELEASE\);/);
+ assert.match(template,/next=progress\.command;/);
  assert.match(template,/function refreshConcurrency\(\)\{linkError='';/);
+});
+
+test('step progress marks steps 1 to 3 complete only with roles, assistants and a valid command',()=>{
+ const empty=api.initialState(preferences,'balanced',{empty:true});
+ let progress=plain(api.stepProgress(empty,release));
+ assert.deepEqual(progress.steps,[true,false,false]);assert.equal(progress.complete,false);assert.deepEqual(progress.missing,['tools']);assert.equal(progress.command,'');
+ empty.selectedRoles=[];progress=plain(api.stepProgress(empty,release));
+ assert.deepEqual(progress.steps,[false,false,false]);assert.deepEqual(progress.missing,['roles','tools']);
+ empty.selectedRoles=['reviewer'];empty.selected=['chatgpt'];empty.active='chatgpt';progress=plain(api.stepProgress(empty,release));
+ assert.deepEqual(progress.steps,[true,true,false]);assert.deepEqual(progress.missing,['mode']);assert.equal(progress.complete,false);
+ const chosen=api.applyPreset(empty,{id:'balanced',preferences});progress=plain(api.stepProgress(chosen,release));
+ assert.deepEqual(progress.steps,[true,true,true]);assert.equal(progress.complete,true);assert.deepEqual(progress.missing,[]);assert.deepEqual(progress.errors,[]);
+ assert.equal(progress.command,api.buildCommand(api.buildConfig(chosen,preferences).config,release));
+ chosen.jobs.chatgpt.reviewer.model='invalid model';progress=plain(api.stepProgress(chosen,release));
+ assert.deepEqual(progress.steps,[true,true,false]);assert.equal(progress.complete,false);assert.equal(progress.command,'');assert.match(progress.errors[0],/valid model ID/);
+ chosen.jobs.chatgpt.reviewer.model='gpt-6.1-sol';chosen.selectedRoles=[];progress=plain(api.stepProgress(chosen,release));
+ assert.deepEqual(progress.steps,[false,true,false]);assert.deepEqual(progress.missing,['roles']);
+ const full=api.initialState(preferences);assert.equal(api.stepProgress(full,release).complete,true,'a state without a role list uses every role');
+ const broken=plain(api.stepProgress(api.initialState(preferences),{...release,version:'0.1.0;echo'}));
+ assert.equal(broken.complete,false);assert.equal(broken.unavailable,true);assert.equal(broken.command,'');
+});
+
+test('the share address appears only for a complete form and an opened link stays until the form changes',()=>{
+ const fragment='#setup=new';
+ assert.equal(api.shareAddress('',{complete:true,fragment}),fragment);
+ assert.equal(api.shareAddress('#setup=old',{complete:true,fragment}),fragment);
+ assert.equal(api.shareAddress('',{complete:false,fragment}),'');
+ assert.equal(api.shareAddress('#setup=old',{complete:false,fragment}),'','an edit that makes a step incomplete removes the link');
+ assert.equal(api.shareAddress('#setup=old',{complete:false,fragment:null}),'');
+ assert.equal(api.shareAddress('#notes',{complete:false,fragment}),'#notes','other fragments are not setup links');
+ const opened={hash:'#setup=old',fragment};
+ assert.equal(api.shareAddress('#setup=old',{complete:false,fragment,opened}),'#setup=old','an opened unfinished link stays while the form is unchanged');
+ assert.equal(api.shareAddress('#setup=old',{complete:false,fragment:'#setup=edited',opened}),'');
+ assert.equal(api.shareAddress('#setup=other',{complete:false,fragment,opened}),'');
+});
+
+test('the page publishes the share address from step progress and removes it with history.replaceState',()=>{
+ const publish=template.slice(template.indexOf(' function publishAddress('),template.indexOf(' function setStepHint('));
+ assert.match(publish,/A\.shareAddress\(location\.hash,\{complete:progress\.complete,fragment,opened:openedLink\}\)/);
+ assert.match(publish,/history\.replaceState\(history\.state,'',location\.pathname\+location\.search\+next\)/);
+ const run=({hash,complete,opened=null,linkError=''})=>{
+  const calls=[],nodes={'link-error':{textContent:'',hidden:true}};
+  const context=vm.createContext({A:api,RELEASE:release,encodeFormState:()=>'#setup=current',location:{hash,pathname:'/v/0.5.0/',search:'?q=1'},history:{state:null,replaceState:(...args)=>calls.push(args)},$:id=>nodes[id]});
+  vm.runInContext(`let linkError=${JSON.stringify(linkError)},state={},helpers=[],pickedTools=[],selectedScope=null,lastAddress=null,openedLink=${JSON.stringify(opened)},progress={complete:${complete}};${publish};publishAddress();globalThis.result={lastAddress,openedLink};`,context);
+  return {calls:plain(calls),result:plain(context.result),error:nodes['link-error']};
+ };
+ assert.deepEqual(run({hash:'',complete:false}).calls,[],'first load keeps an address without a link');
+ assert.deepEqual(run({hash:'#setup=old',complete:false}).calls,[[null,'','/v/0.5.0/?q=1']]);
+ assert.deepEqual(run({hash:'',complete:true}).calls,[[null,'','/v/0.5.0/?q=1#setup=current']]);
+ assert.equal(run({hash:'',complete:true}).result.lastAddress,'#setup=current');
+ const kept=run({hash:'#setup=old',complete:false,opened:{hash:'#setup=old'}});
+ assert.deepEqual(kept.calls,[]);assert.deepEqual(kept.result.openedLink,{hash:'#setup=old',fragment:'#setup=current'});
+ const invalid=run({hash:'#setup=bad',complete:false,linkError:'This setup link is invalid.'});
+ assert.deepEqual(invalid.calls,[],'an invalid opened link stays visible with its error');assert.equal(invalid.error.hidden,false);
+});
+
+test('Reset form clears the share address and the step-4 area offers a pinned undo command',()=>{
+ assert.match(template,/\$\('reset-form'\)\.addEventListener\('click',\(\)=>\{freshForm\(\);linkError='';render\(\);\}\);/);
+ const freshForm=template.slice(template.indexOf(' function freshForm('),template.indexOf(' function loadAddress('));
+ assert.match(freshForm,/openedLink=null;/);
+ const setup=template.match(/<section aria-labelledby="setup-heading">[\s\S]*?<\/section>/)[0];
+ assert.match(setup,/<div class="undo" role="group" aria-labelledby="undo-title" aria-describedby="undo-text">/);
+ assert.match(setup,/<code id="undo-command"><\/code><button type="button" class="quiet-button" id="copy-undo" aria-label="Copy the uninstall command">Copy<\/button>/);
+ assert.match(setup,/restores the settings you had before APK/);assert.match(setup,/keeps your unrelated edits/);
+ assert.match(setup,/without <code>--apply<\/code>/);assert.match(setup,/~\/\.agent-policy-kit/);
+ assert.match(setup,/href="__APK_REMOVAL_GUIDE_URL__"/);
+ assert.ok(setup.indexOf('class="undo"')>setup.indexOf('class="output"'),'undo follows the setup command');
+ assert.match(setup,/You can undo the setup/);
+ assert.match(template,/const undoCommand=`npx --yes --ignore-scripts --package \$\{RELEASE\.packageSpec\} agent-policy uninstall --apply`;/);
+ assert.match(template,/navigator\.clipboard\.writeText\(undoCommand\)/);
+ assert.match(template,/getSelection\(\)\?\.selectAllChildren\(\$\('undo-command'\)\)/);
+ const page=fs.readFileSync(new URL('../site/index.html',import.meta.url),'utf8');
+ const version=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
+ assert.match(page,new RegExp(`"packageSpec":"agent-policy-kit@${version.replaceAll('.','\\.')}"`));
+ assert.match(page,/href="https:\/\/github\.com\/automatis-tools\/agent-policy-kit\/blob\/main\/docs\/guide\/updates-and-removal\.md#remove-apk"/);
 });
 
 test('parallel limits belong to individual tool profiles and preset selection restores only that tool',()=>{

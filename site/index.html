@@ -261,6 +261,7 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 .tool-group>.scope-all{padding:8px 13px}.tool-group>.scope-all[aria-pressed=true]{background:var(--control-hover);color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--brand-blue)}
 
 .reset-form{padding:4px 0;border:0;background:transparent;color:var(--muted);font-size:var(--text-support);text-decoration:underline;text-underline-offset:3px}.reset-form:hover{color:var(--accent)}.intro .link-error{margin-top:12px;color:var(--amber);font-size:var(--text-support)}.builder>section[data-complete=true]>.step-heading>.step-number{background:var(--success-paper);border-color:var(--success-line);color:var(--success);font-size:14px;font-weight:600}.builder>section[data-complete=true]::before{background:var(--success-line)}
+.undo{display:grid;gap:6px;margin-top:14px;padding:16px 20px;border:1px solid var(--success-line);border-radius:6px;background:var(--success-paper)}.undo strong{color:var(--ink);font-size:var(--text-ui);font-weight:600;line-height:1.5}.undo p{margin:0;color:var(--muted);font-size:var(--text-support);line-height:1.6}.undo p code{font-family:var(--mono);color:var(--ink)}.undo .undo-hint{font-size:var(--text-meta)}.undo a{color:var(--accent);text-underline-offset:3px}.undo-command{display:flex;align-items:stretch;gap:8px;margin:4px 0}.undo-command code{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);font:var(--text-meta)/1.7 var(--mono);overflow-wrap:anywhere;user-select:all}.undo-command .quiet-button{flex-shrink:0;margin-left:0;padding:4px 14px;background:var(--white);font-size:var(--text-ui)}.undo-command .quiet-button:hover{background:var(--control-hover)}.undo .undo-feedback{color:var(--ink)}.undo .undo-feedback:empty{display:none}@media(max-width:600px){.undo{padding:16px}.undo-command{flex-direction:column}.undo-command .quiet-button{align-self:flex-start;min-height:36px}}
 
 .how-it-works{margin-top:18px;border:1px solid var(--line);border-radius:7px;background:var(--paper);interpolate-size:allow-keywords}.how-it-works summary{padding:14px 16px;color:var(--accent);font-size:var(--text-ui);font-weight:500;line-height:1.5;cursor:pointer}.how-it-works summary:hover{background:var(--control-hover);border-radius:6px}.how-it-works::details-content{height:0;overflow:hidden;opacity:0;transition:height 200ms ease,opacity 180ms ease,content-visibility 200ms allow-discrete}.how-it-works[open]::details-content{height:auto;opacity:1}.how-it-works .explanation{padding:2px 16px 18px;display:grid;gap:14px}.intro .how-it-works p{max-width:70ch;font-size:var(--text-ui);line-height:1.7}.how-it-works strong{color:var(--ink);font-weight:600}.limits-chart{overflow-x:auto}.limits-chart svg{display:block;width:100%;min-width:560px;height:auto;border:1px solid var(--line);border-radius:12px}@media(prefers-reduced-motion:reduce){.how-it-works::details-content{transition:none}}
 @media(max-width:600px){header,main,footer{width:calc(100% - 32px)}.intro h1{font-size:30px}.step-heading{flex-wrap:wrap;gap:6px 10px}.step-hint{flex-basis:100%;margin-left:0;padding-left:0}.output{grid-template-columns:minmax(0,1fr);padding:16px}.output>.primary{grid-column:1;grid-row:2;justify-self:start}.setup-command{grid-row:3}#copy-feedback{grid-row:4}.editor-head{display:none}.editor-row{grid-template-columns:minmax(0,1fr);gap:10px;padding:16px 0}.editor-name{font-weight:600}.tool-group{flex-wrap:wrap}.tool-item{flex-basis:calc(50% - 4px)}.tool-group>.scope-all{flex-basis:100%}.tool-group .tool-scope{padding-left:8px;padding-right:24px}.mode-option{font-size:var(--text-meta);gap:12px}.brand{font-size:15px}header{gap:9px}footer{gap:14px}}
@@ -317,7 +318,7 @@ section[aria-labelledby=helpers-heading]{view-transition-name:step-helpers}secti
 <section aria-labelledby="tools-heading"><div class="step-heading"><span class="step-number">2</span><h2 id="tools-heading" tabindex="-1">AI assistants</h2></div><div class="tool-group" id="selected-tools" role="group" aria-label="Selected AI assistants"></div><div class="suggestions" id="tool-options" role="group" aria-label="Available AI assistants"></div><p class="notice tools-notice" id="tools-notice" role="note" hidden></p></section>
 <section aria-labelledby="mode-heading"><div class="step-heading"><span class="step-number">3</span><h2 id="mode-heading" tabindex="-1">Work mode</h2></div><div id="mode-empty" class="mode-placeholder">Choose subagent roles and AI assistants above.</div><div id="mode-panel" hidden><div class="mode-heading"><span class="scope-label" id="scope-label">All selected AI assistants</span></div><div id="mode-options" role="radiogroup" aria-label="Work mode"></div><p class="notice" id="mode-notice" hidden></p><div class="top-models" id="top-models" hidden><button type="button" role="switch" id="top-models-toggle" aria-checked="false"><span class="switch-track" aria-hidden="true"></span><span id="top-models-label">Use top models for code, review and tests</span></button></div><section class="advanced" id="advanced" aria-label="Models and effort"><h3>Models &amp; effort</h3><div id="editor"></div><div class="concurrency" id="concurrency-panel" hidden><h3>Parallel subagents</h3><div class="concurrency-row"><label for="max-concurrent" id="concurrency-label">Max per session</label><div class="concurrency-stepper" role="group" aria-label="Maximum concurrent subagents"><button id="decrease-concurrency" type="button" aria-label="Decrease maximum concurrent subagents">−</button><input id="max-concurrent" type="number" min="1" max="32" step="1" value="3" inputmode="numeric" aria-describedby="concurrency-error"><button id="increase-concurrency" type="button" aria-label="Increase maximum concurrent subagents">+</button></div></div><p class="field-error" id="concurrency-error" role="status" hidden>Enter a whole number from 1 to 32.</p></div></section></div></section>
 
-<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2><span class="step-hint" id="step-hint-4" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and an AI assistant in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><div class="setup-footer"><p class="release-status" id="release-status"></p><button type="button" class="reset-form" id="reset-form">Reset form</button></div></section>
+<section aria-labelledby="setup-heading"><div class="step-heading"><span class="step-number">4</span><h2 id="setup-heading">Copy setup command</h2><span class="step-hint" id="step-hint-4" role="status" aria-live="polite" aria-atomic="true" hidden></span></div><div class="output" data-ready="false"><div class="setup-result"><div aria-live="polite" aria-atomic="true"><strong id="setup-summary">Complete the steps above.</strong><p id="setup-description">Choose a subagent role in step 1 and an AI assistant in step 2.</p></div><textarea class="setup-command" id="setup-command" readonly aria-label="Setup command" wrap="soft" rows="1" hidden></textarea><p id="copy-feedback" role="status" hidden></p></div><button class="button primary" id="copy" type="button" aria-describedby="setup-description" disabled>Copy command</button></div><div class="setup-footer"><p class="release-status" id="release-status"></p><button type="button" class="reset-form" id="reset-form">Reset form</button></div><div class="undo" role="group" aria-labelledby="undo-title" aria-describedby="undo-text"><strong id="undo-title">You can undo the setup</strong><p id="undo-text">One command removes the APK settings. It restores the settings you had before APK and keeps your unrelated edits.</p><div class="undo-command"><code id="undo-command"></code><button type="button" class="quiet-button" id="copy-undo" aria-label="Copy the uninstall command">Copy</button></div><p class="undo-hint">To preview first, run it without <code>--apply</code>. Removal uses the receipts that setup saves in <code>~/.agent-policy-kit</code>, so keep that folder. <a href="https://github.com/automatis-tools/agent-policy-kit/blob/main/docs/guide/updates-and-removal.md#remove-apk" target="_blank" rel="noopener noreferrer">Details and exceptions</a></p><p class="undo-feedback" id="undo-feedback" role="status"></p></div></section>
 </div>
 </main>
 <div id="role-tooltip" class="role-tooltip" role="tooltip" hidden></div>
@@ -796,7 +797,30 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
   function buildCommand(config, release) {return formatExplicitCommand(config,release.version,RELEASE.roles);}
-  globalThis.APKConfigurator = Object.freeze({initialState, assistantNotices, modeFor, presetModelSummary, topModelRoles, topModelsOn, setTopModels, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, updateConcurrency, stepConcurrency, concurrencyFor, restoreState, addAll, buildConfig, encodeConfig, buildCommand});
+  // Steps 1–3 are complete when roles and assistants are chosen and their settings give a valid command.
+  // The green checks and the share address both use this result, so they cannot disagree.
+  function stepProgress(state, release = RELEASE) {
+    const roles=state.selectedRoles===undefined?ROLES:Array.isArray(state.selectedRoles)?state.selectedRoles:[];
+    const tools=Array.isArray(state.selected)?state.selected:[];
+    const missing=[];
+    if(!roles.length)missing.push('roles');
+    if(!tools.length)missing.push('tools');
+    if(!missing.length&&tools.some(client=>modeFor(state,client)===null))missing.push('mode');
+    let command='',errors=[],unavailable=false;
+    if(!missing.length){
+      const built=buildConfig(state,release.preferences,release.catalog);errors=built.errors;
+      if(!errors.length)try{command=buildCommand(built.config,release);}catch{unavailable=true;}
+    }
+    const steps=[roles.length>0,tools.length>0,!!command];
+    return {steps,complete:steps.every(Boolean),missing,errors,unavailable,command};
+  }
+  // The address carries a setup link only for a complete form. An opened link stays while the form still matches it.
+  function shareAddress(hash, {complete, fragment, opened = null}) {
+    if(complete)return fragment;
+    if(!hash.startsWith('#setup='))return hash;
+    return opened?.hash===hash&&opened.fragment===fragment?hash:'';
+  }
+  globalThis.APKConfigurator = Object.freeze({initialState, assistantNotices, modeFor, presetModelSummary, topModelRoles, topModelsOn, setTopModels, applyPreset, effective, allowedEfforts, preferenceForModel, updateEffort, updateConcurrency, stepConcurrency, concurrencyFor, restoreState, addAll, buildConfig, encodeConfig, buildCommand, stepProgress, shareAddress});
   if (typeof document === 'undefined') return;
 
 (() => {
@@ -815,13 +839,21 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
  syncTargets();
  const modeName=id=>id===null?'Choose mode':presets.find(p=>p.id===id)?.label??'Custom';
  function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n;}
- let mounted=false,archiveNavigation=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0,lastCopiedCommand=null,linkError='',lastAddress=location.hash;
+ let mounted=false,archiveNavigation=false,activeTransition=null,motionCount=0,motionReady=0,lastAnimationCount=0,currentCommand='',commandRevision=0,lastCopiedCommand=null,linkError='',lastAddress=location.hash,openedLink=null,progress=A.stepProgress(state,RELEASE);
  const showCommand=`npx --yes --ignore-scripts --package ${RELEASE.packageSpec} agent-policy show`;
  $('show-command').textContent=showCommand;
  $('copy-show').addEventListener('click',async()=>{
   const button=$('copy-show');
   try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(showCommand);button.textContent='Copied';setTimeout(()=>{button.textContent='Copy';},1600);}
   catch{$('show-command').hidden=false;getSelection()?.selectAllChildren($('show-command'));}
+ });
+ const undoCommand=`npx --yes --ignore-scripts --package ${RELEASE.packageSpec} agent-policy uninstall --apply`;
+ $('undo-command').textContent=undoCommand;
+ let undoTimer=null;
+ $('copy-undo').addEventListener('click',async()=>{
+  const button=$('copy-undo'),feedback=$('undo-feedback');clearTimeout(undoTimer);
+  try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(undoCommand);button.textContent='Copied';feedback.className='sr-only';feedback.textContent='Uninstall command copied.';undoTimer=setTimeout(()=>{button.textContent='Copy';feedback.textContent='';},1600);}
+  catch{getSelection()?.selectAllChildren($('undo-command'));feedback.className='undo-feedback';feedback.textContent='Command selected. Copy it with your keyboard.';}
  });
  $('release-status').textContent=RELEASE.unreleased?'Release candidate · npm command available after publication.':`Configuration release ${RELEASE.version}`;
  const reducedMotion=matchMedia('(prefers-reduced-motion:reduce)');
@@ -973,14 +1005,14 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
   }
  }
  function freshForm(){
-  state=A.initialState(initial.preferences,initial.id,{empty:true});helpers=[...state.selectedRoles];pickedTools=[];selectedScope=null;lastCopiedCommand=null;commandRevision++;for(const node of toolModeLabels.values())node.getAnimations?.().forEach(animation=>animation.cancel());toolModeLabels.clear();
+  state=A.initialState(initial.preferences,initial.id,{empty:true});helpers=[...state.selectedRoles];pickedTools=[];selectedScope=null;lastCopiedCommand=null;openedLink=null;commandRevision++;for(const node of toolModeLabels.values())node.getAnimations?.().forEach(animation=>animation.cancel());toolModeLabels.clear();
  }
  function loadAddress(first=false){
   try{
    const data=decodeFormState(location.hash,RELEASE);
    if(data){
     freshForm();helpers=[...data.roles];pickedTools=data.tools.map(tool=>tool.id);selectedScope=data.scope;
-    state=A.restoreState(data,initial.preferences,presets,initial.id);
+    state=A.restoreState(data,initial.preferences,presets,initial.id);openedLink={hash:location.hash};
    }else if(!first)freshForm();
    linkError='';
   }catch(error){
@@ -989,13 +1021,22 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
    freshForm();linkError=error?.code==='SHARE_RELEASE_MISMATCH'?'Open this setup link with its matching APK release, or reset the form.':'This setup link is invalid. Reset the form to start again.';
   }
  }
+ // The address gets a setup link only when steps 1–3 are complete; otherwise the link is removed.
  function publishAddress(){
   let message=linkError;
-  if(!message)try{
-   const fragment=encodeFormState({state,helpers,pickedTools,selectedScope},RELEASE);
-   if(location.hash!==fragment)history.replaceState(history.state,'',location.pathname+location.search+fragment);
-   lastAddress=fragment;
-  }catch{message=pickedTools.some(client=>{const cap=A.concurrencyFor(state,client);return !Number.isInteger(cap)||cap<1||cap>32;})?'Check parallel limits in the AI assistant details.':'Check your model IDs before sharing this setup.';}
+  if(!message){
+   let fragment=null;
+   try{fragment=encodeFormState({state,helpers,pickedTools,selectedScope},RELEASE);}
+   catch{if(progress.complete)message=pickedTools.some(client=>{const cap=A.concurrencyFor(state,client);return !Number.isInteger(cap)||cap<1||cap>32;})?'Check parallel limits in the AI assistant details.':'Check your model IDs before sharing this setup.';}
+   if(!message){
+    // The first render after opening a link records its form, so the link stays until the form changes.
+    if(openedLink&&openedLink.fragment===undefined)openedLink.fragment=fragment;
+    const next=A.shareAddress(location.hash,{complete:progress.complete,fragment,opened:openedLink});
+    if(location.hash!==next)history.replaceState(history.state,'',location.pathname+location.search+next);
+    if(next!==openedLink?.hash)openedLink=null;
+    lastAddress=next;
+   }
+  }
   $('link-error').textContent=message;$('link-error').hidden=!message;
  }
  function setStepHint(number,message){
@@ -1025,7 +1066,7 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
  }
  function updateProgress(){
   const copied=!!currentCommand&&lastCopiedCommand===currentCommand;
-  const complete=[helpers.length>0,pickedTools.length>0,!!currentCommand,copied];
+  const complete=[...progress.steps,copied];
   document.querySelectorAll('.builder>section').forEach((section,index)=>{
    const marker=section.querySelector('.step-number'),value=String(complete[index]),changed=marker.dataset.complete!==undefined&&marker.dataset.complete!==value;section.dataset.complete=value;marker.dataset.complete=value;
    const text=complete[index]?'✓':String(index+1);if(marker.textContent!==text)marker.textContent=text;marker.setAttribute('role','img');marker.setAttribute('aria-label',`Step ${index+1}${complete[index]?' complete':''}`);if(changed)flashStep(marker,complete[index]);
@@ -1047,17 +1088,13 @@ function archivedReleaseUrl(error,href,hostedReleases=[]){
    $('concurrency-error').hidden=validCap;
    $('decrease-concurrency').disabled=validCap&&cap===1;$('increase-concurrency').disabled=validCap&&cap===32;
   }
-  let next='',summary='Complete the steps above.',detail='',missing=[];
-  if(!helpers.length)missing.push(['helpers-heading','a subagent role in step 1']);
-  if(!pickedTools.length)missing.push(['tools-heading','an AI assistant in step 2']);
+  progress=A.stepProgress(state,RELEASE);
+  let next='',summary='Complete the steps above.',detail='';
+  const missing=progress.missing.map(step=>({roles:['helpers-heading','a subagent role in step 1'],tools:['tools-heading','an AI assistant in step 2'],mode:['mode-heading','a work mode for each selected AI assistant in step 3']})[step]);
   if(!missing.length){
-   if(pickedTools.some(client=>A.modeFor(state,client)===null))missing.push(['mode-heading','a work mode for each selected AI assistant in step 3']);
-   else{
-    const {config,errors}=A.buildConfig(state,RELEASE.preferences,RELEASE.catalog);
-    if(errors.length){summary='Check your settings.';detail=errors[0];}
-    else try{next=A.buildCommand(config,RELEASE);summary=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${pickedTools.length} AI assistant${pickedTools.length===1?'':'s'}`;}
-    catch{summary='Command unavailable.';detail='Check the configuration release.';}
-   }
+   if(progress.errors.length){summary='Check your settings.';detail=progress.errors[0];}
+   else if(progress.unavailable){summary='Command unavailable.';detail='Check the configuration release.';}
+   else{next=progress.command;summary=`${helpers.length} subagent role${helpers.length===1?'':'s'} · ${pickedTools.length} AI assistant${pickedTools.length===1?'':'s'}`;}
   }
   if(next!==currentCommand){commandRevision++;lastCopiedCommand=null;}
   currentCommand=next;
