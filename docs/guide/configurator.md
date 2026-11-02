@@ -1,6 +1,6 @@
 # Configurator
 
-This document describes the configurator page: its four steps, the work modes, the top models switch, the per-assistant limits and the share links. It is for people who use the page to make a setup command. For a first setup from start to end, see [Getting started](getting-started.md).
+This document describes the configurator page: its four steps, the work modes, the top models switch, the per-assistant limits, the undo command and the share links. It is for people who use the page to make a setup command. For a first setup from start to end, see [Getting started](getting-started.md).
 
 ## Open the page
 
@@ -131,9 +131,27 @@ npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup \
 
 The [Commands](commands.md#explicit-tool-arguments) reference describes this syntax. To preview without writes, delete the `--apply` line and the ` \` at the end of the line before it.
 
+### Undo the setup
+
+Under step 4, the box **You can undo the setup** shows the command that removes the APK settings. The command is pinned to the release of the page, for example:
+
+```sh
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy uninstall --apply
+```
+
+The removal restores the settings that you had before APK and keeps your unrelated edits. It uses the receipts that setup saves in the state directory, `~/.agent-policy-kit` by default. Keep this directory.
+
+1. Click **Copy** next to the command. If the clipboard is not available, the page selects the command. Copy it with your keyboard.
+2. To preview the removal, run the command without `--apply`.
+3. Run the command with `--apply` to remove the APK settings.
+
+To remove the APK settings of one assistant only, add `--client ID`, for example `--client claude`.
+
+The box is always visible. It does not depend on the form. [Updates and removal](updates-and-removal.md#remove-apk) gives the full procedure and the known exceptions.
+
 ## Reset the form
 
-Click **Reset form** under step 4. The page selects all six roles again and clears the assistants, the modes and the copy status. The address then holds only the six roles, as on a page that you open for the first time. Reset does not change files on your computer.
+Click **Reset form** under step 4. The page selects all six roles again and clears the assistants, the modes and the copy status. It also removes the setup link from the address. Reset does not change files on your computer. To remove the APK settings, use the [undo command](#undo-the-setup).
 
 ## Check current settings
 
@@ -141,15 +159,22 @@ At the bottom of the page, **Check current settings** has a **Copy** button. It 
 
 ## Share a setup
 
-The page saves the form in the address. Each change replaces the part after `#setup=`.
+The page saves a complete form in the address, in the part after `#setup=`. The form is complete when steps 1, 2 and 3 show their green checks.
 
-1. Complete the form, or a part of it.
+- When you open the page without a setup link, the address has no `#setup=` part.
+- When steps 1, 2 and 3 are complete, the page writes the form into the address. Each later change replaces the part after `#setup=`.
+- When a change makes step 1, 2 or 3 incomplete, the page removes the `#setup=` part. For example, this occurs when you remove the last assistant.
+- **Reset form** removes the `#setup=` part.
+
+To share a setup:
+
+1. Complete steps 1, 2 and 3.
 2. Copy the page address from the browser.
 3. Send the address to the other person.
 
 The link contains the roles, the assistant order, the mode of each assistant, the model and effort choices, each limit and the assistant that you edit. It does not contain the copy status. The link stays in the browser. The page needs no database to open it.
 
-When someone opens the link, the page restores the form, including unfinished choices. The command is still blocked until all values are valid.
+When someone opens the link, the page restores the form, including unfinished choices. The command is still blocked until all values are valid. For a link to an unfinished form, the address keeps the link until the form changes.
 
 - A link contains its release version. A link from another release opens only on the page of that release. The hosted page sends such a link to the page of its release, if that page is hosted. Otherwise, the page shows an error.
 - If a link is not valid, the page shows an error. Click **Reset form** to start again.
