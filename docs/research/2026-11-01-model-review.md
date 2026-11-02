@@ -1,6 +1,6 @@
 # Model review of 2026-11-01
 
-This document records the evidence behind the presets and the model catalog of APK 0.4.0. It is for maintainers who prepare the next review and for users who want to know why a preset has its values. It lists the sources per vendor, compares Opus 5.5 with Sonnet 5.5 at different effort levels, compares Fable 5.1 with Opus 5.5, and summarizes what the evidence says about effort and small models. It also lists the decisions of 0.4.0 and the questions that need local verification. The current preset values are in [presets](../reference/presets.md). The catalog fields are in [model catalog](../reference/model-catalog.md). The procedure for the next review is in the [model review procedure](../maintainers/model-review.md).
+This document records the evidence behind the presets and the model catalog of APK 0.4.0. It is for maintainers who prepare the next review and for users who want to know why a preset has its values. It lists the sources per vendor, compares Opus 5.5 with Sonnet 5.5 at different effort levels, compares Fable 5.1 with Opus 5.5, and summarizes what the evidence says about effort and small models. It also lists the decisions of 0.4.0 and the questions that need local verification. An update of 2026-11-02 checked the equal-effort numbers for Opus 5.5 and Sonnet 5.5 against primary sources and recorded the decision for the Standard Claude Coder ([#29](https://github.com/automatis-tools/agent-policy-kit/issues/29)). It also checked the lifecycle of the Claude 4.5 models again ([#28](https://github.com/automatis-tools/agent-policy-kit/issues/28)). The current preset values are in [presets](../reference/presets.md). The catalog fields are in [model catalog](../reference/model-catalog.md). The procedure for the next review is in the [model review procedure](../maintainers/model-review.md).
 
 ## Scope and method
 
@@ -77,6 +77,9 @@ No Anthropic model was released after 2026-10-30. The current models are Fable 5
 | Frontmatter `effort` overrides the session effort but not `CLAUDE_CODE_EFFORT_LEVEL`. | [Model configuration](https://code.claude.com/docs/en/model-config) (primary) |
 | Claude Code 2.1.316 adds `CLAUDE_CODE_SUBAGENT_EFFORT`. It sets the effort of subagents that name no effort, instead of the session effort. The documentation pages do not describe it yet. | Claude Code 2.1.316 release notes, installed with the client (primary) |
 | Sonnet 4.5 (`claude-sonnet-4-5-20250929`) is deprecated and retires on 2026-11-30. Opus 4.5 retires not sooner than 2026-11-24. Haiku 4.5 retires not sooner than 2026-10-15; that date passed without a deprecation notice. | [Model deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations) (primary) |
+| Check of 2026-11-02 (#28): Sonnet 4.5 was deprecated on 2026-09-30 with the replacement Sonnet 5.5. Its retirement on 2026-11-30 applies to the Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Microsoft Foundry. Opus 4.5 and Haiku 4.5 are "Active (legacy)" with no deprecation notice. Anthropic gives at least 60 days' notice before a retirement, so the Opus 4.5 date is a floor, not a scheduled date. | [Model deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations), [Sonnet 4.5](https://platform.claude.com/docs/en/models/sonnet-4-5/overview), [Opus 4.5](https://platform.claude.com/docs/en/models/opus-4-5/overview), [Haiku 4.5](https://platform.claude.com/docs/en/models/haiku-4-5/overview) (primary) |
+| Partner schedules for Sonnet 4.5: Amazon Bedrock lists it as Legacy from 2026-10-08 with end of life on 2027-04-08. Google Cloud (Google managed) announces no retirement date; its earliest retirement date, 2026-09-29, passed. Google's earliest retirement dates are 2026-11-24 for Opus 4.5 and 2026-12-07 for Haiku 4.5. | [Bedrock legacy models](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html), [Google: Sonnet 4.5](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/claude/sonnet-4-5), [Google partner model deprecations](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/deprecations/partner-models) (primary) |
+| The Claude Code aliases resolve to 4.5 models outside the Anthropic API: `sonnet` to Sonnet 4.5 on Bedrock, Google Cloud's Agent Platform and Microsoft Foundry; `haiku` to Haiku 4.5 on every provider except the Anthropic API; `default` to Sonnet 4.5 on Microsoft Foundry. Foundry follows the Claude API lifecycle. | [Model configuration](https://code.claude.com/docs/en/model-config), [Claude in Microsoft Foundry](https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry) (primary) |
 | Plans: Pro, Max ($100, 5 times Pro) and Ultra ($200, no 5-hour limit). On Pro, Fable uses usage credits. On Max and Ultra, Fable has a separate weekly limit. | [Claude pricing](https://claude.com/pricing), [Use Claude Code with your Pro or Max plan](https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-or-max-plan) (primary) |
 | In non-interactive `-p` mode, Fable usage is billed without a consent prompt. | [Model configuration](https://code.claude.com/docs/en/model-config) (primary) |
 
@@ -175,44 +178,58 @@ Per token, Opus 5.5 costs twice as much as Sonnet 5.5. Subscription plans meter 
 | Anthropic: FrontierCode (Sonnet at max) | 54.4% | 46.2% | [Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5) (primary) |
 | Anthropic: FrontierCode, Sonnet 5.5 at xhigh | — | 52.1% | [Haiku 5.5](https://www.anthropic.com/claude-haiku-5-5) (primary) |
 
-Caveat for the Terminal-Bench lead of Sonnet 5.5 in Anthropic's numbers: apidog reports, with the system card as its source, that a fallback was used in 1.5% of Sonnet 5.5 trials and in 10% of Opus 5.5 trials. Source: [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/) (secondary). This review did not check the caveat in the system card.
+Caveat for the Terminal-Bench lead of Sonnet 5.5 in Anthropic's numbers: a fallback served 1.2% of the Sonnet 5.5 requests (1.5% of trials) and 2.5% of the Opus 5.5 requests (10% of trials). These rates apply only to the headline runs, Sonnet 5.5 at max and Opus 5.5 at xhigh. No source publishes fallback rates per effort level. Sources: Sonnet 5.5 system card, §8.5, p.113, and Opus 5.5 system card, §8.5, p.178 (primary). The 0.4.0 review had this caveat only from [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/) (secondary). Artificial Analysis saw the same asymmetry independently: in the Terminal-Bench part of its Coding Agent Index, the fallback served 6 of 198 Sonnet 5.5 attempts and 24 of 198 Opus 5.5 attempts. Source: [Artificial Analysis: coding agents](https://artificialanalysis.ai/agents/coding) (primary).
 
 The two independent measurements put Opus 5.5 ahead by 2.4 index points and by about 1 percentage point. At these effort levels the models are almost equal.
 
-### Results at equal high effort
+### Results at equal effort
 
-Only one source compares the two models at the same effort level. It is secondary: apidog cites the Sonnet 5.5 system card. This review did not check these numbers against the system card. The cost is the API cost of one attempt at one task.
+Anthropic publishes per-effort results for both models on three coding benchmarks. They are the data behind the "Accuracy vs. cost" charts on the model pages: the pages embed the chart data in their HTML. The system cards confirm the CursorBench values and the Opus 5.5 FrontierCode result at medium in text. The cost is the list-price API cost of one attempt at one task.
 
-| Benchmark | Sonnet 5.5 high | Opus 5.5 high | Source |
-|---|---|---|---|
-| Terminal-Bench 4.0 | 43.0% ($1.94) | 64.2% ($3.88) | [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/) (secondary) |
-| FrontierCode | 49.4% ($0.42) | 54.0% ($1.09) | [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/) (secondary) |
-| CursorBench | 47.8% ($1.67) | 56.0% ($3.97) | [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/) (secondary) |
+The 0.4.0 review took the high-effort numbers and the Terminal-Bench numbers for Opus 5.5 at medium and Sonnet 5.5 at xhigh from a secondary source, [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/). The check of 2026-11-02 confirmed every one of these numbers in the primary data. apidog names the Sonnet 5.5 system card as its source, but most of the numbers are only in the model-page charts.
 
-The same source gives two more Terminal-Bench 4.0 results: Opus 5.5 at medium 57.6% ($2.94) and Sonnet 5.5 at xhigh 61.5% ($5.30). Source: [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/) (secondary). The source has no result for Sonnet 5.5 at medium, which is the Standard Coder setting.
+| Benchmark | Sonnet 5.5 medium | Sonnet 5.5 high | Opus 5.5 medium | Opus 5.5 high | Source |
+|---|---|---|---|---|---|
+| Terminal-Bench 4.0 | 28.8% ($0.83) | 43.0% ($1.94) | 57.6% ($2.94) | 64.2% ($3.88) | Chart data on [Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5) and [Opus 5.5](https://www.anthropic.com/claude-opus-5-5) (primary) |
+| FrontierCode v1.1 Main | 36.5% ($0.24) | 49.4% ($0.42) | 54.6% ($0.80) | 54.0% ($1.09) | Chart data on [Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5) and [Opus 5.5](https://www.anthropic.com/claude-opus-5-5). Opus 5.5 at medium also in the Opus 5.5 system card, §8.4, p.176 (primary) |
+| CursorBench 4.0 | 39.2% ($0.70) | 47.8% ($1.67) | 52.5% ($2.91) | 56.0% ($3.97) | Chart data on [Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5). Scores also in the Sonnet 5.5 system card, §8.8, p.115, and the Opus 5.5 system card, §8.8, p.179 (primary) |
 
-Anthropic gives two primary results for Opus 5.5 at medium: FrontierCode 54.6% and CursorBench 52.5%. Source: [Opus 5.5](https://www.anthropic.com/claude-opus-5-5) (primary). On FrontierCode, Opus 5.5 at medium (54.6%) is above Sonnet 5.5 at xhigh (52.1%) and at max (46.2%) in Anthropic's own numbers. The two Anthropic pages do not say that they used the same harness.
+- Terminal-Bench 4.0 ran in Claude Code (`--bare`) with safeguards on and 5 trials per task. The standard error is about ±2.5 points. Sonnet 5.5 at xhigh scores 61.5% ($5.30). Source: [Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5) chart data (primary).
+- Cursor reported the CursorBench scores. Anthropic estimated the costs from Cursor's token counts.
+- The model page does not say how the Sonnet 5.5 FrontierCode costs were measured.
+- The Opus 5.5 system card says that its highest FrontierCode scores are at medium effort and that performance declines above medium.
+
+On FrontierCode, Opus 5.5 at medium (54.6%) is above Sonnet 5.5 at xhigh (52.1%) and at max (46.2%) in Anthropic's own numbers.
+
+Artificial Analysis measures both models per effort in its own harness, not in Claude Code. Its results are close to Anthropic's. Sources: [Artificial Analysis: Sonnet 5.5 medium](https://artificialanalysis.ai/models/claude-sonnet-5-5-medium), the `-high` page and the same pages for `claude-opus-5-5` (primary).
+
+| Measurement (Artificial Analysis) | Sonnet 5.5 medium | Sonnet 5.5 high | Opus 5.5 medium | Opus 5.5 high |
+|---|---|---|---|---|
+| Terminal-Bench 4.0 | 29.8% ($1.58) | 43.9% ($2.19) | 52.5% ($4.04) | 56.6% ($5.12) |
+| FrontierCode v1.1 | 29.3% | 44.3% | 57.1% | 54.0% |
+| FrontierCode 2.0 | 11.0% ($0.32) | 25.7% ($0.76) | 33.1% ($1.71) | 35.9% ($2.49) |
+| Intelligence Index | 30.3 | 41.1 | 48.1 | 51.7 |
+
+Vals AI publishes per-effort results only for Opus 5.5 and has no medium value. Source: [Vals AI: Terminal-Bench 4.0](https://www.vals.ai/benchmarks/terminal-bench-4) (primary). No source publishes SWE-bench results per effort.
 
 ### Cost per solved task
 
-The cost per solved task is derived in this document. It is the cost of one attempt divided by the success rate, from the apidog numbers above. No source publishes these values.
+The cost per solved task is derived in this document. It is the cost of one attempt divided by the success rate, from the primary numbers above. The values use the unrounded chart costs, so they can differ by one cent from a division of the rounded values. FrontierCode is a composite score, so for it the value is the cost per score point. No source publishes these values.
 
-| Benchmark | Setting | Success rate | Cost per attempt | Cost per solved task (derived) |
+| Measurement | Sonnet 5.5 medium | Sonnet 5.5 high | Opus 5.5 medium | Opus 5.5 high |
 |---|---|---|---|---|
-| Terminal-Bench 4.0 | Sonnet 5.5 high | 43.0% | $1.94 | $4.51 |
-| Terminal-Bench 4.0 | Opus 5.5 medium | 57.6% | $2.94 | $5.10 |
-| Terminal-Bench 4.0 | Opus 5.5 high | 64.2% | $3.88 | $6.04 |
-| Terminal-Bench 4.0 | Sonnet 5.5 xhigh | 61.5% | $5.30 | $8.62 |
-| FrontierCode | Sonnet 5.5 high | 49.4% | $0.42 | $0.85 |
-| FrontierCode | Opus 5.5 high | 54.0% | $1.09 | $2.02 |
-| CursorBench | Sonnet 5.5 high | 47.8% | $1.67 | $3.49 |
-| CursorBench | Opus 5.5 high | 56.0% | $3.97 | $7.09 |
+| Anthropic: Terminal-Bench 4.0 | $2.90 | $4.51 | $5.10 | $6.05 |
+| Anthropic: FrontierCode v1.1 | $0.65 | $0.85 | $1.47 | $2.02 |
+| Anthropic: CursorBench 4.0 | $1.79 | $3.49 | $5.54 | $7.09 |
+| Artificial Analysis: Terminal-Bench 4.0 | $5.30 | $4.97 | $7.70 | $9.05 |
+| Artificial Analysis: FrontierCode 2.0 | $2.95 | $2.95 | $5.17 | $6.92 |
 
 What the derived values show:
 
-- At high, Sonnet 5.5 has the lowest cost per solved task on all three benchmarks, but it solves fewer tasks.
-- On Terminal-Bench 4.0, Opus 5.5 at medium solves 14.6 percentage points more tasks than Sonnet 5.5 at high. Its cost per solved task is about 13% higher.
-- Sonnet 5.5 at xhigh costs more per solved task than Opus 5.5 at high, and it solves fewer tasks (61.5% vs 64.2%).
+- Sonnet 5.5 at medium solves the fewest tasks. Sonnet 5.5 at high scores 8.6 to 14.8 points more on every measurement, at 1.4 to 2.4 times the cost per task. On the Artificial Analysis Terminal-Bench run, its cost per solved task is even lower than at medium ($4.97 against $5.30).
+- Opus 5.5 at medium scores 4.7 to 14.6 points more than Sonnet 5.5 at high. It costs 1.5 to 2.3 times more per task, and its cost per solved task is 13% to 75% higher on all five measurements.
+- The largest Opus gain is on Terminal-Bench 4.0. On FrontierCode and CursorBench, which are closer to repository work, Opus 5.5 at medium leads Sonnet 5.5 at high by about 5 points.
+- Sonnet 5.5 at xhigh costs more per solved task on Terminal-Bench 4.0 ($8.62) than Opus 5.5 at high, and it solves fewer tasks (61.5% against 64.2%).
 
 ### The Sonnet 5.5 regression at max
 
@@ -227,16 +244,22 @@ Anthropic reports that Sonnet 5.5 scored lower on FrontierCode at max than at xh
 | The example read-only code reviewer uses Sonnet at high. | [Subagents](https://code.claude.com/docs/en/sub-agents) (primary) |
 | Sonnet 5.5 is "a faster, lower-cost complement to Claude Opus 5.5" for "well-scoped everyday tasks, bug fixes". | [Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5) (primary) |
 | A customer (Factory) calls Opus 5.5 "the first model we'd default to at medium effort". This is a customer quote, not Anthropic guidance. | [Opus 5.5](https://www.anthropic.com/claude-opus-5-5) (primary) |
+| For Sonnet 5.5: "For agentic coding and multistep tool use, start with `medium` for well-specified tasks and move to `high` for harder or longer ones." | [Effort](https://platform.claude.com/docs/en/build-with-claude/effort) (primary) |
+| High is for "Work where verification matters or edge cases are likely, such as fixing a bug in an existing codebase". | [Model configuration](https://code.claude.com/docs/en/model-config) (primary) |
+| Opus "uses meaningfully more of your quota, so consider switching to Sonnet for routine work". No official per-model multiplier for plan limits exists. | [Models, usage, and limits in Claude Code](https://support.claude.com/en/articles/14552983), [Claude pricing](https://claude.com/pricing) (primary) |
 
 ### What this means for the Standard Claude Coder
 
-The Standard Claude Coder stays Sonnet 5.5 at medium in 0.4.0. The reasons:
+In 0.4.0 the Standard Claude Coder stayed Sonnet 5.5 at medium. That review said that the equal-effort data came only from a secondary source and that no source measured Sonnet 5.5 at medium. Both statements were wrong. Anthropic publishes the equal-effort data and Sonnet 5.5 at medium on three coding benchmarks, and Artificial Analysis measures both independently. See [Results at equal effort](#results-at-equal-effort).
 
-- The equal-effort data that favors Opus 5.5 at medium comes only from a secondary source.
-- No source measures Sonnet 5.5 at medium, so the current cell has no measured position.
-- Anthropic's guidance puts Sonnet first for most coding.
+Decision of 2026-11-02 ([#29](https://github.com/automatis-tools/agent-policy-kit/issues/29), release 0.5.0): the Standard Claude Coder changes from Sonnet 5.5 · medium to Sonnet 5.5 · high. Confidence: medium.
 
-The candidates for a local A/B comparison are Sonnet 5.5 at high and Opus 5.5 at medium. On Terminal-Bench 4.0 their derived costs per solved task are close ($4.51 and $5.10), and Opus 5.5 at medium solves more tasks. A test must use representative repository tasks and count the plan usage, not only the API price. The Coder effort also becomes the effort of unnamed subagents in Claude Code 2.1.316 and later (capped at high), so a change to the Coder also changes those subagents. [Roles](../reference/roles.md) describes this default subagent.
+- **Sonnet 5.5 at medium is the weak point.** On Terminal-Bench 4.0 it scores 28.8% in Anthropic's run and 29.8% in the Artificial Analysis run. On FrontierCode 2.0 it scores 11.0%. High adds 8.6 to 14.8 points on every measurement.
+- **Opus 5.5 at medium is stronger, but it is a quality-first choice.** Its cost per solved task is higher than that of Sonnet 5.5 at high on all five measurements, and Anthropic says that Opus uses "meaningfully more of your quota". That fits Top-tier, not a balance preset. Its largest gain is on Terminal-Bench 4.0, which Anthropic describes as science-adjacent and frontier-engineering tasks.
+- **Sonnet 5.5 at high matches Anthropic's guidance for the role.** The Coder implements tasks and fixes bugs in existing code. The Sonnet 5.5 effort guidance and the Claude Code definition of high both point to high. Anthropic still suggests Sonnet for most coding.
+- **Why the confidence is medium:** benchmark tasks are harder than many well-scoped subagent tasks, and Anthropic says that medium fits clear-scope work. No source gives fallback rates per effort. No official plan-usage multiplier exists, so the API cost ratios are only a proxy. A local A/B comparison on representative repository tasks is still the definitive check (open question 2).
+
+Side effect: setup writes `CLAUDE_CODE_SUBAGENT_EFFORT` from the Coder effort, capped at high (Claude Code 2.1.316 and later). In Standard, Claude subagents without a named role therefore also move from medium to high, and they use more of the plan. [Roles](../reference/roles.md#default-subagent-per-assistant) describes this default subagent. With the Coder at high, the Standard Claude Reviewer and Test writer equal the `code` choice, so `policies/balanced.json` no longer carries separate entries for them. Their values do not change.
 
 ## Fable 5.1 and Opus 5.5
 
@@ -255,7 +278,7 @@ The strongest argument for Fable 5.1: Anthropic says that the gap is "narrower i
 
 Fable 5.1 also has different billing. On Pro it uses usage credits, and on Max and Ultra it has a separate weekly limit. In `-p` mode it bills without a consent prompt. Sources: [Model configuration](https://code.claude.com/docs/en/model-config), [Use Claude Code with your Pro or Max plan](https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-or-max-plan) (primary).
 
-The gain of xhigh over high on Opus 5.5 is small: 66.4% (xhigh, primary, [Opus 5.5](https://www.anthropic.com/claude-opus-5-5)) against 64.2% (high, secondary, [apidog](https://apidog.com/blog/claude-sonnet-5-5-benchmarks/)) on Terminal-Bench 4.0. The switch therefore buys more reasoning on the same model, not a different model with separate billing.
+The gain of xhigh over high on Opus 5.5 is small: 66.4% (xhigh, primary, [Opus 5.5](https://www.anthropic.com/claude-opus-5-5)) against 64.2% (high, primary, chart data on [Opus 5.5](https://www.anthropic.com/claude-opus-5-5)) on Terminal-Bench 4.0. The switch therefore buys more reasoning on the same model, not a different model with separate billing.
 
 ## Effort returns
 
@@ -309,11 +332,19 @@ The release also changed setup for Claude. Setup writes `CLAUDE_CODE_SUBAGENT_EF
 
 The catalog snapshot of 0.4.0 records these facts from this review: GPT-5.5 retired for ChatGPT sign-in, the GPT-6 Astra server default, the excluded `gpt-reserve`, the client versions, the Opus 4.5 and Haiku 4.5 retirement dates, the Kimi plan requirements, the undocumented Flash Lite tier and the Grok 4.7 reasoning levels. [Model catalog](../reference/model-catalog.md) describes the fields.
 
+### Changes after the review
+
+| Preset | Assistant | Cells | 0.4.0 | 0.5.0 | Main evidence | Confidence |
+|---|---|---|---|---|---|---|
+| Standard | Claude | Coder (and Claude subagents without a named role) | Sonnet 5.5 · medium | Sonnet 5.5 · high | Anthropic's per-effort data: Sonnet 5.5 at medium scores 8.6 to 14.2 points below high. Opus 5.5 at medium costs more per solved task on every measurement. See [What this means for the Standard Claude Coder](#what-this-means-for-the-standard-claude-coder). | Medium |
+
+The catalog of 0.5.0 also records the Claude 4.5 lifecycle check of 2026-11-02 (#28): the deprecation date and replacement of Sonnet 4.5, the platforms that its retirement on 2026-11-30 applies to, the partner schedules, and the legacy status of Opus 4.5 and Haiku 4.5.
+
 ### Cells left unchanged on purpose
 
 | Cell | Why it did not change |
 |---|---|
-| Standard, Claude, Coder: Sonnet 5.5 · medium | The equal-effort evidence is secondary. Anthropic suggests Sonnet for most coding. Candidates for a local A/B test: Sonnet 5.5 · high and Opus 5.5 · medium. See [What this means for the Standard Claude Coder](#what-this-means-for-the-standard-claude-coder). |
+| Standard, Claude, Coder: Sonnet 5.5 · medium | In 0.4.0: the equal-effort evidence was secondary, and Anthropic suggests Sonnet for most coding. Changed in 0.5.0 to Sonnet 5.5 · high after a check of the primary data. See [Changes after the review](#changes-after-the-review). |
 | Light, ChatGPT, Code explorer and Docs writer: Luna · low | OpenAI's "start with high" also applies, but Light saves usage on purpose. No data shows that low harms discovery or writing. |
 | Top-tier, Kimi, Code explorer and Docs writer: K3 · high | They share the `kimi-code/k3` alias with the Coder, so their effort cannot go down alone. Moonshot suggests `k3` for large-codebase analysis. |
 | Top-tier, Kimi, Task runner: K2.8 Preview · high | K2.8 Preview has no medium level. The alias effort is shared. |
@@ -328,14 +359,14 @@ The catalog snapshot of 0.4.0 records these facts from this review: GPT-5.5 reti
 | # | Question | Why it matters | How to check |
 |---|---|---|---|
 | 1 | How does `CLAUDE_CODE_SUBAGENT_EFFORT` rank against frontmatter `effort`, the Agent tool parameter and `CLAUDE_CODE_EFFORT_LEVEL`? | The 0.4.0 setup writes this setting. | Test on Claude Code 2.1.316 or later. Read the documentation when Anthropic adds it. |
-| 2 | Is Sonnet 5.5 · high or Opus 5.5 · medium a better Standard Claude Coder than Sonnet 5.5 · medium? | Only secondary data compares them. | Run an A/B comparison on representative repository tasks. Count solved tasks and plan usage. |
+| 2 | Is Sonnet 5.5 · high or Opus 5.5 · medium the better Standard Claude Coder on real repository work? | Primary benchmark data led 0.5.0 to Sonnet 5.5 · high (#29). Benchmark tasks are harder than many subagent tasks, and plan usage is not measured. | Run an A/B comparison of Sonnet 5.5 · high and Opus 5.5 · medium on representative repository tasks. Count solved tasks and plan usage. |
 | 3 | Does Grok Build 1.0.70 accept `reasoning_effort` for `[subagents.roles.<name>]`? How does a persona bind to an `apk-*` agent? | Per-role Grok effort and a Grok 4.7 · xhigh switch depend on it. | Use an isolated Grok home directory with a role and a persona. Read the effort of the subagent in the logs. |
 | 4 | Does `grok-build-0.1` appear in the Grok Build model picker for signed-in accounts on each plan? | Light and Standard use it for Grok. | Check the model list of signed-in clients on different plans. Record only whether the model is offered, not account details. |
 | 5 | Which models do the Antigravity tiers `pro`, `flash` and `flash_lite` use on the Pro and Ultra plans? | `pro` may not mean Gemini 4 Argon on every plan. | Start one subagent per tier and read the resolved model name in the CLI log. |
 | 6 | Does `flash_lite` use less Antigravity quota than `flash`? | It decides whether Flash Lite is useful in Light. | No official data exists. Compare usage statistics. |
 | 7 | Is Terra available for Codex subagents on all paid plans and in the IDE extension? What do Free and Go plans get? | The Standard ChatGPT Docs writer uses Terra. | Compare the Codex model catalog on different plans. Start a subagent with `gpt-6.1-terra`. |
 | 8 | What do the catalog field `multi_agent_reasoning_effort: "xhigh"` and the hidden `gpt-reserve` model mean? | The field may set subagent effort in Codex Ultra mode. | Wait for OpenAI documentation. Compare server catalogs over time. |
-| 9 | Is the Opus 4.5 ID `claude-opus-4-5-20251101` (catalog) or `claude-opus-4-5-20251001` (deprecations page as read in this review)? | The catalog ID may be wrong. | Compare with [Model deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations). |
+| 9 | Is the Opus 4.5 ID `claude-opus-4-5-20251101` (catalog) or `claude-opus-4-5-20251001` (deprecations page as read in this review)? | Resolved on 2026-11-02: the catalog ID `claude-opus-4-5-20251101` is correct. | Every Anthropic source uses `20251101`: the [model deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations) table and the [Opus 4.5](https://platform.claude.com/docs/en/models/opus-4-5/overview) page (Bedrock `anthropic.claude-opus-4-5-20251101-v1:0`, Google `claude-opus-4-5@20251101`). No page has `claude-opus-4-5-20251001`. It probably mixes Opus 4.5 with the Haiku 4.5 snapshot date (`claude-haiku-4-5-20251001`). |
 | 10 | What is the untitled Anthropic item dated 2026-11-01? | It may be a new model after this review. | Read [Anthropic news](https://www.anthropic.com/news) again. |
 | 11 | What is the exact Fable limit on Ultra ("50% of weekly limits*")? | The review read it only through a summary tool. | Read [Claude pricing](https://claude.com/pricing) directly. |
 | 12 | Will a stable Kimi Code release limit subagents to the configured model pool? Does per-spawn model selection also take an effort? | The APK model pool must then contain every role model. | Watch [Kimi Code releases](https://github.com/MoonshotAI/kimi-code/releases). |
