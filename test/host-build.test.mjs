@@ -10,7 +10,7 @@ import * as site from '../scripts/build-site.mjs';
 // A launcher such as a git hook can export GIT_DIR. Fixture repositories and the in-process host
 // build must use their own directories, never a surrounding repository.
 for(const key of execFileSync('git',['rev-parse','--local-env-vars'],{encoding:'utf8'}).split('\n').filter(Boolean))delete process.env[key];
-const sensitive=['policies/fast.json','policies/balanced.json','policies/quality.json','models/catalog.json','src/roles.mjs','src/explicit.mjs','src/policy.mjs','schema/policy.schema.json'];
+const sensitive=['policies/fast.json','policies/balanced.json','policies/quality.json','models/catalog.json','src/roles.mjs','src/release.mjs','src/explicit.mjs','src/policy.mjs','schema/policy.schema.json'];
 const put=(root,file,text)=>{fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.writeFileSync(path.join(root,file),text);};
 const git=(root,...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 function fixture(t){
