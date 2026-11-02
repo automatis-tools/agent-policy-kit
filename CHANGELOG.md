@@ -18,7 +18,9 @@ Kimi, Gemini and Grok preset values do not change, so their 0.3.0 installations 
 
 ### Migration and rollback
 
-Assistant IDs, preset ids (`fast`, `balanced`, `quality`), share-link format v2 and receipt format v4 are unchanged. Setup with 0.4.0 replaces a 0.3.0 installation in place, and setup with 0.3.0 moves back. A Claude receipt can now own a third setting, `CLAUDE_CODE_SUBAGENT_EFFORT`; receipts written by 0.3.0 without it still validate and uninstall. Removal restores the value that the setting had before setup, or removes it. Share links of 0.3.0 open on the 0.3.0 page.
+Assistant IDs, preset ids (`fast`, `balanced`, `quality`), share-link format v2 and receipt format v4 are unchanged. Setup with 0.4.0 replaces a 0.3.0 installation in place, and receipts written by 0.3.0 still validate and uninstall. Setup with 0.3.0 moves ChatGPT, Kimi, Gemini and Grok back.
+
+Claude has a migration boundary in the downgrade direction. A 0.4.0 Claude receipt owns a third setting, `CLAUDE_CODE_SUBAGENT_EFFORT`, whenever the Coder effort is pinned, and every preset pins it. Version 0.3.0 does not know this setting, so its setup reports `INVALID_RECEIPT` and changes nothing. To move Claude back to 0.3.0, first remove its settings with 0.4.0: `npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy uninstall --client claude --apply`. Then set up with 0.3.0. This was checked with the 0.3.0 source in an isolated home. Removal restores the value that the setting had before setup, or removes it. Share links of 0.3.0 open on the 0.3.0 page.
 
 ### Presets and model catalog
 
