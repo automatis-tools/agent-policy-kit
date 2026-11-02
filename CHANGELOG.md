@@ -2,6 +2,28 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
+## 0.5.1 — Unreleased
+
+### Why this release
+
+The Grok Reviewer and Code explorer roles were not read-only (#30). Releases 0.4.0 and 0.5.0 wrote `permission_mode: plan` in their role files. Grok Build reads the fields of an agent file in camelCase, so it ignored this key without a warning, and the prompt was the only restriction. A role file template reaches your setup only through a new release.
+
+### Who should update
+
+- Anyone who uses Grok Build with APK and wants the Reviewer and the Code explorer to be read-only.
+- Other assistants get no configuration change. Their role files, presets and the model catalog are the same as in 0.5.0.
+
+### Migration and rollback
+
+Assistant IDs, preset ids, share-link format v2 and receipt format v4 are unchanged. `doctor` and `show` of 0.5.1 read installations and receipts from 0.4.0 and 0.5.0. Setup with 0.5.1 and `--release`, `--preset`, `--config` or explicit tool arguments replaces their Grok role files in place. A setup without these options reports `unchanged` and keeps the old role files. Setup with 0.5.0 or 0.4.0 moves Grok back in place and writes `permission_mode: plan` again. `uninstall` of 0.5.1 removes a 0.4.0, 0.5.0 or 0.5.1 installation. This was checked for Grok with the published 0.4.0 and 0.5.0 packages in isolated homes and with `grok inspect --json` of Grok Build 1.0.70. The [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries) of earlier releases still apply.
+
+### What changed
+
+- Grok: the Reviewer and the Code explorer role files have `capabilityMode: read-only` instead of `permission_mode: plan` (#30). When Grok Build starts a subagent of this type, it removes the built-in tools that edit, write, delete or move files and the shell tool. A capability mode requested at spawn cannot widen it. Tools from MCP servers stay, and image or video tools can stay when they are enabled. See [Grok read-only roles](docs/reference/assistants.md#grok-read-only-roles).
+- Grok: APK does not write `permissionMode: plan`. Grok Build reads this field, but at spawn it uses only `bypassPermissions`.
+- `show` reports `UNSUPPORTED_ROLE_CAPABILITY` for a Grok agent file whose `capabilityMode` Grok Build does not accept. Grok Build drops such an agent without a warning.
+- Not checked: a live Grok model task with a read-only role.
+
 ## 0.5.0 — 2026-11-01
 
 ### Why this release
