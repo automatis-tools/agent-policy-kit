@@ -76,7 +76,7 @@ The **Models & effort** table shows one row for each selected role. It is visibl
 
 Any change to a model or effort sets the assistant to **Custom**. Selecting **Custom** without a change does not change any value. A model ID can have 1 to 128 ASCII characters and no spaces.
 
-For Kimi, roles that use the same model alias share one effort. A change to one of these roles changes all of them. For Grok, the page has no effort buttons. Grok subagents use the main session effort. The [assistants reference](../reference/assistants.md) explains these limits.
+For Kimi, roles that use the same model alias share one effort. A change to one of these roles changes all of them. For Grok, the page offers the effort levels of the model: low, medium, high and xhigh for Grok 4.7, and none for Grok 4.6, Grok 4.5 and Grok Build 0.1. A custom Grok model ID offers every level that Grok Build accepts. Grok Build applies an effort only when the model supports effort. A Grok role without an effort runs at the default effort of its model. The [assistants reference](../reference/assistants.md) explains these limits.
 
 ### Use the top models switch
 
@@ -125,7 +125,7 @@ npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup \
 - The package version is the release of the page.
 - `--roles` lists the selected role IDs.
 - `--max-concurrent` is the shared limit. If the limits of the assistants differ, the assistants with a different limit also get `--TOOL-max-concurrent`.
-- Each assistant gets one argument with `role=model:effort` entries. Gemini and Grok entries have no effort.
+- Each assistant gets one argument with `role=model:effort` entries. Gemini entries have no effort. A Grok entry has an effort only when one is set, so a Grok role without an effort stays `role=model`.
 - `--avoid-TOOL` appears only when the list of models to avoid is not empty. A model that you select is removed from that list.
 - `--apply` is always the last line.
 

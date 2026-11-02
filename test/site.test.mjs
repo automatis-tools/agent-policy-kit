@@ -381,21 +381,35 @@ test('agy accepts native tiers without invented per-role effort', () => {
   assert.equal(api.buildConfig(state, preferences).config, null);
 });
 
-test('Grok Build accepts any model identifier but never a per-role effort', () => {
+test('Grok Build accepts any model identifier and per-role effort only where the catalog lists it', () => {
+  const catalog = JSON.parse(fs.readFileSync(new URL('../models/catalog.json', import.meta.url), 'utf8')),grok=catalog.clients.grok;
   const state = api.initialState(preferences);
   state.jobs.grok.reviewer = {model: 'grok-4.5', effort: null};
   state.jobs.grok.explorer = {model: 'custom-grok-model', effort: null};
-  const built = plain(api.buildConfig(state, preferences));
+  const built = plain(api.buildConfig(state, preferences, catalog));
   assert.deepEqual(built.errors, []);
   assert.deepEqual(built.config.clients.grok.roles.reviewer, {model: 'grok-4.5', effort: null});
+  assert.deepEqual(plain(api.allowedEfforts(grok, 'grok-4.7')), [null, 'low', 'medium', 'high', 'xhigh']);
+  assert.deepEqual(plain(api.allowedEfforts(grok, 'grok-build-0.1')), [null]);
+  assert.deepEqual(plain(api.allowedEfforts(grok, 'custom-grok-model')), [null, 'low', 'medium', 'high', 'xhigh', 'max']);
+  assert.equal(api.preferenceForModel(preferences.clients.grok, 'worker', 'grok-4.7', {}, grok).effort, 'high');
   state.jobs.grok.reviewer.effort = 'high';
-  assert.equal(api.buildConfig(state, preferences).config, null);
-  state.jobs.grok.reviewer = {model: 'grok-4.5', effort: null};
+  assert.equal(api.buildConfig(state, preferences, catalog).config, null);
+  state.jobs.grok.reviewer = {model: 'grok-4.7', effort: 'max'};
+  assert.equal(api.buildConfig(state, preferences, catalog).config, null);
+  state.jobs.grok.reviewer = {model: 'grok-4.7', effort: 'xhigh'};
+  state.jobs.grok.explorer = {model: 'custom-grok-model', effort: 'max'};
+  state.jobs.grok.routine = {model: 'grok-build-0.1', effort: null};
   state.selected = ['grok'];state.active = 'grok';
-  const command = api.buildCommand(plain(api.buildConfig(state, preferences).config), release);
-  assert.match(command, /--grok '[^']*reviewer=grok-4\.5[^']*'/);
-  assert.doesNotMatch(command, /--grok '[^']*:/);
-  equivalent(decodedCommand(command), plain(api.buildConfig(state, preferences).config));
+  const config = plain(api.buildConfig(state, preferences, catalog).config);
+  assert.ok(config);assert.deepEqual(config.clients.grok.roles.reviewer, {model: 'grok-4.7', effort: 'xhigh'});
+  const command = api.buildCommand(config, release);
+  assert.match(command, /--grok '[^']*reviewer=grok-4\.7:xhigh[^']*'/);
+  assert.match(command, /--grok '[^']*explorer=custom-grok-model:max[^']*'/);
+  assert.match(command, /--grok '[^']*routine=grok-build-0\.1(?:,|')/);
+  assert.doesNotMatch(command, /:native/);
+  equivalent(decodedCommand(command), config);
+  assert.doesNotMatch(script, /main session effort/);
 });
 
 test('command is version pinned, fully explicit and shell safe', () => {

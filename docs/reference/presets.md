@@ -23,7 +23,7 @@ The presets were reviewed on 2026-11-01. They are starting recommendations, not 
 - Vendors' effort labels and subscription usage are not directly comparable. One role can therefore get different effort levels in different assistants.
 - Presets pin at most `high`. The only exception is the Claude top choice at `xhigh`. Higher effort gives quickly diminishing returns. Higher levels stay available in Custom.
 - No preset bans a model. A model that a preset does not select stays available in Custom. Personal avoid lists stay available in preferences and CLI input.
-- Each table cell is `model · effort`. A cell without an effort means that the assistant has no per-role effort setting. Gemini and Grok cells have no effort for this reason. See [Roles](roles.md#how-effort-applies).
+- Each table cell is `model · effort`. A cell without an effort means that the preset writes no effort, so the native default applies. Gemini cells have no effort because Antigravity has no per-role effort setting. Grok cells keep the native default of each model. See [Roles](roles.md#how-effort-applies).
 
 ### Light
 
@@ -119,7 +119,7 @@ These are short reasons. The sources and the detailed comparisons are in the [mo
 - **Anthropic (Claude):** Anthropic suggests Sonnet for most coding, Opus for complex architectural work and Haiku for simple subagent tasks. Anthropic suggests Fable only when Opus 5.5 at a higher effort still falls short. Anthropic describes high as the level for work where verification matters and xhigh as deeper reasoning at higher token spend. Anthropic reports that Sonnet 5.5 scored lower at max than at xhigh, because it started review subagents more often.
 - **Moonshot (Kimi):** Kimi describes K2.8 Preview as efficient thinking and K3 256K as a smaller quota footprint than K3. Moonshot recommends K3 256K for routine feature work and K3 for large-codebase analysis and multi-file refactoring. K3.1 Pro Highspeed has the same capabilities as K3.1 Pro at a quota premium, so no preset uses it.
 - **Google (Gemini):** The presets use only the native role tiers of Antigravity. The tiers do not fix the underlying model, and there is no per-role effort.
-- **xAI (Grok):** Grok Build 0.1 is xAI's fast coding model and serves light work. Grok 4.7 is the flagship and serves code, review, tests and docs. Grok 4.6 and 4.5 stay available in Custom.
+- **xAI (Grok):** Grok Build 0.1 is xAI's fast coding model and serves light work. Grok 4.7 is the flagship and serves code, review, tests and docs. Grok 4.6 and 4.5 stay available in Custom. Release 0.5.0 added a per-role effort for Grok and reviewed the Grok presets again. Every Grok preset keeps the native default effort: `high` for Grok 4.7, and no effort setting for Grok Build 0.1. A pinned `high` would give the same level, and presets pin at most `high`. No task comparison supports another level, so Grok has no top choice in this release. The other Grok 4.7 levels stay available in Custom.
 
 Account access to each model varies by plan. A preset does not grant access. For plan requirements, see [Model catalog](model-catalog.md#access-requirements).
 

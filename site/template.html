@@ -100,7 +100,7 @@ __APK_SHARE_CODEC__
   function assistantNotices(selected) {
     return selected.filter(client => Object.hasOwn(SCOPE_NOTES, client)).map(client => SCOPE_NOTES[client]);
   }
-  const NOTES = {chatgpt: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', gemini: 'Native tiers only; per-task effort is unavailable.', grok: 'Per-task effort is unavailable; subagents use the main session effort.'};
+  const NOTES = {chatgpt: '', claude: '', kimi: 'Effort changes apply to every task using the same alias.', gemini: 'Native tiers only; per-task effort is unavailable.', grok: 'Effort applies only to models that support it; native default uses the model default.'};
   const clone = value => JSON.parse(JSON.stringify(value));
   const addAll = (selected, available) => [...selected, ...available.filter(id => !selected.includes(id))];
   function effective(config, role) {

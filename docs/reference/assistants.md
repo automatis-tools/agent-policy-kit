@@ -74,7 +74,7 @@ APK writes settings through native features. It does not run during agent work a
 | Claude | Native setting. It applies to ordinary Agent-tool spawns, with documented exceptions. | Role file | Role file | Session, project and managed settings, environment overrides and some spawn paths can override user settings. |
 | Kimi | Guidance only. No native cap is set. | Guidance only. The parent selects the pool alias when it spawns. | Per alias, not per role | Native Kimi rules |
 | Gemini | Guidance only. There is no universal native cap. | Native tier per role | None | Native Antigravity rules |
-| Grok | Native setting | `config.toml` per role | None. Subagents use the main session effort. | Project settings, explicit spawn settings and higher-priority instructions follow Grok Build rules. |
+| Grok | Native setting | `config.toml` per role | Role file. It applies only when the model supports effort. A role without an effort runs at the default effort of its model. | Project settings, explicit spawn settings, Grok roles with the same name and higher-priority instructions follow Grok Build rules. |
 
 Each assistant adds warning codes to the setup result. The codes tell the person or agent which limits apply:
 
@@ -84,7 +84,7 @@ Each assistant adds warning codes to the setup result. The codes tell the person
 | Claude | `claude-native-precedence-limits` |
 | Kimi | `kimi-concurrency-guidance-only`, `kimi-model-pool-routing-guidance` |
 | Gemini | `gemini-concurrency-guidance-only`, `gemini-per-role-effort-unsupported` |
-| Grok | `grok-per-role-effort-unsupported`, `grok-native-precedence-limits` |
+| Grok | `grok-effort-model-dependent`, `grok-native-precedence-limits`. Installs made by 0.4.0 keep the older code `grok-per-role-effort-unsupported` in their receipt; setup shows it with the same corrected note. |
 
 Other limits apply to all assistants:
 
@@ -131,6 +131,17 @@ Kimi sets effort for each alias, not for each role. The effort rules and their r
 
 - Existing `[subagents]` or `[subagents.models]` values that are not tables, or a `max_concurrent` that is not a positive whole number, stop setup with `UNSUPPORTED_CONFIG`.
 - Grok Build reads `~/.claude/CLAUDE.md` by default. If Claude is also configured, Grok Build can therefore also read the Claude instruction block. APK does not change that behavior.
+
+#### Grok role effort
+
+Issue #27 tested whether a named agent such as `apk-reviewer` can have its own effort. It can. The result comes from the Grok Build source and from a check with Grok Build 1.0.70:
+
+- APK writes a role effort as `effort: <level>` in the frontmatter of `~/.grok/agents/apk-<role>.md`. A role with the native default gets no `effort` line.
+- Grok Build 1.0.70 accepts `low`, `medium`, `high`, `xhigh` and `max` in this field. For any other value, Grok Build drops the whole agent without a warning. `grok inspect --json` with an isolated `GROK_HOME` confirmed both cases. APK writes only the levels that the [model catalog](model-catalog.md#grok-grok-build) lists for a known model.
+- Grok Build applies the effort only when the model supports effort. Grok 4.7 lists `low`, `medium`, `high` and `xhigh`, with `high` as its default. Grok Build 0.1 has no effort setting, so Grok Build ignores an effort for it.
+- A role without an effort runs at the default effort of its model, not at the main session effort. The reason: APK pins the model of each role in `[subagents.models]`, and Grok Build gives a pinned model the default effort from its model list. For Grok 4.7 the default is `high`. Exceptions: the `--effort` option of Grok Build applies to all models, and `[models].default_reasoning_effort` applies to the default model.
+- Grok Build uses this order: a spawn override from the harness, then a Grok role with the same name as the agent (`[subagents.roles.apk-<role>]` or `~/.grok/roles/apk-<role>.toml`), then the agent frontmatter, then the default of the model. The parent model cannot select an effort when it spawns a subagent. APK writes no Grok roles.
+- Not checked: a live model task. Grok Build has no command that shows the resolved subagent effort without a model run. The source is a public sync from 2026-09-29, and the error and log text of these code paths occurs in the 1.0.70 program.
 
 ## Desktop apps
 

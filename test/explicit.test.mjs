@@ -49,15 +49,21 @@ test('explicit input rejects missing, extra, repeated, malformed or opaque choic
  const inherited=Object.assign(Object.create({roles:'reviewer','max-concurrent':'3'}),{chatgpt:base.chatgpt});assert.throws(()=>parseExplicitOptions(inherited,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
 
-test('Grok Build accepts role=model without effort and rejects a pinned effort or foreign flags',()=>{
+test('Grok Build accepts role=model, role=model:effort and role=model:native and rejects foreign flags',()=>{
  const valid={roles:'worker,reviewer','max-concurrent':'3',grok:'worker=grok-4.7,reviewer=grok-4.6','grok-max-concurrent':'2','avoid-grok':'grok-4.5'};
  const parsed=validatePolicy(parseExplicitOptions(valid,ROLE_IDS));
  assert.deepEqual(rolePreference(parsed.clients.grok,'reviewer'),{model:'grok-4.6',effort:null});assert.equal(parsed.clients.grok.maxConcurrent,2);assert.deepEqual(parsed.clients.grok.avoidModels,['grok-4.5']);
- for(const bad of ['worker=grok-4.7:high,reviewer=grok-4.6','worker=grok-4.7:native,reviewer=grok-4.6','worker=grok-4.7'])assert.throws(()=>parseExplicitOptions({...valid,grok:bad},ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
+ const pinned=validatePolicy(parseExplicitOptions({...valid,grok:'worker=grok-4.7:xhigh,reviewer=grok-4.6:native'},ROLE_IDS));
+ assert.deepEqual(rolePreference(pinned.clients.grok,'worker'),{model:'grok-4.7',effort:'xhigh'});assert.deepEqual(rolePreference(pinned.clients.grok,'reviewer'),{model:'grok-4.6',effort:null});
+ // The codec accepts the generic level names; the catalog check refuses levels a known model does not list.
+ for(const bad of ['worker=grok-4.7:max,reviewer=grok-4.6','worker=grok-4.7,reviewer=grok-4.6:high','worker=grok-4.7:none,reviewer=grok-4.6'])assert.throws(()=>validatePolicy(parseExplicitOptions({...valid,grok:bad},ROLE_IDS)),{code:'INVALID_POLICY'},bad);
+ for(const bad of ['worker=grok-4.7','worker=:high,reviewer=grok-4.6'])assert.throws(()=>parseExplicitOptions({...valid,grok:bad},ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'},bad);
  assert.throws(()=>parseExplicitOptions({roles:'worker','max-concurrent':'3','avoid-grok':'grok-4.5'},ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
  const config={schemaVersion:1,maxConcurrent:3,selectedRoles:['worker'],clients:{grok:{code:{model:'grok-4.7',effort:null},light:{model:'grok-4.7',effort:null},avoidModels:[]}}};
  const command=formatExplicitCommand(config,'0.1.0',ROLE_DEFINITIONS);assert.match(command,/--grok 'worker=grok-4\.7'/);assert.doesNotMatch(command,/:native/);
- assert.throws(()=>explicitOptions({...config,clients:{grok:{...config.clients.grok,code:{model:'grok-4.7',effort:'high'}}}},ROLE_DEFINITIONS),{code:'INVALID_EXPLICIT_CONFIG'});
+ const high={...config,clients:{grok:{...config.clients.grok,code:{model:'grok-4.7',effort:'high'}}}};
+ assert.match(formatExplicitCommand(high,'0.1.0',ROLE_DEFINITIONS),/--grok 'worker=grok-4\.7:high'/);
+ assert.deepEqual(validatePolicy(parseExplicitOptions(explicitOptions(high,ROLE_DEFINITIONS),ROLE_IDS)).clients.grok.roles.worker,{model:'grok-4.7',effort:'high'});
 });
 test('native Kimi alias consistency and Antigravity tiers remain policy requirements',()=>{
  const valid={roles:'worker,reviewer','max-concurrent':'3',kimi:'worker=native/k3:high,reviewer=native/k3:native',gemini:'worker=pro,reviewer=flash'};
@@ -92,10 +98,13 @@ test('explicit per-tool concurrency overrides round-trip without changing the sh
  for(const bad of [{...one(),'kimi-max-concurrent':'2'},{...one(),'chatgpt-max-concurrent':'0'},{...one(),'chatgpt-max-concurrent':'33'},{...one(),'chatgpt-max-concurrent':'1.5'},{...one(),'chatgpt-max-concurrent':'02'}])assert.throws(()=>parseExplicitOptions(bad,ROLE_IDS),{code:'INVALID_EXPLICIT_CONFIG'});
 });
 
-test('Grok custom model ids may contain colons, while effort-like suffixes stay rejected',()=>{
- const config=model=>({schemaVersion:1,maxConcurrent:3,selectedRoles:['worker'],clients:{grok:{code:{model,effort:null},light:{model,effort:null},avoidModels:[]}}});
+test('Grok custom model ids may contain colons and effort-like suffixes round-trip with an explicit :native',()=>{
+ const config=(model,effort=null)=>({schemaVersion:1,maxConcurrent:3,selectedRoles:['worker'],clients:{grok:{code:{model,effort},light:{model,effort},avoidModels:[]}}});
  const command=formatExplicitCommand(config('org:grok-custom'),'0.1.0',ROLE_DEFINITIONS);assert.match(command,/--grok 'worker=org:grok-custom'/);
  const parsed=parseExplicitOptions({roles:'worker','max-concurrent':'3',grok:'worker=org:grok-custom'},ROLE_IDS);
  assert.deepEqual(rolePreference(parsed.clients.grok,'worker'),{model:'org:grok-custom',effort:null});
- for(const model of ['grok-4.7:high','grok-4.7:native','org:model:xhigh'])assert.throws(()=>formatExplicitCommand(config(model),'0.1.0',ROLE_DEFINITIONS),{code:'INVALID_EXPLICIT_CONFIG'},model);
+ for(const [model,effort,text] of [['grok-4.7:high',null,'worker=grok-4.7:high:native'],['grok-4.7:native',null,'worker=grok-4.7:native:native'],['org:model:xhigh',null,'worker=org:model:xhigh:native'],['org:model:xhigh','max','worker=org:model:xhigh:max']]){
+  const options=explicitOptions(config(model,effort),ROLE_DEFINITIONS);assert.equal(options.grok,text,model);
+  assert.deepEqual(rolePreference(parseExplicitOptions(options,ROLE_IDS).clients.grok,'worker'),{model,effort},model);
+ }
 });

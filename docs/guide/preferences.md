@@ -96,7 +96,7 @@ This example configures three roles in Claude Code and Antigravity. The Claude R
 APK refuses preferences that break one of these rules:
 
 - `selectedRoles`, if present, is not empty, has no duplicates and contains only `worker`, `reviewer`, `explorer`, `tester`, `writer` and `routine`.
-- The effort is `null` or a native level of the assistant. Gemini and Grok accept only `null`. The [model catalog reference](../reference/model-catalog.md) lists the levels of each assistant.
+- The effort is `null` or a native level of the assistant. Gemini accepts only `null`. Grok accepts the levels that Grok Build reads from an agent file, limited by the catalog for a known model: Grok 4.7 accepts `low` to `xhigh`, and the other Grok models only `null`. The [model catalog reference](../reference/model-catalog.md) lists the levels of each assistant.
 - If the model is in the release catalog, the effort is a level of that model. A model that is not in the catalog can use any native level of the assistant. The assistant must still support it.
 - A Gemini model is a native tier: `pro`, `flash`, `flash_lite` or `inherit`.
 - A Kimi model is not `primary`.
