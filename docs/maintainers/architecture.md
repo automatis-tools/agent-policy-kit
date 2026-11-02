@@ -55,7 +55,7 @@ The CLI needs no compilation step. Only the configuration page is generated.
 5. With `--apply`, `applyInstall` commits the plan in a transaction and writes the receipt. Plans and transactions run one client at a time, because one transaction can change shared state that the next plan reads.
 6. The result has one entry per client. One client can fail while another succeeds.
 
-The first selected role in catalog order supplies the native default subagent. An effort of `null` means no explicit pin. [Roles](../reference/roles.md) documents the per-assistant details.
+The first selected role in role-definition order (`src/roles.mjs`) supplies the native default subagent. An effort of `null` means no explicit pin. [Roles](../reference/roles.md) documents the per-assistant details.
 
 ## Data flow for the configuration page
 

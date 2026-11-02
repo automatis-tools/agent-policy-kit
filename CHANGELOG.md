@@ -47,7 +47,7 @@ Configuration checks are not model-quality evaluations.
 - Claude: setup also writes `CLAUDE_CODE_SUBAGENT_EFFORT`, the effort for subagents that name none, from the Coder effort capped at high. Claude Code 2.1.316 added this setting; earlier versions ignore it. Before, those subagents kept the main session effort.
 - `agent-policy show` reports the stored Claude default subagent effort and a `CLAUDE_CODE_SUBAGENT_EFFORT` environment override.
 - The top models switch label shows each tool's model and effort.
-- The configurator shows a note when Gemini is selected: APK configures Antigravity, not Gemini CLI. The README and the compatibility documentation say the same.
+- The configurator shows a note when Gemini is selected: APK configures Antigravity, not Gemini CLI. The README and the AI assistants reference say the same.
 - The documentation is reorganized into independent documents by audience: `docs/guide/` for people who use APK, `docs/reference/` for facts about assistants, roles, presets, the catalog and ownership, `docs/research/` for the evidence behind presets, and `docs/maintainers/` for development, releases and the website. [docs/README.md](docs/README.md) is the index. Old `docs/*.md` paths are removed without redirects. The 2026-11-01 model review is documented in [docs/research/2026-11-01-model-review.md](docs/research/2026-11-01-model-review.md).
 
 ## 0.3.0 — 2026-11-01

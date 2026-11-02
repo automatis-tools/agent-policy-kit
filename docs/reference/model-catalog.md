@@ -166,6 +166,8 @@ The Grok 4.7 levels are API capabilities. APK writes only a model for each Grok 
 | Opus 4.5 | active | earliest retirement 2026-11-24 | Anthropic model lifecycle |
 | Haiku 4.5 | active | earliest retirement 2026-10-15 | Anthropic model lifecycle |
 
+The earliest retirement date of Haiku 4.5, 2026-10-15, passed without an announced deprecation. This was the state on the review date, 2026-11-01.
+
 A release does not keep a retired model available. See [Updates and removal](../guide/updates-and-removal.md).
 
 ## Access requirements

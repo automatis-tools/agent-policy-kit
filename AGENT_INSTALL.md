@@ -1,6 +1,6 @@
-# Agent Policy Kit — runbook for AI agents
+# Agent Policy Kit — AI operator guide
 
-This runbook is for an AI agent that installs, updates or removes Agent Policy Kit (APK) settings for its owner. It gives the steps in order: select the release, detect, choose the input, plan, apply, verify, remove and report. Flags, output fields and per-assistant details are in the linked documents. `agent-policy instructions` prints this runbook.
+This guide is for an AI agent that installs, updates or removes Agent Policy Kit (APK) settings for its owner. It gives the steps in order: select the release, detect, choose the input, plan, apply, verify, remove and report. Flags, output fields and per-assistant details are in the linked documents. `agent-policy instructions` prints this guide.
 
 ## Rules
 
@@ -34,8 +34,9 @@ The package version is the configuration release. Use the version that the owner
    ```
 
 2. Read the entry for this version in [CHANGELOG.md](CHANGELOG.md): what changed, why, and the migration limits.
-3. Check the installed tool versions, the model aliases that the account actually has, and the current official model and effort documentation.
-4. Keep the explicit choices of the owner. A newer package or a newer model is not an instruction to switch.
+3. For a downgrade, also read the entry of each newer version, up to the version that is applied now. `doctor` shows the applied version of each client. A migration boundary is recorded in the entry of the newer version. The release notes of an older package do not contain newer entries, so run `release --json` with the applied version.
+4. Check the installed tool versions, the model aliases that the account actually has, and the current official model and effort documentation.
+5. Keep the explicit choices of the owner. A newer package or a newer model is not an instruction to switch.
 
 For several commands, you can install the package into a temporary or user-owned prefix:
 
@@ -45,7 +46,7 @@ npm install --prefix PREFIX agent-policy-kit@0.4.0 --ignore-scripts --no-audit -
 
 Then run `PREFIX/node_modules/.bin/agent-policy`. If the owner gives you a verified local `.tgz` file of a version that is not on npm, install that file in the same way. You need no sudo, no fixed prefix and no shell profile change.
 
-More: [updates and removal](docs/guide/updates-and-removal.md), [presets](docs/reference/presets.md), [model review](docs/maintainers/model-review.md).
+More: [updates and removal](docs/guide/updates-and-removal.md), [presets](docs/reference/presets.md), [model review procedure](docs/maintainers/model-review.md).
 
 ## Step 2: Detect
 
@@ -73,6 +74,8 @@ Use exactly one input mode. A combination fails before any write.
 | `setup --policy FILE` | The owner keeps a preferences file. This mode does not replace different saved choices. To replace them deliberately, validate the file and pass it as `--config` |
 
 The configurator command lists every selected role for every selected assistant. The tools that it does not name are not configured.
+
+Some release changes cross a migration boundary. For example, to move Claude from 0.4.0 to 0.3.0, first remove its settings with 0.4.0. Read [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries) before an upgrade or a downgrade.
 
 More: [commands](docs/guide/commands.md), [preferences](docs/guide/preferences.md).
 
@@ -142,7 +145,7 @@ The receipts verify ownership. Removal restores the original user settings and k
 - Do not restore old whole-file backups.
 - Do not delete locks or pending journals by force.
 - Do not delete hooks by text match.
-- Use an executable that supports the receipt format. Older versions can reject receipt v4. Installations of ChatGPT and Gemini from 0.2.0 need removal with 0.2.0.
+- Use a version that can read the receipt. All versions from 0.1.0 write receipt format v4, but an older version can refuse the content of a newer receipt. Versions 0.3.0 and earlier cannot read a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`: remove it with 0.4.0. ChatGPT and Gemini settings from 0.2.0 or earlier need removal with the version that created them. See [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries).
 
 More: [ownership](docs/reference/ownership.md), [updates and removal](docs/guide/updates-and-removal.md).
 

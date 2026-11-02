@@ -1,10 +1,10 @@
 # Model review of 2026-11-01
 
-This document records the evidence behind the presets and the model catalog of APK 0.4.0. It is for maintainers who prepare the next review and for users who want to know why a preset has its values. It lists the sources per vendor, compares Opus 5.5 with Sonnet 5.5 at different effort levels, compares Fable 5.1 with Opus 5.5, and summarizes what the evidence says about effort and small models. It also lists the decisions of 0.4.0 and the questions that need local verification. The current preset values are in [presets](../reference/presets.md). The catalog fields are in [model catalog](../reference/model-catalog.md). The procedure for the next review is in [model review](../maintainers/model-review.md).
+This document records the evidence behind the presets and the model catalog of APK 0.4.0. It is for maintainers who prepare the next review and for users who want to know why a preset has its values. It lists the sources per vendor, compares Opus 5.5 with Sonnet 5.5 at different effort levels, compares Fable 5.1 with Opus 5.5, and summarizes what the evidence says about effort and small models. It also lists the decisions of 0.4.0 and the questions that need local verification. The current preset values are in [presets](../reference/presets.md). The catalog fields are in [model catalog](../reference/model-catalog.md). The procedure for the next review is in the [model review procedure](../maintainers/model-review.md).
 
 ## Scope and method
 
-The review date is 2026-11-01 (UTC). The previous catalog check was on 2026-10-30. The review covers the five assistants that APK configures and the six roles: Coder, Reviewer, Code explorer, Test writer, Docs writer and Task runner. It covers 105 preset cells: 90 cells in Light, Standard and Top-tier (6 roles × 5 assistants × 3 presets) and 15 cells under the top models switch (3 roles × 5 assistants).
+The review date is 2026-11-01 (UTC). The previous catalog check was on 2026-10-30. The review covers the five assistants that APK configures and the six roles: Coder, Reviewer, Code explorer, Test writer, Docs writer and Task runner. It covers 99 preset cells: 90 cells in Light, Standard and Top-tier (6 roles × 5 assistants × 3 presets) and 9 cells under the top models switch (3 roles × 3 assistants). Gemini and Grok have no top choice.
 
 These native clients were inspected read-only:
 
@@ -50,7 +50,7 @@ Positioning. OpenAI describes Astra as its most capable model for complex work a
 
 Plan usage. Codex credits per 1M tokens (input / cached input / output) are: Astra 250 / 25 / 1,250, GPT-6.1 Sol 50 / 2.5 / 250, GPT-6.1 Terra 25 / 1.25 / 125, GPT-6 Luna 2.5 / 0.25 / 12.5. Relative to Sol, Astra costs 5 times, Terra 0.5 times and Luna 0.05 times per token. Source: [Codex pricing](https://learn.chatgpt.com/docs/pricing) (primary).
 
-Subagent guidance. OpenAI suggests `gpt-6.1-sol` for "ambiguous, multi-step work" and `gpt-6-luna` for "lighter subagent work". For explicit settings it suggests starting at high for Luna and at low for Astra. High is for agents that "trace complex logic, check assumptions, or work through edge cases", and medium "balances speed and depth". The examples use `pr_explorer` on Luna at high and `reviewer` on Sol at medium. The page does not mention Terra. Source: [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents) (primary).
+Subagent guidance. OpenAI suggests `gpt-6.1-sol` for "ambiguous, multi-step work" and `gpt-6-luna` for "lighter subagent work". For explicit settings it suggests starting at high for Luna and at low for Astra. High is for agents that "trace complex logic, check assumptions, or work through edge cases". The guide names "reviewer or security-focused agents" as examples for high. Medium "balances speed and depth". The example agents use `pr_explorer` on Luna at high and `reviewer` on Sol at medium, so the reviewer example of the guide does not use high. The page does not mention Terra. Source: [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents) (primary).
 
 Benchmarks:
 
@@ -289,11 +289,11 @@ Small models are much weaker on multi-step agentic tasks. They are closer to lar
 
 Anthropic says that Haiku 5.5 "pairs well with Opus 5.5 and Sonnet 5.5 as a subagent on coding work". Source: [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview) (primary). OpenAI suggests Luna for "lighter subagent work". Source: [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents) (primary).
 
-This supports the current design. In Standard, small models do exploration and routine work. In Top-tier, only the Task runner uses a lighter model. In Light, small models do all roles, with a deliberate loss of quality to save plan limits.
+This supports the current design. In Standard, small models do exploration and routine work. In Top-tier, the Task runner uses a lighter model in Claude, Kimi, Gemini and Grok. ChatGPT uses Sol for every Top-tier role, and its Task runner runs at medium. In Light, small models do all roles, with a deliberate loss of quality to save plan limits.
 
 ## Decisions for 0.4.0
 
-The review proposed seven changes to nine of the 105 preset cells. The 0.4.0 release adopted all seven. [CHANGELOG.md](../../CHANGELOG.md) records them. Confidence is the confidence of the evidence, not a test result.
+The review proposed seven changes to nine of the 99 preset cells. The 0.4.0 release adopted all seven. [CHANGELOG.md](../../CHANGELOG.md) records them. Confidence is the confidence of the evidence, not a test result.
 
 | Preset | Assistant | Cells | 0.3.0 | 0.4.0 | Main evidence | Confidence |
 |---|---|---|---|---|---|---|

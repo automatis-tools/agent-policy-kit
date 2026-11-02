@@ -28,7 +28,7 @@ Installing or updating the npm package does not change your native files. Only `
 
 A newer release or model is not always better for your work, your account or your limits. APK never changes your models without a setup command.
 
-Versions 0.1.0, 0.2.0 and 0.3.0 are published. Version 0.4.0 is being prepared. Until a version is on npm, its configurator page shows `Release candidate`, and its `npx` command does not work.
+A release that is not published yet has the heading `VERSION — Unreleased` in the release notes. Its `npx` command does not work until npm serves the version. To list the published versions, run `npm view agent-policy-kit versions`. The [website document](../maintainers/website.md#release-status-on-the-page) tells what the configurator page shows for a release that is not published.
 
 ## Upgrade or downgrade
 
@@ -44,7 +44,7 @@ Versions 0.1.0, 0.2.0 and 0.3.0 are published. Version 0.4.0 is being prepared. 
 3. Read the preview.
 4. Run the same command with `--apply`.
 
-To downgrade, use the same steps with an older version in `--package agent-policy-kit@VERSION`.
+To downgrade, use the same steps with an older version in `--package agent-policy-kit@VERSION`. Before you downgrade, read [Migration boundaries](#migration-boundaries). Some changes need a removal first.
 
 ### To your own choices
 
@@ -66,7 +66,46 @@ Explicit tool arguments, `--release`, `--preset` and `--config` can replace an e
 
 Each assistant has its own transaction. One assistant can move to the new release while another keeps its earlier release. Read the result of each assistant. Run `doctor` to see the release that each assistant has now.
 
-An older release can refuse a receipt format that it does not know. In that case, use a release that supports the receipt. The [ownership reference](../reference/ownership.md) lists the receipt formats and the transaction steps.
+The [ownership reference](../reference/ownership.md#updates) describes the transaction steps.
+
+### Migration boundaries
+
+A *migration boundary* is a release change that setup cannot do in place. At a boundary, setup stops for the affected assistant and changes nothing. First remove the APK settings of that assistant with a release that can read its receipt. Then set up with the other release. The release notes record each boundary in the entry of the newer release.
+
+These boundaries are known:
+
+| Assistant | Change | Setup without removal | Remove with |
+|---|---|---|---|
+| Claude | From 0.4.0 to 0.3.0 or earlier | `INVALID_RECEIPT` | 0.4.0 |
+| ChatGPT and Gemini | From 0.2.0 or earlier to 0.3.0 or later | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.2.0 |
+| ChatGPT and Gemini | From 0.3.0 or later to 0.2.0 or earlier | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.4.0 |
+
+**Claude, 0.4.0 to an older release.** A 0.4.0 Claude receipt owns `CLAUDE_CODE_SUBAGENT_EFFORT` when the effort of the default subagent role is pinned. Every preset pins it. Releases 0.3.0 and earlier do not know this setting, so they refuse the receipt. To move Claude back to 0.3.0:
+
+1. Remove the Claude settings with 0.4.0:
+
+   ```sh
+   npx --yes --ignore-scripts --package agent-policy-kit@0.4.0 agent-policy uninstall --client claude --apply
+   ```
+
+2. Set up Claude with 0.3.0.
+
+ChatGPT, Kimi, Gemini and Grok move from 0.4.0 to 0.3.0 in place.
+
+**ChatGPT and Gemini, 0.2.0 and 0.3.0.** Release 0.3.0 renamed the assistant IDs `codex` to `chatgpt` and `agy` to `gemini`. Releases 0.3.0 and later do not read receipts under the old IDs, and releases 0.2.0 and earlier do not know the new IDs. To move from 0.2.0 to a later release:
+
+1. Remove the settings with 0.2.0:
+
+   ```sh
+   npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy uninstall --client codex --apply
+   npx --yes --ignore-scripts --package agent-policy-kit@0.2.0 agent-policy uninstall --client agy --apply
+   ```
+
+2. Set up ChatGPT and Gemini with the later release.
+
+In the other direction, remove them with `--client chatgpt` and `--client gemini` and the newer release. Claude, Kimi and Grok keep their IDs.
+
+Preview each removal without `--apply` first. The [ownership reference](../reference/ownership.md#receipt-formats) explains the receipt formats. The [release notes](../../CHANGELOG.md) of 0.3.0 and 0.4.0 give the details.
 
 ## What a release does not freeze
 
@@ -101,7 +140,12 @@ If you used `--home` or `--state-dir` for setup, use the same values here. To re
 
 Uninstall uses the receipts in the state directory. It needs no assistant executable and no preferences. It restores the values that you had before the first APK setup, also after release changes. It keeps unrelated later changes. It removes the receipts, but keeps the saved preferences and the private backups in the state directory.
 
-Use any release that supports your receipt format to uninstall. You do not need the release that you used for setup.
+You do not need the release that you used for setup. Any release that can read the receipt can remove it. There are two known exceptions:
+
+- Releases 0.3.0 and later do not read the ChatGPT and Gemini receipts of 0.2.0 and earlier. Remove these settings with the release that created them.
+- Releases 0.3.0 and earlier cannot read a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`. Remove these settings with 0.4.0.
+
+See [Migration boundaries](#migration-boundaries) and the [ownership reference](../reference/ownership.md#receipt-formats).
 
 ## Handle local edits
 

@@ -134,14 +134,21 @@ Effort is the reasoning level that a model uses. An unpinned effort (`null`, or 
 | Gemini | None | `--effort` and `/effort` apply to the whole session. |
 | Grok | None | Grok Build resolves subagent effort from a spawn override, a role default, a persona default and then the parent session. APK writes only a model, so subagents use the main session effort. |
 
-Kimi sets effort for each alias, not for each role:
-
-- Roles that use the same alias share its effort.
-- A selected alias can have at most one pinned effort. Contradictory pins are refused.
-- A pin for an alias also applies to the unpinned roles that use the same alias.
-- The pinned level must be in the alias's `support_efforts`. See [AI assistants](assistants.md#kimi-kimi-code).
-
 A known model accepts only the levels in the [model catalog](model-catalog.md). The page offers only those levels.
+
+### Kimi alias effort
+
+Kimi sets effort for each alias, not for each role. An alias is a model entry in the Kimi `config.toml`. These rules apply:
+
+- Roles that use the same alias share its effort. A pin for an alias also applies to the unpinned roles that use the same alias.
+- Selected roles that use the same alias cannot request different explicit efforts. APK refuses such input before it plans a change: a preferences file with `INVALID_POLICY`, command-line flags with `INVALID_EXPLICIT_CONFIG` and a `--config` value with `INVALID_CONFIG`. One explicit effort and `null` can share an alias.
+- Setup can resolve a missing catalog alias to an existing alias with the same upstream model. If two roles then resolve to one alias with different pinned efforts, setup returns `kimi-resolved-effort-conflict`.
+- The pinned level must be in the `support_efforts` of the alias, including its `overrides`. If not, setup returns `kimi-supported-effort-required`.
+- If thinking is off (`thinking.enabled = false`) and any effort is pinned, setup returns `kimi-thinking-disabled`.
+- If some selected aliases have a pinned effort, others are unpinned, and `secondary_model.default_effort` is set, setup returns `kimi-mixed-native-default-effort`.
+- If a pinned alias is also the main model (`default_model`) and the pin changes its default effort, setup returns `kimi-main-effort-conflict`. This refusal does not apply when `thinking.effort` sets an explicit main effort that the alias supports. Use a separate native alias for subagents, or set the main effort deliberately.
+
+For the other Kimi prerequisites, see [AI assistants](assistants.md#kimi-kimi-code).
 
 ## Related documents
 

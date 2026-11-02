@@ -12,7 +12,7 @@ Use one of these pages:
 
 Use a current version of Google Chrome. The page is one self-contained HTML file. It has no backend and makes no requests while you use it. It never runs the command and never grants model access.
 
-Each page belongs to one configuration release. A *configuration release* is one APK package version with its presets, model catalog and role templates. The status line under step 4 shows the release, for example `Configuration release 0.4.0`. If the release is not on npm yet, the line shows `Release candidate · npm command available after publication.`
+Each page belongs to one configuration release. A *configuration release* is one APK package version with its presets, model catalog and role templates. The status line under step 4 shows the release, for example `Configuration release 0.4.0`. While the release notes mark the release as unreleased, the line shows a release-candidate notice instead. The [website document](../maintainers/website.md#release-status-on-the-page) tells when each line is shown.
 
 ## Step 1: Subagent roles
 
@@ -80,7 +80,7 @@ For Kimi, roles that use the same model alias share one effort. A change to one 
 
 ### Use the top models switch
 
-The top models switch is shown in Top-tier mode for assistants that have a top model. Its label names each model and effort, for example `Use top models (…) for code, review and tests`.
+The top models switch is shown in Top-tier mode for assistants that have a top model. Its label names each model and effort. When you edit one assistant, the label is `Use <model · effort> for code, review and tests`. In the **All** view, it is `Use top models (…) for code, review and tests` and lists the top model of each assistant.
 
 - Turn the switch on to use the top model for the Coder, Reviewer and Test writer roles.
 - Turn the switch off to go back to the Top-tier values.
@@ -133,7 +133,7 @@ The [Commands](commands.md#explicit-tool-arguments) reference describes this syn
 
 ## Reset the form
 
-Click **Reset form** under step 4. The page clears roles, assistants, modes, the copy status and the address fragment. Reset does not change files on your computer.
+Click **Reset form** under step 4. The page selects all six roles again and clears the assistants, the modes and the copy status. The address then holds only the six roles, as on a page that you open for the first time. Reset does not change files on your computer.
 
 ## Check current settings
 

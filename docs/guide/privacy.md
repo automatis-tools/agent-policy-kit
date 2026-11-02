@@ -44,13 +44,13 @@ APK does not provision, copy or transfer credentials. It does not change your ma
 
 ## The state directory
 
-The state directory is `~/.agent-policy-kit` by default. It contains copies of earlier versions of your native files. These copies can contain secrets that were already in your settings.
+The state directory contains copies of earlier versions of your native files. These copies can contain secrets that were already in your settings.
 
 - Keep the state directory private.
 - Never publish receipts, backups or backup indexes.
 - Do not share the content of the state directory to report a problem. Share the error codes instead.
 
-The [ownership reference](../reference/ownership.md) describes the content of the state directory.
+The [ownership reference](../reference/ownership.md#state-directory) tells where the state directory is and what it contains.
 
 ## The configurator page
 

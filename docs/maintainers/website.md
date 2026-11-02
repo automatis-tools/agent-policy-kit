@@ -19,7 +19,14 @@ Each marker must occur exactly once in the template, or the build fails. `npm ru
 
 ## Release status on the page
 
-When the changelog heading of the current version says `Unreleased`, the page shows `Release candidate · npm command available after publication.` After the release is cut, it shows `Configuration release VERSION`. [Release](release.md) describes when to change the heading.
+The page takes its release status from `CHANGELOG.md` when `npm run build:site` runs. It does not ask npm. `scripts/build-site.mjs` looks for the exact heading `## VERSION — Unreleased`, where `VERSION` is the `version` in `package.json`:
+
+| `CHANGELOG.md` at build time | Status line on the page |
+|---|---|
+| Has the heading `## VERSION — Unreleased` | `Release candidate · npm command available after publication.` |
+| Has no such heading, for example `## VERSION — YYYY-MM-DD` | `Configuration release VERSION` |
+
+The status line therefore does not show whether npm serves the version. A changed heading has an effect only after the next build. [Release](release.md) describes when to change the heading.
 
 ## Metadata and footer
 

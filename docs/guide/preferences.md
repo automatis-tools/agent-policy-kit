@@ -100,7 +100,7 @@ APK refuses preferences that break one of these rules:
 - If the model is in the release catalog, the effort is a level of that model. A model that is not in the catalog can use any native level of the assistant. The assistant must still support it.
 - A Gemini model is a native tier: `pro`, `flash`, `flash_lite` or `inherit`.
 - A Kimi model is not `primary`.
-- For Kimi, selected roles that use the same alias do not request different explicit efforts. One explicit effort and `null` can share an alias.
+- For Kimi, selected roles that use the same alias do not request different explicit efforts. [Roles](../reference/roles.md#how-effort-applies) gives the full Kimi effort rules.
 - No selected role uses a model from `avoidModels` of the same assistant.
 
 `avoidModels` is routing guidance in the APK instructions. It does not block a model in the assistant.

@@ -23,7 +23,7 @@ Report configuration and parser evidence separately from native loading and prov
 - Start each document with a title and a short paragraph that tells what it covers and who it is for.
 - Write in English with short sentences, active voice and present tense. Define a term when you use it the first time.
 - Packaged documents can link only to packaged files. `npm run check` rejects other relative links.
-- Keep the README short and the [runbook for AI agents](AGENT_INSTALL.md) precise.
+- Keep the README short and the [AI operator guide](AGENT_INSTALL.md) precise.
 
 ## Private data
 

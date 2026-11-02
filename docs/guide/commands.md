@@ -54,11 +54,7 @@ Assistant IDs map to coding agents: `chatgpt` is Codex, `claude` is Claude Code,
 
 ### Home folder and state directory
 
-The *state directory* is the private APK folder with receipts, saved preferences and transaction backups. The [ownership reference](../reference/ownership.md) describes its content.
-
-- The default state directory is `.agent-policy-kit` in the home folder. With `--home`, it is `.agent-policy-kit` in that folder.
-- The `AGENT_POLICY_HOME` environment variable replaces the default.
-- `--state-dir` replaces both. The path must be absolute. Otherwise the command fails with `STATE_PATH_MUST_BE_ABSOLUTE`.
+The *state directory* is the private APK folder with receipts, saved preferences and transaction backups. The [ownership reference](../reference/ownership.md#state-directory) gives its default location, the order in which APK selects it, and its content. A path that is not absolute fails with `STATE_PATH_MUST_BE_ABSOLUTE`.
 
 If you use `--home` or `--state-dir` for setup, use the same values for `doctor`, `show` and `uninstall` later.
 
@@ -74,7 +70,7 @@ agent-policy setup [input] [--client ID] [--home PATH] [--state-dir PATH] [--app
 
 APK configures only assistants that are installed and selected in the preferences. It finds them as `detect` does. An assistant that is not installed is skipped. Each assistant has its own transaction: one assistant can succeed while another stops.
 
-A repeated setup with the same values reports the assistant as unchanged. After a change, open a new session in the assistant to load it.
+A repeated setup with the same values changes no file. The preview reports `planned` with no files, and the readable output shows `Already up to date`. With `--apply`, the result is `unchanged`. After a change, open a new session in the assistant to load it.
 
 ### Input modes
 
@@ -122,10 +118,10 @@ Rules for the values:
 
 - `EFFORT` is `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` or `native`. `native` sets no explicit effort, so the assistant uses its native default.
 - APK splits `MODEL:EFFORT` at the last colon. A model ID can contain colons.
-- A model ID has 1 to 128 characters: letters, digits and `. _ : @ / [ ] -`. It starts with a letter or digit.
+- A model ID must follow the rule in [Preferences](preferences.md#choices).
 - The effort must be a level that the assistant supports. For a model in the catalog, it must be a level of that model. The [model catalog reference](../reference/model-catalog.md) lists the levels.
 - A model in `--avoid-TOOL` cannot also be selected for a role.
-- For Kimi, roles that share a model alias cannot request different explicit efforts. The alias `primary` is not accepted.
+- For Kimi, effort applies to a model alias, not to a role. [Roles](../reference/roles.md#how-effort-applies) gives the rules. The alias `primary` is not accepted.
 - Each explicit option can appear only once. A duplicate fails with `DUPLICATE_OPTION`.
 - This mode works only with `setup` and `install`. It cannot be used with `--client`.
 
@@ -145,7 +141,7 @@ agent-policy setup --release --preset quality --apply
 | `--release` | none | Use a preset of this release. Without `--preset`, the preset is `balanced`. |
 | `--preset` | `fast`, `balanced` or `quality` | Select the preset: Light, Standard or Top-tier. `--preset` alone also selects this mode. |
 
-`--release` takes no version. The package version in the `npx` command selects the release. This mode is the supported way to upgrade or downgrade to the defaults of one release. See [Updates and removal](updates-and-removal.md). An unknown preset fails with `UNKNOWN_PRESET`. The [presets reference](../reference/presets.md) lists the values.
+`--release` takes no version. The package version in the `npx` command selects the release. This mode is the supported way to upgrade or downgrade to the defaults of one release. See [Updates and removal](updates-and-removal.md). Some release changes cross a migration boundary and need a removal first, for example Claude from 0.4.0 to 0.3.0. See [Migration boundaries](updates-and-removal.md#migration-boundaries). An unknown preset fails with `UNKNOWN_PRESET`. The [presets reference](../reference/presets.md) lists the values.
 
 ### Encoded preferences (`--config`)
 
@@ -180,9 +176,9 @@ Each assistant gets one result status:
 
 | Status | Meaning |
 |---|---|
-| `planned` | Preview: APK would make the listed changes. |
+| `planned` | Preview: APK would make the listed changes. A plan with no files means that the configuration is already current. |
 | `configured` | APK wrote the changes. |
-| `unchanged` | The configuration is already current. |
+| `unchanged` | Only with `--apply`: the configuration was already current, and APK wrote nothing. |
 | `not_selected` | The preferences do not include this assistant. |
 | `not_found` | The assistant is not installed. |
 | `invalid` | An executable was found, but its identity could not be verified. |
@@ -334,11 +330,13 @@ These codes come with exit code 1:
 | `INVALID_CONFIG` | The `--config` value is not valid. |
 | `INVALID_POLICY` | The preferences file is not valid. |
 | `POLICY_PATH_REQUIRED` | `init` has no `--policy`. |
+| `EEXIST` | The `init` target file already exists. |
+| `ENOENT` | The `--policy` file of `setup` does not exist. |
 | `OPERATION_FAILED` | Another failure. |
 
 ### Assistant results
 
-These codes appear in the result of one assistant. The command then exits with code 3.
+These codes appear in the result of one assistant. `setup` and `uninstall` then exit with code 3. `doctor` reports an error code as the reason of the status `attention` and exits with code 0.
 
 | Code | Meaning |
 |---|---|
@@ -346,10 +344,23 @@ These codes appear in the result of one assistant. The command then exits with c
 | `INSTALLATION_CONFLICT` | The installed APK preferences differ from this request. |
 | `POLICY_CONFLICT` | The saved preferences differ from this request. |
 | `OWNERSHIP_CONFLICT` | A file that APK wants to create already exists, or the instructions file already has an APK block that APK does not own. |
+| `INVALID_RECEIPT` | The receipt has an unknown format or content, for example a receipt that a newer APK version wrote. See [Migration boundaries](updates-and-removal.md#migration-boundaries). |
+| `LEGACY_RUNTIME_RECEIPT` | The receipt comes from an experimental runtime version: format v1, hooks or a package path. Remove it with the version that created it. |
 | `RECOVERY_REQUIRED` | An interrupted transaction needs recovery. |
 | `INSTALL_LOCKED` | Another APK operation holds the lock. |
+| `STALE_PLAN` | A file that the plan read changed before or during the apply. Make a new plan. |
+| `INSTALL_FAILED` | A write failed. APK restored the earlier configuration of the assistant. |
+| `ROLLBACK_CONFLICT` | APK could not restore a file after a failure. It keeps the lock and the journal for recovery. |
+| `UNSAFE_PATH` | A path contains a symbolic link, is outside its expected folder, or has a part with an unexpected file type. |
+| `UNSAFE_FILE` | A file that APK reads is not a regular file, or it is larger than 1 MiB. |
+| `UNSUPPORTED_CONFIG` | A native configuration file has a structure or a value type that APK cannot change safely. |
+| `INVALID_JSON`, `INVALID_TOML` | A native configuration file is not valid JSON or TOML. |
+| `UNSUPPORTED_TOML_STRUCTURE`, `UNSUPPORTED_TOML_VALUE` | A TOML file uses a form that APK does not edit. |
+| `CHATGPT_CAP_ALIAS_CONFLICT` | The ChatGPT `config.toml` has the older `[agents] max_threads` setting. See the [assistants reference](../reference/assistants.md#chatgpt-codex). |
 | `PLATFORM_UNSUPPORTED` | APK cannot write on Windows. |
-| `native-home-override-unsupported` | The assistant uses a native folder that is not standard. |
+| `EACCES`, `EPERM`, `ENOENT`, `ENOSPC`, `EIO`, `EROFS` | A file operation failed in the operating system. |
+| `SETUP_FAILED` | Another `setup` failure. `uninstall` reports another failure as `OPERATION_FAILED`. |
+| `native-home-override-unsupported` | The assistant uses a native folder that is not standard. `doctor` reports it as `NATIVE_HOME_OVERRIDE_UNSUPPORTED`. |
 | `client-not-selected` | `--client` names an assistant that the preferences do not include. |
 | `claude-force-model-conflict` | Claude Code forces one subagent model. |
 | `kimi-provisioned-models-required` and other `kimi-*` codes | Kimi needs model aliases or effort support that are not configured. |

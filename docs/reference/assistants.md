@@ -117,12 +117,11 @@ Kimi needs provisioned model entries. APK never creates aliases, providers or cr
 
 - Each selected alias must exist in `config.toml` with a provider, an upstream model and a context size, and its provider must exist. If not, setup returns `kimi-provisioned-models-required`.
 - If a preferred catalog alias is missing, setup looks for exactly one existing alias with the same upstream model and uses it. The result then has the warning `kimi-catalog-alias-resolved`. If more than one alias matches, setup returns `kimi-catalog-alias-ambiguous`.
-- If a resolved alias is in the avoid list, setup returns `kimi-resolved-model-avoided`. If two roles resolve to one alias with different pinned efforts, setup returns `kimi-resolved-effort-conflict`.
+- If a resolved alias is in the avoid list, setup returns `kimi-resolved-model-avoided`.
 - The alias `primary` is reserved and cannot be a pool entry.
-- A pinned effort must be in the alias's `support_efforts`. If not, setup returns `kimi-supported-effort-required`.
-- If thinking is off (`thinking.enabled = false`), setup returns `kimi-thinking-disabled` when any effort is pinned, or when a selected alias needs thinking. Both K3.1 Pro variants need thinking. APK does not change the thinking setting.
-- If some selected aliases have a pinned effort, others are unpinned, and `secondary_model.default_effort` is set, setup returns `kimi-mixed-native-default-effort`.
-- If a pinned alias is also the main model and the pin changes its default effort, setup returns `kimi-main-effort-conflict`, unless a valid explicit main effort is set in `thinking.effort`. Use a separate native alias for subagents, or set the main effort deliberately.
+- If thinking is off (`thinking.enabled = false`) and a selected alias needs thinking, setup returns `kimi-thinking-disabled`. Both K3.1 Pro variants need thinking. APK does not change the thinking setting.
+
+Kimi sets effort for each alias, not for each role. The effort rules and their refusal codes are in [Roles](roles.md#kimi-alias-effort).
 
 ### Gemini (Antigravity)
 

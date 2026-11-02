@@ -4,7 +4,7 @@ This document explains the data behind the subagent limit illustration in the RE
 
 ## Method
 
-Codex logs the weekly limit as `rate_limits.primary.used_percent`, together with its reset time. Free limit resets started two separate windows, each from 0%. The illustration compares these two windows:
+Codex logs the weekly limit as `rate_limits.primary.used_percent`, together with its reset time. Two limit resets that the vendor granted outside the weekly schedule each started a window at 0%. The illustration compares these two windows:
 
 | | Without APK | With APK |
 |---|---|---|

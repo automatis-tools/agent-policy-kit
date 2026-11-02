@@ -66,14 +66,14 @@ APK 0.4.0 writes format v4. It can read, check and remove v2, v3 and v4.
 
 | Format | Written by | Roles it can own | Release fields |
 |---|---|---|---|
-| v4 | All published releases, 0.1.0 to 0.4.0 | The selected subset of all six roles (`selectedRoles`) | `releaseVersion`, `source`, `preset` |
+| v4 | All releases from 0.1.0, including 0.4.0 | The selected subset of all six roles (`selectedRoles`) | `releaseVersion`, `source`, `preset` |
 | v3 | Development versions before 0.1.0 | The four original roles: Coder, Reviewer, Code explorer, Task runner | `releaseVersion`, `source`, `preset` |
 | v2 | Development versions before 0.1.0 | The four original roles | None. The applied release is reported as unknown. |
 
 - A v4 receipt must list exactly the files of its selected roles, plus the instruction file and, if the assistant has one, the configuration file.
 - Grok receipts exist only in v4.
 - A Claude v4 receipt owns two or three `env` values. The third, `CLAUDE_CODE_SUBAGENT_EFFORT`, is new in 0.4.0. It is present only when the effort of the first selected role is pinned. Receipts from 0.3.0 without it stay valid.
-- An older APK version can reject a v4 receipt that a newer version wrote. For example, APK 0.3.0 accepts only two owned `env` values in a Claude receipt, so it stops with `INVALID_RECEIPT` on a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`. Use a version that supports the receipt before you downgrade. For example, remove the Claude settings with 0.4.0 and then run setup with 0.3.0.
+- An older APK version can reject a v4 receipt that a newer version wrote. For example, APK 0.3.0 accepts only two owned `env` values in a Claude receipt, so it stops with `INVALID_RECEIPT` on a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`. Use a version that supports the receipt before you downgrade. For example, remove the Claude settings with 0.4.0 and then run setup with 0.3.0. [Migration boundaries](../guide/updates-and-removal.md#migration-boundaries) lists the known cases.
 
 APK refuses these receipts:
 
@@ -152,7 +152,7 @@ The role files of roles that the new selection removes are deleted in the same t
 
 Only an explicit input can replace an existing installation: `--release` or `--preset`, `--config`, or explicit assistant arguments. Without one of these inputs:
 
-- If the receipt has the same preferences hash, the result is `unchanged`. If the requested snapshot no longer matches these preferences, setup stops with `OWNED_DRIFT`.
+- If the receipt has the same preferences hash, a preview reports `planned` with no files, and `--apply` reports `unchanged`. If the requested snapshot no longer matches these preferences, setup stops with `OWNED_DRIFT`.
 - If the hash differs, setup stops with `INSTALLATION_CONFLICT`.
 - If no receipt exists but the requested snapshot differs from the new preferences, setup stops with `POLICY_CONFLICT`.
 
@@ -174,4 +174,4 @@ The native files do not depend on the npm package. You can remove the package af
 ## Related documents
 
 - [Architecture](../maintainers/architecture.md): the modules that implement these rules.
-- [AI operator guide](../../AGENT_INSTALL.md): the runbook for an agent that applies or removes APK.
+- [AI operator guide](../../AGENT_INSTALL.md): the guide for an agent that applies or removes APK.

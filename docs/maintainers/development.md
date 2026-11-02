@@ -63,7 +63,7 @@ Consumer fixtures read files. They do not prove that a native client loads the f
 
 - Use temporary home directories. Do not touch the real home directory.
 - Detection looks for desktop app bundles in `/Applications`. Set `AGENT_POLICY_APPLICATIONS_DIR` to another absolute directory to replace it. The tests set this variable, so apps on the host do not change the results.
-- `AGENT_POLICY_HOME` sets the state directory. The default is `~/.agent-policy-kit`.
+- `AGENT_POLICY_HOME` sets the state directory. The [ownership reference](../reference/ownership.md#state-directory) gives the selection order and the default.
 - Keep the existing checks for transactions, the complete read set, rollback, ownership, symbolic links and privacy.
 
 ## Pre-push hook

@@ -29,7 +29,7 @@ An AI agent that installs APK for you follows the [AI operator guide](../AGENT_I
 
 | Question | Document |
 |---|---|
-| What evidence supports the 0.4.0 presets? | [Model review, 2026-11-01](research/2026-11-01-model-review.md) |
+| What evidence supports the 0.4.0 presets? | [Model review of 2026-11-01](research/2026-11-01-model-review.md) |
 | How was the limit illustration in the README measured? | [Limits evidence](research/limits-evidence.md) |
 
 ## Maintain APK

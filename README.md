@@ -30,7 +30,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 - [Documentation index](docs/README.md)
 - [Presets](docs/reference/presets.md)
 - [Release notes](CHANGELOG.md)
-- [Runbook for AI agents](AGENT_INSTALL.md)
+- [AI operator guide](AGENT_INSTALL.md)
 
 ## Related projects
 

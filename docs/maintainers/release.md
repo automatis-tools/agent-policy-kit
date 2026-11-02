@@ -1,6 +1,6 @@
 # Release
 
-This document tells maintainers how to prepare, verify and publish a configuration release of Agent Policy Kit (APK). It also explains the host-build guard and why a change to presets or to the catalog needs a new version. For the review of models and presets before a release, see [model review](model-review.md). For the deployment of the page, see [website](website.md).
+This document tells maintainers how to prepare, verify and publish a configuration release of Agent Policy Kit (APK). It also explains the host-build guard and why a change to presets or to the catalog needs a new version. For the review of models and presets before a release, see the [model review procedure](model-review.md). For the deployment of the page, see [website](website.md).
 
 ## Rules
 
@@ -44,13 +44,13 @@ Interface changes to the page template do not need a release. The latest root pa
 
 Do these steps on a branch. Open a draft pull request.
 
-1. Review models and presets as [model review](model-review.md) describes.
+1. Review models and presets as the [model review procedure](model-review.md) describes.
 2. Set `version` in `package.json` and in `package-lock.json`.
 3. Set `homepage` in `package.json` to `https://agent-policy-kit.trymenow.io/v/VERSION/`.
 4. Update the preset files, the catalog and its `reviewedAt` date as needed.
 5. Add the changelog entry with the heading `## VERSION — Unreleased`.
 6. Update the pinned commands (`agent-policy-kit@VERSION`) in `README.md`, `AGENT_INSTALL.md` and the documents in `docs/` that contain them.
-7. Run `npm run build:site`. The page labels itself as a release candidate while the changelog heading says `Unreleased`.
+7. Run `npm run build:site`. For the release status that the page then shows, see [website](website.md#release-status-on-the-page).
 8. Run `npm run check` and `npm test`. See [development](development.md).
 
 After the owner merges this pull request, the deployment workflow skips with the notice that the version is not tagged and published yet. The run does not fail.
@@ -75,7 +75,7 @@ Do these steps on a second branch, `release/VERSION`. Open a draft pull request.
 
 1. Change the changelog heading to `## VERSION — YYYY-MM-DD`. Complete the notes.
 2. Add the verification record for this version to [verification](verification.md).
-3. Run `npm run build:site`. The page now shows `Configuration release VERSION`.
+3. Run `npm run build:site`. The page status changes as [website](website.md#release-status-on-the-page) describes.
 4. Run `npm run check` and `npm test`.
 
 The owner merges this pull request.
