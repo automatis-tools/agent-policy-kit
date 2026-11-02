@@ -65,7 +65,7 @@ Prompt: "Execute only the prescribed commands or clearly specified mechanical ed
 
 ## Permissions
 
-The Reviewer and the Code explorer are read-only roles. Their prompts tell them not to edit files. Two assistants also restrict them natively:
+The Reviewer and the Code explorer are read-only roles. Their prompts tell them not to edit files. Three assistants also restrict them natively:
 
 | Assistant | Native read-only setting for Reviewer and Code explorer |
 |---|---|
@@ -73,9 +73,11 @@ The Reviewer and the Code explorer are read-only roles. Their prompts tell them 
 | Claude | `tools: Read, Grep, Glob` |
 | Kimi | `tools: [Read, Grep, Glob]` |
 | Gemini | None. The prompt is the only restriction. |
-| Grok | None in effect. APK writes `permission_mode: plan`, but Grok Build 1.0.70 reads agent fields in camelCase and ignores this field. The prompt is the only restriction until #30 is fixed. |
+| Grok | `capabilityMode: read-only`. When Grok Build starts the subagent, it removes the tools that edit, write, delete or move files and the shell tool. Tools from MCP servers stay. See [AI assistants](assistants.md#grok-read-only-roles). |
 
 The other four roles get no tool restriction. They use the permissions of the native client.
+
+Grok installs made by 0.4.0 or 0.5.0 have `permission_mode: plan` in these two role files. Grok Build ignores this field, so the prompt is their only restriction. A setup with 0.5.1 or later and `--release`, `--preset`, `--config` or explicit tool arguments replaces the files. See [Updates and removal](../guide/updates-and-removal.md#what-happens-during-an-update).
 
 ## Role file contents
 
@@ -87,7 +89,7 @@ For the file paths, see [AI assistants](assistants.md#files-written). Each file 
 | Claude | Markdown with frontmatter | `name`, `description`, `model`, `effort` (only when pinned), `tools` (read-only roles); the body is the prompt |
 | Kimi | Markdown with frontmatter | `name`, `description`, `tools` (read-only roles); the body is the prompt and a routing note |
 | Gemini | Markdown with frontmatter | `name`, `description`, `model` (the tier), `subagent: true`; the body is the prompt |
-| Grok | Markdown with frontmatter | `name`, `description`, `effort` (only when pinned), `permission_mode: plan` (read-only roles); the body is the prompt |
+| Grok | Markdown with frontmatter | `name`, `description`, `effort` (only when pinned), `capabilityMode: read-only` (read-only roles); the body is the prompt |
 
 - Kimi frontmatter does not select a model. The routing note in the body names the pool alias and the requested effort. The parent selects the alias when it spawns the subagent.
 - Grok takes the model of each role from `[subagents.models]` in `config.toml`, not from the role file.

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import {createHash} from 'node:crypto';
 import {planInstall,applyInstall,uninstall,summarizePlan,inspectConfiguration} from '../src/install.mjs';
 import {readConfiguration} from '../src/inspect.mjs';
 import {setupDetected} from '../src/setup.mjs';
@@ -10,6 +11,7 @@ import {formatResult} from '../src/output.mjs';
 import {parseToml} from '../src/toml.mjs';
 import {nativeHomeConflict} from '../src/native.mjs';
 import {ROLE_IDS} from '../src/roles.mjs';
+import {PACKAGE_VERSION} from '../src/release.mjs';
 
 // Temporary profiles only: nothing here reads a real Grok profile or calls a model.
 async function fixture(t,policy={}) {
@@ -27,6 +29,19 @@ const put=async(file,text)=>{await fs.mkdir(path.dirname(file),{recursive:true})
 const configPath=f=>path.join(f.home,'.grok/config.toml');
 const rolePath=(f,role)=>path.join(f.home,'.grok/agents',`apk-${role}.md`);
 const original='# user grok settings\nmodel = "main-grok"\n[subagents]\nenabled = true\n';
+// Releases 0.4.0 and 0.5.0 wrote the read-only roles with the snake_case key `permission_mode: plan`, which Grok Build ignores.
+// Rewrite the role files and their receipt hashes exactly as those releases wrote them.
+async function legacyReadOnlyRoles(f) {
+ const receiptPath=path.join(f.stateDir,'installations/grok.json'),receipt=JSON.parse(await fs.readFile(receiptPath,'utf8'));
+ for(const role of ['reviewer','explorer']){
+  const file=rolePath(f,role),legacy=(await fs.readFile(file,'utf8')).replace(/^capabilityMode: read-only$/m,'permission_mode: plan');
+  assert.match(legacy,/^permission_mode: plan$/m);assert.doesNotMatch(legacy,/^capabilityMode:/m);
+  await fs.writeFile(file,legacy);
+  receipt.files.find(entry=>entry.path===file).afterHash=createHash('sha256').update(legacy).digest('hex');
+ }
+ await fs.writeFile(receiptPath,JSON.stringify(receipt,null,2)+'\n');
+}
+const readOnlyRoles=async f=>{for(const role of ROLE_IDS){const body=await fs.readFile(rolePath(f,role),'utf8');assert.equal(/^capabilityMode: read-only$/m.test(body),['reviewer','explorer'].includes(role),role);assert.doesNotMatch(body,/^permission_mode:/m,role);}};
 
 test('apply writes native role files, per-role models, the general-purpose fallback and a native cap',async t=>{
  const f=await fixture(t);await put(configPath(f),original);
@@ -42,7 +57,9 @@ test('apply writes native role files, per-role models, the general-purpose fallb
  for(const role of ROLE_IDS){
   const body=await fs.readFile(rolePath(f,role),'utf8');
   assert.match(body,new RegExp(`^---\\nname: apk-${role}\\ndescription: ".+"\\n`));
-  assert.equal(/^permission_mode: plan$/m.test(body),['reviewer','explorer'].includes(role),role);
+  // Grok Build reads camelCase agent fields; capabilityMode read-only removes the edit, write and shell tools at spawn.
+  assert.equal(/^capabilityMode: read-only$/m.test(body),['reviewer','explorer'].includes(role),role);
+  assert.doesNotMatch(body,/^(permission_mode|permissionMode|capability_mode):/m,role);
   assert.doesNotMatch(body,/^(model|effort|tools):/m);
  }
  const instructions=await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8');
@@ -132,7 +149,7 @@ test('a pinned effort is written to the agent frontmatter only for that role and
   assert.equal(await fs.readFile(rolePath(f,role),'utf8'),await fs.readFile(rolePath(plain,role),'utf8'),role);
  }
  const reviewer=await fs.readFile(rolePath(f,'reviewer'),'utf8');
- assert.match(reviewer,/^---\nname: apk-reviewer\ndescription: ".+"\neffort: xhigh\npermission_mode: plan\n---\n/);assert.doesNotMatch(reviewer,/^(model|reasoning_effort|reasoningEffort):/m);
+ assert.match(reviewer,/^---\nname: apk-reviewer\ndescription: ".+"\neffort: xhigh\ncapabilityMode: read-only\n---\n/);assert.doesNotMatch(reviewer,/^(model|reasoning_effort|reasoningEffort):/m);
  const native=parseToml(await fs.readFile(configPath(f),'utf8'));
  assert.equal(native.subagents.models['apk-reviewer'],'grok-4.7');assert.equal(native.subagents.models['apk-tester'],'grok-custom');
  assert.ok(Object.values(native.subagents.models).every(value=>typeof value==='string'));assert.equal(native.subagents.roles,undefined);
@@ -158,18 +175,64 @@ test('an install made by 0.4.0 still inspects, updates in place with an effort a
  for(const file of receipt.files)if(file.type==='instructions')file.block=file.block.replace(current,legacy);
  await fs.writeFile(receiptPath,JSON.stringify(receipt,null,2)+'\n');
  await fs.writeFile(path.join(f.home,'.grok/AGENTS.md'),(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8')).replace(current,legacy));
+ await legacyReadOnlyRoles(f);
  const inspected=await inspectConfiguration(f);assert.equal(inspected.status,'verified');assert.equal(inspected.releaseVersion,'0.4.0');
  assert.equal((await readConfiguration({home:f.home,client:'grok',env:{},stateDir:f.stateDir})).clients.grok.apk.status,'verified');
  const unchanged=await planInstall({...f,releaseVersion:'0.4.0'});assert.equal(unchanged.status,'unchanged');
  assert.doesNotMatch(formatResult('setup',{schemaVersion:1,status:'configured',detected:[],results:[{client:'grok',status:'unchanged',changedFiles:0,warnings:unchanged.warnings}],requiredActions:[],exitCode:0},{apply:true}),/do not support per-role effort|main session/);
  const pinned=JSON.parse(await fs.readFile(f.policyPath,'utf8'));pinned.clients.grok.roles.reviewer={model:'grok-4.7',effort:'medium'};await fs.writeFile(f.policyPath,JSON.stringify(pinned));
  await applyInstall(await planInstall({...f,replace:true}));
- assert.match(await fs.readFile(rolePath(f,'reviewer'),'utf8'),/^effort: medium$/m);
+ assert.match(await fs.readFile(rolePath(f,'reviewer'),'utf8'),/^effort: medium$/m);await readOnlyRoles(f);
  assert.doesNotMatch(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8'),/main session effort/);
  await uninstall({...f,apply:true});
  assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
  assert.equal(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8'),'User rules.\n');
  for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
+});
+
+test('an install made by 0.5.0 still inspects, updates in place with read-only roles and uninstalls',async t=>{
+ const f=await fixture(t,{grok:{roles:{reviewer:{model:'grok-4.7',effort:'xhigh'}}}});await put(configPath(f),original);await put(path.join(f.home,'.grok/AGENTS.md'),'User rules.\n');
+ await applyInstall(await planInstall({...f,releaseVersion:'0.5.0'}));await legacyReadOnlyRoles(f);
+ const before=await fs.readFile(rolePath(f,'reviewer'),'utf8');assert.match(before,/^---\nname: apk-reviewer\ndescription: ".+"\neffort: xhigh\npermission_mode: plan\n---\n/);
+ const inspected=await inspectConfiguration(f);assert.equal(inspected.status,'verified');assert.equal(inspected.releaseVersion,'0.5.0');
+ const shown=(await readConfiguration({home:f.home,client:'grok',env:{},stateDir:f.stateDir})).clients.grok;
+ assert.equal(shown.apk.status,'verified');assert.equal(shown.apk.releaseVersion,'0.5.0');assert.equal(shown.status,'configured');assert.deepEqual(shown.warnings,[]);
+ assert.deepEqual(shown.roles.find(r=>r.name==='apk-reviewer'),{name:'apk-reviewer',model:'grok-4.7',effort:'xhigh'});
+ // Without a replacing command the earlier release stays, including its role files.
+ assert.equal((await planInstall({...f,releaseVersion:'0.5.0'})).status,'unchanged');
+ const plan=await planInstall({...f,replace:true});assert.equal(plan.status,'planned');
+ assert.deepEqual(summarizePlan(plan).files.filter(file=>file.path.startsWith('~/.grok/agents/')).map(file=>file.path+' '+file.action).sort(),['~/.grok/agents/apk-explorer.md update','~/.grok/agents/apk-reviewer.md update']);
+ await applyInstall(plan);await readOnlyRoles(f);
+ assert.match(await fs.readFile(rolePath(f,'reviewer'),'utf8'),/^---\nname: apk-reviewer\ndescription: ".+"\neffort: xhigh\ncapabilityMode: read-only\n---\n/);
+ const updated=await inspectConfiguration(f);assert.equal(updated.status,'verified');assert.equal(updated.releaseVersion,PACKAGE_VERSION);
+ await uninstall({...f,apply:true});
+ assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
+ assert.equal(await fs.readFile(path.join(f.home,'.grok/AGENTS.md'),'utf8'),'User rules.\n');
+ for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
+});
+
+test('an install made by 0.5.0 uninstalls without an update',async t=>{
+ const f=await fixture(t);await put(configPath(f),original);
+ await applyInstall(await planInstall({...f,releaseVersion:'0.5.0'}));await legacyReadOnlyRoles(f);
+ assert.equal((await uninstall(f)).status,'planned');await uninstall({...f,apply:true});
+ assert.deepEqual(parseToml(await fs.readFile(configPath(f),'utf8')),parseToml(original));
+ for(const role of ROLE_IDS)await assert.rejects(fs.stat(rolePath(f,role)),{code:'ENOENT'});
+});
+
+test('show warns about a capability mode that Grok Build rejects and ignores the snake_case key',async t=>{
+ const f=await fixture(t);await applyInstall(await planInstall(f));
+ const read=async()=>(await readConfiguration({home:f.home,client:'grok',env:{},stateDir:f.stateDir})).clients.grok;
+ assert.deepEqual((await read()).warnings,[]);
+ // Grok Build 1.0.70 accepts these values and their aliases; the snake_case key is not a Grok field, so its value does not matter.
+ await put(path.join(f.home,'.grok/agents/aliases.md'),'---\nname: aliases\ndescription: aliases\ncapabilityMode: readOnly\n---\n');
+ await put(path.join(f.home,'.grok/agents/quoted.md'),'---\nname: quoted\ndescription: quoted\ncapabilityMode: "read-only" # comment\n---\n');
+ await put(path.join(f.home,'.grok/agents/snake.md'),'---\nname: snake\ndescription: snake\ncapability_mode: not-a-mode\npermission_mode: not-a-mode\n---\n');
+ assert.deepEqual((await read()).warnings,[]);
+ // Grok Build drops an agent whose capabilityMode is not a mode it accepts.
+ for(const value of ['not-a-mode','""']){
+  await put(path.join(f.home,'.grok/agents/odd.md'),`---\nname: odd\ndescription: odd\ncapabilityMode: ${value}\n---\n`);
+  const odd=await read();assert.deepEqual(odd.warnings,['UNSUPPORTED_ROLE_CAPABILITY'],value);assert.equal(odd.status,'attention');
+ }
 });
 
 test('show reports roles, the fallback model and the native cap from an isolated GROK_HOME',async t=>{

@@ -161,6 +161,25 @@ Issue #27 tested whether a named agent such as `apk-reviewer` can have its own e
 - Grok Build uses this order: a spawn override from the harness, then a Grok role with the same name as the agent (`[subagents.roles.apk-<role>]` or `~/.grok/roles/apk-<role>.toml`), then the agent frontmatter, then the default of the model. The parent model cannot select an effort when it spawns a subagent. APK writes no Grok roles.
 - Not checked: a live model task. Grok Build has no command that shows the resolved subagent effort without a model run. The source is a public sync from 2026-09-29, and the error and log text of these code paths occurs in the 1.0.70 program.
 
+#### Grok read-only roles
+
+Issue #30 tested which field makes the Reviewer and the Code explorer read-only in Grok Build. The result comes from the Grok Build source and from a check with Grok Build 1.0.70:
+
+- Grok Build reads the fields of an agent file in camelCase. It ignores a snake_case key such as `permission_mode` without a warning. Releases 0.4.0 and 0.5.0 wrote `permission_mode: plan`, so their Grok Reviewer and Code explorer had only the prompt as a restriction.
+- Since 0.5.1, APK writes `capabilityMode: read-only` in `~/.grok/agents/apk-reviewer.md` and `~/.grok/agents/apk-explorer.md`.
+- When Grok Build starts a subagent of this type, it removes every built-in tool whose kind is not allowed in read-only mode: the tools that edit, write, delete or move files, the shell tool, the image and video tools, and messages to other active agents. The tools that read, list and search files, the LSP, web search and web fetch, the plan tools and skills stay. Because no edit tool stays, Grok Build also does not add its separate file write tool.
+- The agent file sets an upper limit. A capability mode that the parent or a Grok role requests at spawn cannot widen it: read-only combined with any other mode gives read-only.
+- Grok Build accepts `read-only`, `read-write`, `execute` and `all`, and some spellings of them such as `readOnly`. For any other value, Grok Build drops the whole agent without a warning. `grok inspect --json` with an isolated `GROK_HOME` confirmed both cases. `agent-policy show` reports `UNSUPPORTED_ROLE_CAPABILITY` for such an agent file.
+- `permissionMode: plan` does not make a subagent read-only. Grok Build reads the field, but at spawn it uses only `bypassPermissions`. APK therefore does not write `permissionMode`.
+
+These limits apply:
+
+- Tools from MCP servers have no tool kind, so read-only mode keeps them. An MCP tool that changes files or other systems stays available to the role.
+- If image or video generation is enabled in Grok Build, the source adds these tools to the subagent after the filter. A read-only role can then still generate images or videos.
+- By default a subagent cannot start its own subagents. If you raise the Grok Build subagent depth, it is not checked whether a subagent that a read-only role starts is also read-only.
+- Installs made by 0.4.0 or 0.5.0 keep `permission_mode: plan` until a setup replaces the role files. Use 0.5.1 or later with `--release`, `--preset`, `--config` or explicit tool arguments. A setup without these options reports `unchanged` and keeps the old files.
+- Not checked: a live model task. The spawn path runs only when a model starts a subagent. The source is a public sync from 2026-09-29, and the log text of the capability filter occurs in the 1.0.70 program.
+
 ## Desktop apps
 
 Some desktop apps include their own copy of a CLI and do not put it on `PATH`. On macOS, detection also checks these copies, after `PATH` and the conventional locations:

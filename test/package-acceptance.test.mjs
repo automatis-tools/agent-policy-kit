@@ -92,7 +92,7 @@ const body=fs.readFileSync(file,'utf8');
 assert.ok(body.includes('apk-'+role));
 if(client==='chatgpt')assert.ok(body.includes('model = '+JSON.stringify(expected[role].model)));
 else if(client==='kimi')assert.ok(body.includes(expected[role].model));
-else if(client==='grok'){assert.match(body,new RegExp('^name: apk-'+role+'$','m'));assert.equal(/^permission_mode: plan$/m.test(body),['reviewer','explorer'].includes(role));assert.ok(!/^(model|effort):/m.test(body));}
+else if(client==='grok'){assert.match(body,new RegExp('^name: apk-'+role+'$','m'));assert.equal(/^capabilityMode: read-only$/m.test(body),['reviewer','explorer'].includes(role));assert.ok(!/^permission_mode:/m.test(body));assert.ok(!/^(model|effort):/m.test(body));}
 else assert.equal(JSON.parse(body.match(/^model: (.+)$/m)[1]),expected[role].model);
 assert.ok(!body.includes('node_modules')&&!body.includes('agent-policy.mjs'));
 }

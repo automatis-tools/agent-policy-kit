@@ -116,7 +116,7 @@ The command always lists every selected assistant and role with its model and ef
 A generated command has this form:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy setup \
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy setup \
   --roles 'reviewer,explorer' \
   --max-concurrent 3 \
   --chatgpt 'reviewer=gpt-6.1-sol:high,explorer=gpt-6-luna:high' \
@@ -138,7 +138,7 @@ The [Commands](commands.md#explicit-tool-arguments) reference describes this syn
 Under step 4, the box **You can undo the setup** shows the command that removes the APK settings. The command is pinned to the release of the page, for example:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.5.0 agent-policy uninstall --apply
+npx --yes --ignore-scripts --package agent-policy-kit@0.5.1 agent-policy uninstall --apply
 ```
 
 The removal restores the settings that you had before APK and keeps your unrelated edits. It uses the receipts that setup saves in the state directory, `~/.agent-policy-kit` by default. Keep this directory.
