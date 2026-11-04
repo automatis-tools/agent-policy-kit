@@ -4,15 +4,11 @@ This document describes the configurator page: its four steps, the work modes, t
 
 ## Open the page
 
-Use one of these pages:
+Open the [configurator on getacc.dev](https://getacc.dev/agent-policy-kit/) in a current browser.
 
-- The hosted page for the current release: <https://agent-policy-kit.trymenow.io/>.
-- The hosted page for one release, for example <https://agent-policy-kit.trymenow.io/v/0.4.0/>.
-- The local file `site/index.html` from the APK package or repository.
+The form belongs to the ACC website. It composes commands locally, without analytics or a configuration upload. It never runs the command or grants model access. The npm package no longer includes local HTML or versioned web pages.
 
-Use a current version of Google Chrome. The page is one self-contained HTML file. It has no backend and makes no requests while you use it. It never runs the command and never grants model access.
-
-Each page belongs to one configuration release. A *configuration release* is one APK package version with its presets, model catalog and role templates. The status line under step 4 shows the release, for example `Configuration release 0.4.0`. While the release notes mark the release as unreleased, the line shows a release-candidate notice instead. The [website document](../maintainers/website.md#release-status-on-the-page) tells when each line is shown.
+The website pins one published APK package version. The status line under step 4 identifies that configuration release, for example `Configuration release 0.5.2`. [Website ownership](../maintainers/website.md) explains how the website is updated.
 
 ## Step 1: Subagent roles
 
@@ -178,9 +174,8 @@ The link contains the roles, the assistant order, the mode of each assistant, th
 
 When someone opens the link, the page restores the form, including unfinished choices. The command is still blocked until all values are valid. For a link to an unfinished form, the address keeps the link until the form changes.
 
-- A link contains its release version. A link from another release opens only on the page of that release. The hosted page sends such a link to the page of its release, if that page is hosted. Otherwise, the page shows an error.
+- A link contains its release version. A link from another release shows a mismatch error; there are no `/v/` archives on the new site. Recreate the form for the current release.
 - If a link is not valid, the page shows an error. Click **Reset form** to start again.
-- A link to a local file works only on the same computer.
 
 ## Related documents
 

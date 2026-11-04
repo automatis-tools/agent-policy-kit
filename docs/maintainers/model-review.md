@@ -86,7 +86,7 @@ Vendor pages can disagree with each other or lag behind the clients. Older help 
 | [docs/reference/assistants.md](../reference/assistants.md) | Native limits and prerequisites, when a client changed them |
 | `docs/research/<YYYY-MM-DD>-model-review.md` | The new research document |
 | [CHANGELOG.md](../../CHANGELOG.md) | The changed cells, the reasons, who should update, client requirements, and migration and rollback limits |
-| `site/index.html` | The configuration page, built with `npm run build:site` |
+| Website dependency pin | Update the separate ACC website to the published APK version after publication |
 
 Use the release process in [release](release.md) for the version number and the changelog date. The page build is in [website](website.md).
 
@@ -94,8 +94,8 @@ Use the release process in [release](release.md) for the version number and the 
 
 Run these commands in the repository root:
 
-1. Build the page: `npm run build:site`.
-2. Run the checks: `npm run check`.
-3. Run the tests: `npm test`.
+1. Run the checks: `npm run check`.
+2. Run the tests: `npm test`.
+3. After publication, verify the website against its updated dependency pin.
 
-`npm run check` also confirms that the built page matches the release data. `npm test` includes the comparison of the preset tables with the preset data. For setup and hooks, see [development](development.md). Record native format checks in [verification](verification.md).
+`npm test` includes the comparison of the preset tables with the preset data. For setup and hooks, see [development](development.md). Record native format checks in [verification](verification.md).

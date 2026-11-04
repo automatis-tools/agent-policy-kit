@@ -42,7 +42,6 @@
     "AGENT_INSTALL.md",
     "LICENSE",
     "CHANGELOG.md",
-    "site/index.html",
     "models/"
   ],
   "scripts": {
@@ -51,8 +50,6 @@
     "test:package": "node --test test/*package*.test.mjs",
     "test:unit": "node scripts/test-unit.mjs",
     "prepublishOnly": "npm run check && npm test",
-    "build:site": "node scripts/build-site.mjs",
-    "build:host": "npm run build:site && node scripts/build-host.mjs",
     "test:cache": "node scripts/prime-test-cache.mjs"
   },
   "dependencies": {
@@ -65,5 +62,5 @@
   "bugs": {
     "url": "https://github.com/automatis-tools/agent-policy-kit/issues"
   },
-  "homepage": "https://agent-policy-kit.trymenow.io/v/0.5.2/"
+  "homepage": "https://getacc.dev/agent-policy-kit/"
 }

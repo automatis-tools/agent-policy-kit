@@ -4,7 +4,7 @@ This index tells you which document answers your question. Each document covers 
 
 ## Read the stories
 
-- [Your Claude Code subagents share your limits](articles/claude-code.html) — a short illustrated article about subagent models, shared usage and what one developer's logs showed. Open the HTML file in a browser.
+- [Your Claude Code subagents share your limits](https://getacc.dev/guides/claude-code-subagent-limits/) — a short illustrated article about subagent models, shared usage and what one developer's logs showed.
 
 ## Use APK
 
@@ -44,7 +44,7 @@ An AI agent that installs APK for you follows the [AI operator guide](../AGENT_I
 | How do I set up a development environment and run the tests? | [Development](maintainers/development.md) |
 | How do I review models and presets for a release? | [Model review procedure](maintainers/model-review.md) |
 | How do I prepare and publish a release? | [Release](maintainers/release.md) |
-| How is the configuration page built and deployed? | [Website](maintainers/website.md) |
+| Where is the configuration page maintained? | [Website](maintainers/website.md) |
 | What was verified for each release? | [Verification](maintainers/verification.md) |
 
 Design decisions are recorded as dated documents in `docs/design/`. Release notes are in the [changelog](../CHANGELOG.md).

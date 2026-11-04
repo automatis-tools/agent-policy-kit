@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import vm from 'node:vm';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
 
 // This gate tests the distributable, not imports from a checkout. The isolated
 // build snapshot is removed, and the real checkout is denied to each consumer.
@@ -59,7 +60,6 @@ test('two real configuration packages upgrade and downgrade models and templates
   const changedDefinitions=originalDefinitions.replace('Implement the assigned change or fix within the assigned files.','Fixture B worker. Implement the assigned change or fix within the assigned files.');
   assert.notEqual(changedDefinitions,originalDefinitions);fs.writeFileSync(definitions,changedDefinitions);
   fs.writeFileSync(path.join(snapshotB,'CHANGELOG.md'),['# Changelog','',`## ${NEXT_VERSION} — Unreleased`,'','### Why this release',"Literal $& and $' in release notes must remain data.",'Synthetic test fixture, not a real release.',''].join('\n'));
-  assert.equal(command(process.execPath,['scripts/build-site.mjs'],{cwd:snapshotB,env}).status,0);
   const packedB=parse(command('npm',['pack','--json','--ignore-scripts','--pack-destination',root],{cwd:snapshotB,env}));
   parse(command('npm',['install','--prefix',prefixB,path.join(root,packedB[0].filename),'--ignore-scripts','--no-audit','--no-fund','--offline','--json'],{cwd:consumer,env}));
   fs.rmSync(snapshot,{recursive:true,force:true});fs.rmSync(snapshotB,{recursive:true,force:true});
@@ -80,9 +80,8 @@ test('two real configuration packages upgrade and downgrade models and templates
   const blocked = isolated(process.execPath, ['-e', `require('node:fs').readFileSync(${JSON.stringify(path.join(source, 'package.json'))})`]);
   assert.notEqual(blocked.status, 0, 'The consumer must be unable to read the source checkout.');
   const binB=path.join(prefixB,'node_modules/.bin/agent-policy');
-  const pageB=fs.readFileSync(path.join(prefixB,'node_modules/agent-policy-kit/site/index.html'),'utf8'),contextB=vm.createContext({TextEncoder,btoa});
-  vm.runInContext(pageB.match(/<script>([\s\S]*?)<\/script>/)[1],contextB);
-  assert.equal(typeof contextB.APKConfigurator.buildCommand,'function','release notes must not corrupt the generated page script');
+  const releaseBReport=parse(isolated(binB,['release']));
+  assert.ok(releaseBReport.notes.includes("Literal $& and $' in release notes must remain data."));
   const run=(which,args,extra={})=>isolated(which==='A'?bin:binB,args,extra);
   assert.equal(parse(run('A',['release'])).version,CURRENT_VERSION);assert.equal(parse(run('B',['release'])).version,NEXT_VERSION);
   const nativeBin=path.join(consumer,'native-bin');fs.mkdirSync(nativeBin);
@@ -141,14 +140,15 @@ const body=await fs.readFile(${JSON.stringify(role)},'utf8');if(!body.includes('
   assert.deepEqual(JSON.parse(fs.readFileSync(claude)),{model:'opus',theme:'dark',env:{USER_SECRET:'PRIVATE_SENTINEL'}});
   assert.match(fs.readFileSync(path.join(freshHome,'.codex/AGENTS.md'),'utf8'),/Original instructions\.[\s\S]*Later user note\./);
 
-  // The generated page's actual command data runs through the installed CLI.
-  const html=fs.readFileSync(path.join(consumer,'node_modules/agent-policy-kit/site/index.html'),'utf8');
-  const context=vm.createContext({TextEncoder,btoa});vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],context);
-  const ui=context.APKConfigurator,preferences=JSON.parse(fs.readFileSync(path.join(consumer,'node_modules/agent-policy-kit/policies/balanced.json'))),choices=ui.initialState(preferences);
-  choices.selected=['chatgpt'];
-  choices.jobs.chatgpt.reviewer={model:'page-review-model',effort:'high'};
-  const pageConfig=ui.buildConfig(choices,preferences);assert.equal(pageConfig.errors.length,0);
-  const pageCommand=ui.buildCommand(pageConfig.config,{version:CURRENT_VERSION});assert.ok(pageCommand.startsWith(`npx --yes --ignore-scripts --package agent-policy-kit@${CURRENT_VERSION} `));
+  // The installed CLI's explicit formatter still composes an applicable command.
+  const installedRoot=path.join(consumer,'node_modules/agent-policy-kit');
+  const {formatExplicitCommand}=require(path.join(installedRoot,'src/explicit.mjs'));
+  const {ROLE_DEFINITIONS:installedRoles}=require(path.join(installedRoot,'src/roles.mjs'));
+  const preferences=JSON.parse(fs.readFileSync(path.join(installedRoot,'policies/balanced.json')));
+  const pageConfig=structuredClone(preferences);pageConfig.clients={chatgpt:pageConfig.clients.chatgpt};
+  pageConfig.clients.chatgpt.roles.reviewer={model:'page-review-model',effort:'high'};
+  const pageCommand=formatExplicitCommand(pageConfig,CURRENT_VERSION,installedRoles);
+  assert.ok(pageCommand.startsWith(`npx --yes --ignore-scripts --package agent-policy-kit@${CURRENT_VERSION} `));
   assert.doesNotMatch(pageCommand,/--config|--preset|--release/);
   const pageHome=path.join(consumer,'page-home');fs.mkdirSync(pageHome);const pageState=path.join(pageHome,'.state');
   const quote=value=>"'"+value.replaceAll("'","'\"'\"'")+"'";

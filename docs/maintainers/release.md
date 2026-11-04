@@ -1,6 +1,6 @@
 # Release
 
-This document tells maintainers how to prepare, verify and publish a configuration release of Agent Policy Kit (APK). It also explains the host-build guard and why a change to presets or to the catalog needs a new version. For the review of models and presets before a release, see the [model review procedure](model-review.md). For the deployment of the page, see [website](website.md).
+This document tells maintainers how to prepare, verify and publish a configuration release of Agent Policy Kit (APK). It also explains why a change to presets or to the catalog needs a new version and how the separate website consumes it. For the review of models and presets before a release, see the [model review procedure](model-review.md). For website ownership and updates, see [website](website.md).
 
 ## Rules
 
@@ -20,27 +20,9 @@ This document tells maintainers how to prepare, verify and publish a configurati
 
 ## Why a preset or catalog change needs a new version
 
-The pinned command `agent-policy-kit@VERSION` installs the presets and the catalog of that npm package. The archived page `/v/VERSION/` is a fixed copy from the release tag. If `main` changed the presets under the same version, the latest page would show values that the pinned command does not install.
+The pinned command `agent-policy-kit@VERSION` installs the presets and catalog of that immutable npm package. The website pins the same exact package as a build dependency, so editing an unpublished checkout cannot change its recommendations or generated command.
 
-The host build prevents this. `npm run build:host` (`scripts/build-host.mjs`) stops with one of these codes:
-
-| Code | Cause |
-|---|---|
-| `HOST_RELEASE_TAG_REQUIRED` | The current `package.json` version has no tag (`vVERSION` or `VERSION`) that is reachable from `HEAD` |
-| `UNRELEASED_HOST_CONFIGURATION` | A configuration-sensitive file on `HEAD` differs from the same file at that tag |
-
-The configuration-sensitive files are:
-
-- `policies/fast.json`, `policies/balanced.json`, `policies/quality.json`
-- `models/catalog.json`
-- `src/roles.mjs`, `src/release.mjs`, `src/explicit.mjs`, `src/policy.mjs`
-- `schema/policy.schema.json`
-
-These files define what the page embeds and which commands the published package accepts. `src/release.mjs` holds the preset labels and the top models switch (`PRESETS`).
-
-The native templates (`src/native.mjs`, `src/install.mjs`) are not in the list. The page does not embed them, and the pinned command always runs the templates of the published package, so the page cannot disagree with them. A template change still reaches people only through a new version: bump the version to publish it.
-
-Interface changes to the page template do not need a release. The latest root page is rebuilt from `main`.
+Publish a new version for configuration changes. After publication, update the website's exact dependency and lockfile in a separate draft PR. Interface-only changes belong to the website and do not require an APK release.
 
 ## Prepare the release
 
@@ -48,14 +30,13 @@ Do these steps on a branch. Open a draft pull request.
 
 1. Review models and presets as the [model review procedure](model-review.md) describes.
 2. Set `version` in `package.json` and in `package-lock.json`.
-3. Set `homepage` in `package.json` to `https://agent-policy-kit.trymenow.io/v/VERSION/`.
+3. Set `homepage` in `package.json` to `https://getacc.dev/agent-policy-kit/`.
 4. Update the preset files, the catalog and its `reviewedAt` date as needed.
 5. Add the changelog entry with the heading `## VERSION — Unreleased`.
 6. Update the pinned commands (`agent-policy-kit@VERSION`) in `README.md`, `AGENT_INSTALL.md` and the documents in `docs/` that contain them.
-7. Run `npm run build:site`. For the release status that the page then shows, see [website](website.md#release-status-on-the-page).
-8. Run `npm run check` and `npm test`. See [development](development.md).
+7. Run `npm run check` and `npm test`. See [development](development.md).
 
-After the owner merges this pull request, the deployment workflow skips with the notice that the version is not tagged and published yet. The run does not fail.
+Merging this pull request does not publish npm or deploy a website.
 
 ## Write the changelog entry
 
@@ -77,8 +58,7 @@ Do these steps on a second branch, `release/VERSION`. Open a draft pull request.
 
 1. Change the changelog heading to `## VERSION — YYYY-MM-DD`. Complete the notes.
 2. Add the verification record for this version to [verification](verification.md).
-3. Run `npm run build:site`. The page status changes as [website](website.md#release-status-on-the-page) describes.
-4. Run `npm run check` and `npm test`.
+3. Run `npm run check` and `npm test`.
 
 The owner merges this pull request.
 
@@ -93,7 +73,7 @@ Do these steps on the merge commit on `main`.
 5. Make the final tarball with `npm pack`. Record its integrity.
 6. Make sure that the package contains no private evidence and no configuration from a real account.
 
-The package contains `CHANGELOG.md` and the matching page. No lifecycle install script changes native settings.
+The package contains `CHANGELOG.md`, the native configurator and its public release data. It contains no web interface. No lifecycle install script changes native settings.
 
 ## Publish
 
@@ -103,12 +83,12 @@ Do these steps only after the owner explicitly authorizes the publication.
 2. Create the tag `vVERSION` on the reviewed `main` commit and push it.
 3. Create the GitHub release with the reviewed changelog text.
 
-Publish to npm before you push the tag. The tag push starts Verify package and then the deployment. The host build requires that npm serves the version, and fails with `HOST_RELEASE_NOT_PUBLISHED` if it does not. If this happens, use the manual retry of the deployment workflow after the publication. See [website](website.md).
+Publish to npm before you push the tag. The tag identifies the reviewed immutable package release; it does not deploy a website. Update the website's dependency separately after publication, as [website](website.md) describes.
 
 ## Check the result
 
 1. Check that the npm registry serves the version with the expected contents.
-2. Check that `https://agent-policy-kit.trymenow.io/` and `https://agent-policy-kit.trymenow.io/v/VERSION/` serve the new page.
+2. If the website is being updated, verify its dependency pin and generated command against the published version after the owner merges its separate PR.
 3. Check the links in the published README.
 
 Do not merge, mark a draft ready or enable auto-merge as part of a release.
