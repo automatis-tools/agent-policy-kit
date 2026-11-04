@@ -100,9 +100,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Claude Code subagents share your usage limits. See what changed in one developer's logs when helpers moved from inherited Opus to Sonnet and Haiku roles.">
+  <meta name="description" content="Claude Code subagents share your usage limits. See what changed in one developer's logs when subagents moved from inherited Opus to Sonnet and Haiku roles.">
   <meta name="author" content="Mykola Maksymenko">
-  <title>Your Claude Code helpers share your limits — Agent Policy Kit</title>
+  <title>Your Claude Code subagents share your limits — Agent Policy Kit</title>
   <style>
     /* Palette and typography follow site/base.css and site/template.html. */
     :root { color-scheme: light; --white: #fff; --paper: #f5f7fb; --ink: #19283e; --muted: #59657a; --accent: #284b91; --blue: #3158c3; --yellow: #f2c94c; --line: #e0e5ed; --sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -207,24 +207,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <article aria-labelledby="title">
       <header>
         <p class="eyebrow">Subagents &amp; your limits · 01 / Claude Code</p>
-        <h1 id="title">Your Claude Code helpers share your limits.</h1>
-        <p class="lead">A helper that searches files or checks a test sends its own model requests. Give those helpers a model that fits their job, while keeping your main Claude model.</p>
+        <h1 id="title">Your Claude Code subagents share your limits.</h1>
+        <p class="lead">Each subagent sends its own model requests, which count toward your usage limits. Give each subagent a model that fits its job, while keeping your main Claude model.</p>
         <p class="byline"><a href="https://www.linkedin.com/in/nick-maximenko/" rel="author">Mykola Maksymenko</a><span>Based on personal session logs</span></p>
       </header>
 
       <section class="prose" aria-labelledby="shared-limit">
-        <h2 id="shared-limit">More helpers draw from the same plan</h2>
+        <h2 id="shared-limit">More subagents draw from the same plan</h2>
         <p>Ask Claude Code to investigate a bug, and it may hand off part of the work to a subagent: a separate assistant that searches, writes or reviews, then reports back.</p>
-        <p>That keeps the main conversation focused. But <a href="https://code.claude.com/docs/en/sub-agents">subagent requests count toward the same usage limits</a>. When a helper inherits Opus from the main session, even a small lookup runs on Opus.</p>
+        <p>That keeps the main conversation focused. But <a href="https://code.claude.com/docs/en/sub-agents">subagent requests count toward the same usage limits</a>. When a subagent inherits Opus from the main session, even a small lookup runs on Opus.</p>
       </section>
 
       <section aria-labelledby="observation">
         <div class="prose">
           <h2 id="observation">What changed in my logs</h2>
-          <p>I compared work where subagents inherited Opus with work where roles assigned them Sonnet and Haiku. Here is how much text the helpers generated relative to the main session.</p>
+          <p>I compared work where subagents inherited Opus with work where roles assigned them Sonnet and Haiku. Here is how much text the subagents generated relative to the main session.</p>
         </div>
         <figure class="chart" aria-labelledby="chart-heading" aria-describedby="chart-caption">
-          <h3 class="figure-heading" id="chart-heading">How much output came from the helpers?</h3>
+          <h3 class="figure-heading" id="chart-heading">How much output came from the subagents?</h3>
           <p class="figure-subtitle">Output tokens · each sample’s main-session output = 100 units · same scale in both charts</p>
           <div class="legend" aria-hidden="true"><span><i class="swatch"></i>Main session</span><span><i class="swatch helpers"></i>Subagents</span></div>
           <div class="comparison">
@@ -248,13 +248,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <figcaption id="chart-caption">Source: <a href="https://github.com/automatis-tools/agent-policy-kit/blob/v0.5.2/docs/research/limits-evidence.md#claude-code-observation">the author’s local Claude Code logs</a>. The sample with roles covers one day. These are ratios within each sample, not equal amounts of work.</figcaption>
         </figure>
         <div class="prose finding">
-          <p>The helpers went from generating more text than the main session to a much smaller share of its output.</p>
+          <p>The subagents went from generating more text than the main session to a much smaller share of its output.</p>
           <p class="limits"><strong>This does not measure limit savings.</strong> Output tokens alone do not tell us the cost or how long a plan will last. This was one developer’s work, not a controlled comparison of identical tasks. It also did not establish equal result quality.</p>
         </div>
       </section>
 
       <section class="prose" aria-labelledby="roles-heading">
-        <h2 id="roles-heading">Give each helper a job and a model</h2>
+        <h2 id="roles-heading">Give each subagent a job and a model</h2>
         <p>Keep your preferred model in charge. Use a lighter model for a file search or a prescribed command, and a stronger one for implementation and review. Escalate when the task needs it.</p>
         <figure class="roles" aria-labelledby="roles-caption">
           <div class="lead-role"><div class="role-title"><span>Main session</span><span class="model">Your choice</span></div><p>For example, Opus: coordinates the work and makes the final decisions.</p></div>
@@ -271,7 +271,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ol>
           <li>Open the APK configurator. Select <strong>Claude</strong>, the roles you use and <strong>Standard</strong>.</li>
           <li>Preview the generated command without <code>--apply</code>, or run it as shown to write the settings.</li>
-          <li>Start a new Claude Code session. While a helper runs, use <a href="https://code.claude.com/docs/en/sub-agents#choose-a-model"><code>/tasks</code> to check its actual model</a>. Review its result as well.</li>
+          <li>Start a new Claude Code session. While a subagent runs, use <a href="https://code.claude.com/docs/en/sub-agents#choose-a-model"><code>/tasks</code> to check its actual model</a>. Review its result as well.</li>
         </ol>
         <a class="cta" href="https://agent-policy-kit.trymenow.io/">Configure Claude Code</a>
         <p class="native-note">APK writes native role files and settings, then exits. Your main model stays as it is. Explicit model choices and higher-priority settings can override role settings; check what actually runs. Setup is <a href="https://github.com/automatis-tools/agent-policy-kit/blob/v0.5.2/docs/guide/updates-and-removal.md#remove-apk">reversible</a>.</p>

@@ -4,7 +4,7 @@ This index tells you which document answers your question. Each document covers 
 
 ## Read the stories
 
-- [Your Claude Code helpers share your limits](articles/claude-code.html) — a short illustrated article about subagent models, shared usage and what one developer's logs showed. Open the HTML file in a browser.
+- [Your Claude Code subagents share your limits](articles/claude-code.html) — a short illustrated article about subagent models, shared usage and what one developer's logs showed. Open the HTML file in a browser.
 
 ## Use APK
 
