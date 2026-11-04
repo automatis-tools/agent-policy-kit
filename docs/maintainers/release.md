@@ -30,7 +30,7 @@ Do these steps on a branch. Open a draft pull request.
 
 1. Review models and presets as the [model review procedure](model-review.md) describes.
 2. Set `version` in `package.json` and in `package-lock.json`.
-3. Set `homepage` in `package.json` to `https://getacc.dev/agent-policy-kit/`.
+3. Set `homepage` in `package.json` to `https://getacc.dev/tools/agent-policy-kit/`.
 4. Update the preset files, the catalog and its `reviewedAt` date as needed.
 5. Add the changelog entry with the heading `## VERSION — Unreleased`.
 6. Update the pinned commands (`agent-policy-kit@VERSION`) in `README.md`, `AGENT_INSTALL.md` and the documents in `docs/` that contain them.

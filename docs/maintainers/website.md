@@ -1,6 +1,6 @@
 # Website ownership
 
-The configurator is part of [getacc.dev](https://getacc.dev/agent-policy-kit/). Its source, styling, share-link codec, illustrations, article manuscripts, browser behavior tests and deployment belong to the separate ACC website repository. APK no longer builds, packages or deploys HTML.
+The configurator is part of [getacc.dev](https://getacc.dev/tools/agent-policy-kit/). Its source, styling, share-link codec, illustrations, article manuscripts, browser behavior tests and deployment belong to the separate ACC website repository. APK no longer builds, packages or deploys HTML.
 
 ## Release data and commands
 
@@ -19,6 +19,6 @@ The website uses the shared Astro frame, navigation, typography, author metadata
 
 ## Migration boundary
 
-The owner declined compatibility with the old standalone domain, `/v/` archives and existing share URLs. New links use `/agent-policy-kit/` on getacc.dev. The npm package has no local configurator HTML. Previously published npm versions and Git tags are immutable.
+The owner declined compatibility with the old standalone domain, `/v/` archives and existing share URLs. New links use `/tools/agent-policy-kit/` on getacc.dev. The npm package has no local configurator HTML. Previously published npm versions and Git tags are immutable.
 
 The old Worker/domain is not changed manually by this source migration. Its deployment workflow is retired; unrelated domain changes require a separate infrastructure request. No automatic package publication, merge or manual deployment is introduced.

@@ -28,7 +28,7 @@ Make sure that you have:
 
 ## Set up with the configurator
 
-1. Open the configurator: <https://getacc.dev/agent-policy-kit/>.
+1. Open the configurator: <https://getacc.dev/tools/agent-policy-kit/>.
 2. In step 1, keep or remove subagent roles. All six roles are selected when the page opens.
 3. In step 2, add the AI assistants that you use.
 4. In step 3, choose a work mode: **Light**, **Standard** or **Top-tier**. The mode sets how much of your plan limits subagents can use. The [presets reference](../reference/presets.md) lists the values of each mode.

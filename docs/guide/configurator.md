@@ -4,7 +4,7 @@ This document describes the configurator page: its four steps, the work modes, t
 
 ## Open the page
 
-Open the [configurator on getacc.dev](https://getacc.dev/agent-policy-kit/) in a current browser.
+Open the [configurator on getacc.dev](https://getacc.dev/tools/agent-policy-kit/) in a current browser.
 
 The form belongs to the ACC website. It composes commands locally, without analytics or a configuration upload. It never runs the command or grants model access. The npm package no longer includes local HTML or versioned web pages.
 

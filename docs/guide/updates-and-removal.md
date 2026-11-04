@@ -48,7 +48,7 @@ To downgrade, use the same steps with an older version in `--package agent-polic
 
 ### To your own choices
 
-1. Open the configurator page of the release, for example <https://getacc.dev/agent-policy-kit/>.
+1. Open the configurator page of the release, for example <https://getacc.dev/tools/agent-policy-kit/>.
 2. Make your choices and copy the command. The command is pinned to the release of the page.
 3. Preview and apply it as described in [Getting started](getting-started.md#set-up-with-the-configurator).
 
