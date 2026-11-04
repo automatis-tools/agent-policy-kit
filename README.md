@@ -10,7 +10,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 
 ## Set it up
 
-1. Open the [configurator](https://agent-policy-kit.trymenow.io/). Select roles, your AI assistants and a mode: **Light**, **Standard** or **Top-tier**. The mode sets how much of your plan subagents can use.
+1. Open the [configurator](https://getacc.dev/tools/agent-policy-kit/). Select roles, your AI assistants and a mode: **Light**, **Standard** or **Top-tier**. The mode sets how much of your plan subagents can use.
 2. Copy the command and run it. To preview first, delete the last line (`--apply`) and the ` \` at the end of the line before it. Without `--apply`, APK writes nothing.
 
 ![Configurator: models and effort for each subagent role, and the setup command](docs/assets/configurator.png)

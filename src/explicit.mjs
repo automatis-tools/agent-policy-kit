@@ -1,4 +1,4 @@
-// Pure command codec, also embedded in the offline configuration page.
+// CLI command codec, also used by the separately maintained getacc.dev configurator.
 export const TOOL_FLAGS=Object.freeze({chatgpt:'chatgpt',claude:'claude',kimi:'kimi',gemini:'gemini',grok:'grok'});
 export const EXPLICIT_FIELDS=Object.freeze(['roles','max-concurrent',...Object.keys(TOOL_FLAGS),...Object.keys(TOOL_FLAGS).map(flag=>'avoid-'+flag),...Object.keys(TOOL_FLAGS).map(flag=>flag+'-max-concurrent')]);
 const EXPLICIT_MODEL=/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;

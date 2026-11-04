@@ -1,6 +1,14 @@
 # Changelog
 
-Each npm version is one configuration release: its presets, native role definitions, instructions and configuration page. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
+Each npm version is one configuration release: its presets, native role definitions, instructions and command contract. The web configurator is maintained separately on getacc.dev. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
+
+## Unreleased
+
+### Website ownership
+
+- Move the configurator UI, sharing logic and illustrated articles to getacc.dev. The website pins an exact published APK package for its release data and command contract.
+- Retire standalone website builds, deployment and packaged HTML. Legacy URLs and version archives are not carried over.
+- Keep the CLI, native configuration data and explicit-command API in this package. Previously published npm versions and tags remain unchanged.
 
 ## 0.5.2 — 2026-11-01
 

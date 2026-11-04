@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import vm from 'node:vm';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
 import {ROLE_IDS,ROLE_DEFINITIONS} from '../src/roles.mjs';
 
 // This gate tests the distributable, not imports from a checkout. The isolated
@@ -209,14 +210,17 @@ command="echo user_hook"
   assert.equal(layout(fs.readFileSync(path.join(freshHome,'.grok/config.toml'),'utf8')),layout(grokOriginal));
   assert.ok(fs.existsSync(path.join(freshHome,'.grok/agents/user-agent.md')));
   for(const file of nativePaths.filter(f=>f.includes('apk-')))assert.equal(fs.existsSync(file),false);
-  // Execute the actual expanded page command through a shell and npx + local tarball.
-  const page=fs.readFileSync(path.join(installedRoot,'site/index.html'),'utf8'),context=vm.createContext({TextEncoder,btoa});
-  vm.runInContext(page.match(/<script>([\s\S]*?)<\/script>/)[1],context);
-  const pageRelease=vm.runInContext('RELEASE',context),api=context.APKConfigurator,selection=api.initialState(pageRelease.preferences);
-  selection.selected=['chatgpt','claude'];selection.selectedRoles=['reviewer','explorer'];selection.jobs.chatgpt.reviewer.effort='max';
-  api.updateConcurrency(selection,'chatgpt','5');api.updateConcurrency(selection,'claude','2');
-  const built=api.buildConfig(selection,pageRelease.preferences);assert.deepEqual(Array.from(built.errors),[]);
-  const generated=api.buildCommand(built.config,pageRelease);
+  // Generate the real explicit command from the installed CLI contract.
+  const {formatExplicitCommand}=require(path.join(installedRoot,'src/explicit.mjs'));
+  const {ROLE_DEFINITIONS:installedRoles}=require(path.join(installedRoot,'src/roles.mjs'));
+  const {validatePolicy:installedValidate}=require(path.join(installedRoot,'src/policy.mjs'));
+  const selection=structuredClone(bundled);
+  selection.selectedRoles=['reviewer','explorer'];
+  selection.clients=Object.fromEntries(['chatgpt','claude'].map(client=>[client,selection.clients[client]]));
+  selection.clients.chatgpt.roles.reviewer.effort='max';
+  selection.clients.chatgpt.maxConcurrent=5;selection.clients.claude.maxConcurrent=2;
+  const built=installedValidate(selection);
+  const generated=formatExplicitCommand(built,packed[0].version,installedRoles);
   assert.ok(generated.startsWith(`npx --yes --ignore-scripts --package agent-policy-kit@${packed[0].version} agent-policy setup`));
   assert.doesNotMatch(generated,/--config|--release|--preset/);
   const shellQuote=value=>"'"+value.replaceAll("'","'\"'\"'")+"'";
@@ -238,8 +242,8 @@ command="echo user_hook"
   assert.equal(subsetSnapshot.schemaVersion,4);assert.deepEqual(subsetSnapshot.selectedRoles,['reviewer','explorer']);
 
   // A late replacement failure must restore an owned role that was already removed.
-  const reduced=JSON.parse(JSON.stringify(built.config));reduced.selectedRoles=['reviewer'];
-  const reducedPayload=api.encodeConfig(reduced),explorer=path.join(freshHome,'.codex/agents/apk-explorer.toml');
+  const reduced=JSON.parse(JSON.stringify(built));reduced.selectedRoles=['reviewer'];
+  const reducedPayload=Buffer.from(JSON.stringify(reduced)).toString('base64url'),explorer=path.join(freshHome,'.codex/agents/apk-explorer.toml');
   const ownedBefore=new Map([...subsetSnapshot.files.map(file=>file.path),subsetReceipt,path.join(state,'policy.json')].map(file=>[file,fs.readFileSync(file,'utf8')]));
   const reductionFault=path.join(consumer,'role-reduction-failure.mjs'),reductionMarker=path.join(consumer,'role-reduction-observed');
   fs.writeFileSync(reductionFault,`import fs from 'node:fs/promises';import {syncBuiltinESMExports} from 'node:module';const rename=fs.rename;let failed=false;

@@ -22,9 +22,8 @@ The `version` field in `package.json` identifies one configuration release. That
 | Preferences validation | `src/policy.mjs`, `schema/policy.schema.json` |
 | Command codec | `src/explicit.mjs` |
 | Release notes | `CHANGELOG.md` |
-| Configuration page | `site/index.html`, generated from the items above |
 
-There is no second version number for presets or for the catalog. A change to any of these items needs a new package version. [Release](release.md) explains why the host build enforces this rule.
+There is no second version number for presets or for the catalog. A change to any of these items needs a new package version. The separately maintained website pins that exact published version; see [release](release.md).
 
 ## Modules
 
@@ -36,7 +35,6 @@ There is no second version number for presets or for the catalog. A change to an
 | `src/roles.mjs` | Defines the six roles. The page and native generation use the same definitions |
 | `src/release.mjs` | Exposes the package version, the presets, the catalog and the release notes |
 | `src/explicit.mjs` | Converts explicit tool arguments to preferences (CLI) and preferences to a command (page) |
-| `src/share.mjs` | Encodes and decodes the page form state in the URL fragment |
 | `src/native.mjs` | Renders role files and the instruction block for each assistant, and gives the native paths |
 | `src/install.mjs` | Plans, applies, inspects and removes owned changes in transactions, and writes receipts |
 | `src/toml.mjs` | Reads and edits TOML values through the one runtime dependency, `toml-eslint-parser` |
@@ -44,7 +42,7 @@ There is no second version number for presets or for the catalog. A change to an
 | `src/inspect.mjs` | Reads current user-level subagent settings for `show`, without writes and without starting executables |
 | `src/output.mjs` | Formats readable terminal output. Captured output stays JSON |
 
-The CLI needs no compilation step. Only the configuration page is generated.
+The CLI needs no compilation step. The website has its own build in a separate repository.
 
 ## Data flow for a setup command
 
@@ -59,12 +57,12 @@ The first selected role in role-definition order (`src/roles.mjs`) supplies the 
 
 ## Data flow for the configuration page
 
-1. `npm run build:site` runs `scripts/build-site.mjs`.
-2. The script embeds the release data, the presets, the catalog, the role definitions, `src/explicit.mjs`, `src/share.mjs`, `site/base.css`, the font and the limit illustration into `site/template.html`.
-3. The result is one self-contained file, `site/index.html`. It needs no backend and sends no request to compose a command.
-4. The page always writes the full explicit command, also when a preset filled the form. The CLI validates the command again.
+1. The ACC website pins an exact published APK npm dependency.
+2. At build time it reads the release data, presets, catalog, role definitions and `src/explicit.mjs` from that dependency.
+3. The website renders the configurator inside its shared Astro frame. The form state and sharing logic belong to that repository.
+4. The page writes a complete explicit command pinned to the same npm version. The CLI validates the command again.
 
-[Website](website.md) covers the page build and the hosted copy.
+[Website](website.md) describes ownership and the website update procedure.
 
 ## Ownership in short
 

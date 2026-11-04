@@ -8,7 +8,7 @@ This document tells maintainers and contributors how to set up the repository, r
 - npm.
 - For the package tests: `sandbox-exec` on macOS or bubblewrap (`bwrap`) on Linux.
 
-The CLI has no build step. Only the configuration page is generated.
+The CLI has no build step. Web development belongs to the separate ACC website repository; see [website](website.md).
 
 ## Set up a clone
 
@@ -36,15 +36,12 @@ The CLI has no build step. Only the configuration page is generated.
 
 | Command | What it does |
 |---|---|
-| `npm run check` | Validates `policies/balanced.json`, checks the JavaScript syntax in `src/`, `bin/` and `scripts/`, rejects a stale `site/index.html`, and inspects the package contents |
+| `npm run check` | Validates `policies/balanced.json`, checks the JavaScript syntax in `src/`, `bin/` and `scripts/`, and inspects the package contents |
 | `npm run test:unit` | Runs every test file whose name does not contain `package` |
 | `npm run test:package` | Runs the installed-tarball tests (`test/*package*.test.mjs`) |
 | `npm test` | Runs all tests, unit and package |
-| `npm run build:site` | Regenerates `site/index.html` |
 
 `npm run check` also rejects package files that are larger than 1 MiB, test files, archives, private folders, user home paths and token-like strings. It checks that every relative link in a packaged Markdown file points to a packaged file. For this reason, packaged documents do not link to `scripts/`, `test/`, `.github/` or `.githooks/`. Write those paths as code.
-
-Run `npm run build:site` after a change to the page template, `site/base.css`, the role definitions, the command codec, the version, the presets, the catalog or the changelog.
 
 ## Package tests and the sandbox
 
@@ -76,9 +73,8 @@ The hook is not packaged. It is a contributor check and has no relation to the s
 
 | Workflow | Trigger | Jobs |
 |---|---|---|
-| Verify package (`ci.yml`) | Every push and pull request | `test` on macOS with Node 22.13.0 and on Ubuntu 22.04 with Node 24 runs `npm run test:cache`, `npm run check` and `npm test`. `site-build` runs after `test`. When the version has a `v` tag, it builds the hosted site and checks the upload with a Wrangler dry run, without credentials |
+| Verify package (`ci.yml`) | Every push and pull request | `test` on macOS with Node 22.13.0 and on Ubuntu 22.04 with Node 24 runs `npm run test:cache`, `npm run check` and `npm test`. |
 | Lint (`lint.yml`) | Pull requests and pushes to `main` | `Lint` runs `npm run check` |
-| Deploy configurator (`deploy-site.yml`) | After Verify package, or manual | See [website](website.md) |
 
 The `main` ruleset requires the `Lint` check.
 

@@ -54,8 +54,8 @@ The [ownership reference](../reference/ownership.md#state-directory) tells where
 
 ## The configurator page
 
-- The page is one static HTML file. It has no backend.
-- It makes no requests while you use it and has no telemetry. Its fonts and data are inside the file.
+- The configurator is a static page on getacc.dev. It has no configuration backend.
+- Its choices and command are composed locally. The configurator excludes Google Analytics; it does not upload its URL state. Shared site assets load like those of an ordinary web page.
 - Your choices stay in the browser. A share link stores them in the part of the address after `#`. Browsers do not send this part to the server.
 - Links to other sites load only when you click them.
 - The page never runs the command and has no access to your accounts or files.
