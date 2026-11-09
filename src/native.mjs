@@ -10,6 +10,12 @@ export function nativeHomeConflict(client,home,env) {
   const active=variable&&env[variable];
   return typeof active==='string'&&active.length>0&&path.resolve(active)!==path.resolve(home,directory[client]);
 }
+// The lifetime that outranks a role's frontmatter, in Claude Code's own order. Claude Code ignores values other than 5m and 1h.
+export function claudeSubagentCacheOverride(settings,env={}) {
+  const stored=settings.env??{},read=key=>env[key]??stored[key];
+  if(read('FORCE_PROMPT_CACHING_5M')==='1')return '5m';
+  return [read('CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL'),settings.subagentPromptCacheTtl].find(value=>['5m','1h'].includes(value))??null;
+}
 export function nativeLocations(client,home) {
   const root=path.join(home,directory[client]);
   return {
@@ -37,6 +43,8 @@ export function nativeRoles(client,config,selectedRoles=ROLE_IDS) {
       fields.push(`model: ${JSON.stringify(selected.model)}`);
       if(client==='claude') {
         if(selected.effort!==null)fields.push(`effort: ${selected.effort}`);
+        // Claude Code 2.1.248+ reads this map; earlier versions ignore it. It ignores 1h while a subscription uses usage credits.
+        if(selected.cacheTtl!==undefined)fields.push('experimental:',`  cacheTtl: ${selected.cacheTtl}`);
         if(['reviewer','explorer'].includes(role))fields.push('tools: Read, Grep, Glob');
       } else fields.push('subagent: true');
     }

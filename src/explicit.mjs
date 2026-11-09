@@ -1,6 +1,6 @@
 // CLI command codec, also used by the separately maintained getacc.dev configurator.
 export const TOOL_FLAGS=Object.freeze({chatgpt:'chatgpt',claude:'claude',kimi:'kimi',gemini:'gemini',grok:'grok'});
-export const EXPLICIT_FIELDS=Object.freeze(['roles','max-concurrent',...Object.keys(TOOL_FLAGS),...Object.keys(TOOL_FLAGS).map(flag=>'avoid-'+flag),...Object.keys(TOOL_FLAGS).map(flag=>flag+'-max-concurrent')]);
+export const EXPLICIT_FIELDS=Object.freeze(['roles','max-concurrent',...Object.keys(TOOL_FLAGS),...Object.keys(TOOL_FLAGS).map(flag=>'avoid-'+flag),...Object.keys(TOOL_FLAGS).map(flag=>flag+'-max-concurrent'),'claude-cache-ttl']);
 const EXPLICIT_MODEL=/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
 const EXPLICIT_EFFORTS=['none','minimal','low','medium','high','xhigh','max'];
 function invalidExplicit(){throw Object.assign(new Error('Invalid explicit configuration.'),{code:'INVALID_EXPLICIT_CONFIG'});}
@@ -25,6 +25,9 @@ export function parseExplicitOptions(options,roleIds){
  const roles=roleIds.filter(role=>requested.includes(role)),maxConcurrent=Number(options['max-concurrent']);
  if(!/^[1-9]\d*$/.test(options['max-concurrent'])||!Number.isInteger(maxConcurrent)||maxConcurrent>32)invalidExplicit();
  for(const flag of Object.keys(TOOL_FLAGS))if((options['avoid-'+flag]!==undefined||options[flag+'-max-concurrent']!==undefined)&&options[flag]===undefined)invalidExplicit();
+ // The value names its role so that the option can later grow per role without a new flag.
+ const claudeCache=options['claude-cache-ttl'];
+ if(claudeCache!==undefined&&(claudeCache!=='worker=1h'||options.claude===undefined||!roles.includes('worker')))invalidExplicit();
  const clients={};
  for(const flag of Object.keys(options).filter(flag=>Object.hasOwn(TOOL_FLAGS,flag))){
   const client=TOOL_FLAGS[flag],choices={};
@@ -47,7 +50,7 @@ export function parseExplicitOptions(options,roleIds){
   const first=choices[roles[0]];
   const limit=options[flag+'-max-concurrent'];
   if(limit!==undefined&&(!/^[1-9]\d*$/.test(limit)||Number(limit)>32))invalidExplicit();
-  clients[client]={...(limit===undefined?{}:{maxConcurrent:Number(limit)}),code:{...first},light:{...first},roles:Object.fromEntries(roles.map(role=>[role,choices[role]])),avoidModels};
+  clients[client]={...(limit===undefined?{}:{maxConcurrent:Number(limit)}),code:{...first},light:{...first},roles:Object.fromEntries(roles.map(role=>[role,client==='claude'&&role==='worker'&&claudeCache!==undefined?{...choices[role],cacheTtl:'1h'}:choices[role]])),avoidModels};
  }
  if(!Object.keys(clients).length)invalidExplicit();
  return {schemaVersion:1,maxConcurrent,...(roles.length===roleIds.length?{}:{selectedRoles:roles}),clients};
@@ -77,6 +80,7 @@ export function explicitOptions(config,roleCatalog){
   if(preferences.maxConcurrent!==undefined)options[flag+'-max-concurrent']=String(preferences.maxConcurrent);
   if(!Array.isArray(preferences.avoidModels)||preferences.avoidModels.some(model=>typeof model!=='string'||!EXPLICIT_MODEL.test(model)))invalidExplicit();
   if(preferences.avoidModels.length)options['avoid-'+flag]=preferences.avoidModels.join(',');
+  if(client==='claude'&&preferences.roles?.worker?.cacheTtl!==undefined)options['claude-cache-ttl']=`worker=${preferences.roles.worker.cacheTtl}`;
  }
  parseExplicitOptions(options,roleIds);
  return options;

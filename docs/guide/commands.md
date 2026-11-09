@@ -111,6 +111,7 @@ agent-policy setup \
 | `--grok` | `ROLE=MODEL,...`, `ROLE=MODEL:EFFORT,...` or a mix | `ROLE=MODEL` sets no effort, the same as `:native`. APK reads a trailing `:` and an effort word or `native` as the effort. For a model ID that itself ends like that, add `:native`. |
 | `--TOOL-max-concurrent` | A whole number from 1 to 32 | Optional. Replaces `--max-concurrent` for one assistant. Needs the `--TOOL` option. |
 | `--avoid-TOOL` | Comma-separated model IDs | Optional. At most 32 models. Routing guidance only. Needs the `--TOOL` option. |
+| `--claude-cache-ttl` | `worker=1h` | Optional. Requests the one-hour prompt cache for the Claude Coder role. Needs `--claude` and the `worker` role. See [Claude Coder cache lifetime](../reference/assistants.md#claude-coder-cache-lifetime). |
 
 `TOOL` is `chatgpt`, `claude`, `kimi`, `gemini` or `grok`. At least one tool option is necessary. Each tool option selects that assistant. Assistants without a tool option are not configured.
 
@@ -204,7 +205,7 @@ agent-policy show [--client ID] [--home PATH] [--state-dir PATH] [--json]
 - It reads the native folders that the native-home environment variables select. With `--home`, it reads the standard folders under that folder.
 - It shows the default subagent model and effort, the parallel limit, each role with its model and effort, and the Kimi model pool.
 - For Kimi and Gemini, the parallel limit is guidance from the APK instructions. Kimi role models are routing guidance.
-- For Claude, it also shows environment overrides of the subagent model, effort and parallel limit.
+- For Claude, it also shows environment overrides of the subagent model, effort and parallel limit, a role's cache lifetime, and any user-level setting or environment variable that outranks it (`subagentCacheTtl`).
 - It shows APK files that have local edits with their current values, and marks them.
 
 `show` does not read project settings, managed settings, plugins, session flags or external role files. These can override the values that it shows. It never prints prompts, credentials, raw configuration or private paths. It writes nothing and calls no model.

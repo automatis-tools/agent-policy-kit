@@ -4,6 +4,12 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## Unreleased
 
+### Claude Coder cache lifetime
+
+- Add the optional `--claude-cache-ttl worker=1h` and `cacheTtl` on the Claude `worker` role. It writes Claude Code's experimental `cacheTtl` field to `apk-worker.md`. It is off by default, and no preset sets it.
+- Report the role lifetime and any setting that outranks it in `show`. Setup and `doctor` report the experimental field and an existing setting that outranks it.
+- Role files without the option, `settings.json` and receipt format v4 do not change. `doctor` and `uninstall` of 0.5.2 accept an installation that has the field.
+
 ### Website ownership
 
 - Move the configurator UI, sharing logic and illustrated articles to getacc.dev. The website pins an exact published APK package for its release data and command contract.

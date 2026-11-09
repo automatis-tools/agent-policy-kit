@@ -328,6 +328,35 @@
         }
       }
     },
+    "claudeWorkerProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/identifier"
+        },
+        "effort": {
+          "enum": [
+            null,
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        },
+        "cacheTtl": {
+          "enum": [
+            "1h"
+          ],
+          "description": "Requests the one-hour prompt cache for the Coder role through Claude Code's experimental role field. Omit it to keep the native lifetime."
+        }
+      }
+    },
     "claudeClient": {
       "type": "object",
       "additionalProperties": false,
@@ -356,7 +385,7 @@
           "additionalProperties": false,
           "properties": {
             "worker": {
-              "$ref": "#/$defs/claudeProfile"
+              "$ref": "#/$defs/claudeWorkerProfile"
             },
             "reviewer": {
               "$ref": "#/$defs/claudeProfile"
