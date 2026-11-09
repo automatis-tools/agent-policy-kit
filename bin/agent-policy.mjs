@@ -44,6 +44,7 @@ Options: --client chatgpt|claude|kimi|gemini|grok --home PATH --state-dir PATH
          --chatgpt-max-concurrent N --claude-max-concurrent N
          --kimi-max-concurrent N --gemini-max-concurrent N --grok-max-concurrent N
          --avoid-chatgpt MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-gemini MODELS --avoid-grok MODELS
+         --claude-cache-ttl worker=1h
          --apply --json --help --version
 
 Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort. Gemini and Grok take ROLE=TIER and ROLE=MODEL with no effort.

@@ -25,7 +25,8 @@ export function validatePolicy(value) {
     if(config.maxConcurrent!==undefined&&(!Number.isInteger(config.maxConcurrent)||config.maxConcurrent<1||config.maxConcurrent>32))invalid();
     if(config.roles!==undefined)object(config.roles,Object.keys(ROLES));
     for (const selected of [config.code,config.light,...Object.values(config.roles??{})]) {
-      object(selected,['model','effort']); model(selected.model);
+      object(selected,client==='claude'&&selected===config.roles?.worker?['model','effort','cacheTtl']:['model','effort']); model(selected.model);
+      if(selected.cacheTtl!==undefined&&selected.cacheTtl!=='1h')invalid();
       if (client === 'kimi' && selected.model === 'primary') invalid();
       if(client==='gemini'&&!['pro','flash','flash_lite','inherit'].includes(selected.model))invalid();
       if(selected.effort!==null){
@@ -36,6 +37,7 @@ export function validatePolicy(value) {
     }
     if (!Array.isArray(config.avoidModels) || config.avoidModels.length > 32 || new Set(config.avoidModels).size !== config.avoidModels.length) invalid();
     config.avoidModels.forEach(model);
+    if(config.roles?.worker?.cacheTtl!==undefined&&!selectedRoleIds(value).includes('worker'))invalid();
     const effective=selectedRoleIds(value).map(role=>rolePreference(config,role));
     if (effective.some(selected=>config.avoidModels.includes(selected.model))) invalid();
     const pinned=effective.filter(value=>value.effort!==null);

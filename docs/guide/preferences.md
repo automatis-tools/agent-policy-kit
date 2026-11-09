@@ -56,12 +56,14 @@ The [roles reference](../reference/roles.md) describes each role and its ID.
 
 ### Choices
 
-A *choice* is an object with exactly two fields:
+A *choice* is an object with these two fields:
 
 | Field | Value |
 |---|---|
 | `model` | A model ID. 1 to 128 characters: letters, digits and `. _ : @ / [ ] -`. It starts with a letter or digit. |
 | `effort` | An effort level, or `null`. `null` sets no explicit effort, so the assistant uses its native default. |
+
+The Claude `worker` entry of `roles` can also have `cacheTtl` with the value `"1h"`. See [Claude Coder cache lifetime](../reference/assistants.md#claude-coder-cache-lifetime). No other choice accepts this field.
 
 ### Example
 
@@ -102,6 +104,7 @@ APK refuses preferences that break one of these rules:
 - A Kimi model is not `primary`.
 - For Kimi, selected roles that use the same alias do not request different explicit efforts. [Roles](../reference/roles.md#how-effort-applies) gives the full Kimi effort rules.
 - No selected role uses a model from `avoidModels` of the same assistant.
+- `cacheTtl` is `"1h"`, appears only on the Claude `worker` entry of `roles`, and needs `worker` to be a selected role.
 
 `avoidModels` is routing guidance in the APK instructions. It does not block a model in the assistant.
 

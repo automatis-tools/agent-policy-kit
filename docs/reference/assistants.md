@@ -111,6 +111,25 @@ These rules apply to all assistants except Gemini:
 - If `env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is `1`, setup returns `claude-force-model-conflict`. That setting forces one model for all subagents, so the role models cannot apply. Change the native setting first.
 - Claude Code 2.1.316 or later reads `CLAUDE_CODE_SUBAGENT_EFFORT`. Earlier versions ignore it.
 
+#### Claude Coder cache lifetime
+
+Claude Code subagents use a five-minute [prompt cache](https://code.claude.com/docs/en/prompt-caching#which-ttl-each-request-gets) by default. If a subagent pauses for longer, for example while it waits for CI or for a reply from the main conversation, its next request writes its context to the cache again.
+
+The optional `--claude-cache-ttl worker=1h`, or `"cacheTtl": "1h"` on `clients.claude.roles.worker`, adds this native field to `apk-worker.md`:
+
+```yaml
+experimental:
+  cacheTtl: 1h
+```
+
+- **Off by default.** No preset sets it. Without it, the Coder keeps the native lifetime.
+- **Coder only.** Roles that seldom pause for more than five minutes pay the higher write price and get little in return.
+- **It is a trade-off.** A one-hour cache write [costs more](https://platform.claude.com/docs/en/build-with-claude/prompt-caching#pricing) than a five-minute write. It can save tokens when a subagent with a large context pauses, and costs more when a subagent never pauses. APK promises no saving, and the effect on subscription limits is not established.
+- **The native field is experimental.** It needs Claude Code 2.1.248 or later. Claude Code ignores `1h` here while a subscription uses usage credits. API key and cloud provider use is billed at the higher write price.
+- **Other controls win.** `FORCE_PROMPT_CACHING_5M=1`, `CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL` and the `subagentPromptCacheTtl` setting outrank the role file. APK does not change them. If one is in `settings.json`, setup reports `claude-role-cache-ttl-overridden`. `show` lists the value that wins as `subagentCacheTtl`.
+- **Scope.** It applies to the Coder role only, not to `general-purpose` and other subagents without an APK role.
+- **Ownership.** APK writes only the role file, so `settings.json` and the receipt format do not change. `uninstall` removes the field with the file. A replacing setup without the option removes the field.
+
 #### Claude model aliases on other providers
 
 APK writes a Claude alias such as `sonnet` or `haiku` as it is. Claude Code resolves the alias for each provider. The presets use versioned IDs, not aliases. A role that you set to an alias in Custom can resolve to an older model outside the Anthropic API. On 2026-11-02, the Claude Code documentation gave these resolutions:

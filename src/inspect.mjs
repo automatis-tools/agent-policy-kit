@@ -4,6 +4,7 @@ import path from 'node:path';
 import {parseToml} from './toml.mjs';
 import {CLIENTS,NATIVE_EFFORTS} from './policy.mjs';
 import {inspectConfiguration} from './install.mjs';
+import {claudeSubagentCacheOverride} from './native.mjs';
 
 const ROOTS={chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
 const ENV_ROOTS={chatgpt:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'};
@@ -62,10 +63,21 @@ function frontmatter(text,id){
  const match=text.replace(/^\uFEFF/,'').match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
  if(!match)throw failure('UNSUPPORTED_ROLE_FORMAT');
  const fields={};
+ let experimental=false;
  for(const line of match[1].split(/\r?\n/)){
   // YAML merges, quoted keys and flow mappings can supply model fields that
   // this deliberately small scalar reader cannot resolve safely.
   if(/^(?:<<\s*:|["'{\[])/.test(line))throw failure('UNSUPPORTED_ROLE_FORMAT');
+  if(id==='claude'){
+   // The only nested value this reader takes. Other maps stay unread.
+   if(/^\S/.test(line))experimental=/^experimental[ \t]*:\s*(?:#.*)?$/.test(line);
+   const nested=experimental?line.match(/^[ \t]+cacheTtl[ \t]*:\s*(.*)$/):null;
+   if(nested){
+    if(Object.hasOwn(fields,'cacheTtl'))throw failure('UNSUPPORTED_ROLE_FORMAT');
+    const value=scalar(nested[1]);if(['5m','1h'].includes(value))fields.cacheTtl=value;
+    continue;
+   }
+  }
   const field=line.match(id==='grok'?/^(name|model|effort|subagent|capabilityMode)[ \t]*:\s*(.*)$/:/^(name|model|effort|subagent)[ \t]*:\s*(.*)$/);
   if(!field)continue;
   if(Object.hasOwn(fields,field[1]))throw failure('UNSUPPORTED_ROLE_FORMAT');
@@ -115,6 +127,7 @@ function extractSettings(client,id,native,env,models){
    if(value!==undefined)client.overrides[field]=safeString(value);
   }
   if((env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE??stored.CLAUDE_CODE_SUBAGENT_MODEL_FORCE)==='1')client.overrides.forceModel=true;
+  const subagentCacheTtl=claudeSubagentCacheOverride(native,env);if(subagentCacheTtl!==null)client.overrides.subagentCacheTtl=subagentCacheTtl;
   if(env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS!==undefined){if(!/^\d{1,9}$/.test(env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS))throw failure('UNSUPPORTED_NATIVE_SETTING');client.overrides.maxConcurrent=cap(Number(env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS));}
  }else if(id==='kimi'){
   const secondary=native.secondary_model??{};if(!record(secondary))throw failure('UNSUPPORTED_NATIVE_SETTING');
@@ -147,6 +160,7 @@ async function rolesIn(directory,client,id,budget,models,depth=0){
    const body=await readFile(file,budget);if(body===null)throw failure('CONFIG_CHANGED_DURING_READ');
    const fields=id==='chatgpt'?parseToml(body):frontmatter(body,id);
    const role={name:safeString(fields.name,namePattern),model:optionalString(fields.model),effort:optionalString(id==='chatgpt'?fields.model_reasoning_effort:fields.effort)};
+   if(id==='claude'&&fields.cacheTtl!==undefined)role.cacheTtl=fields.cacheTtl;
    if(id==='kimi'){
     // APK's Markdown role files contain explicit routing guidance, not a
     // native model binding. Other prose is never interpreted as configuration.

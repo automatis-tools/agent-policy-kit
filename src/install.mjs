@@ -8,7 +8,7 @@ import {ROLE_IDS,LEGACY_ROLE_IDS,selectedRoleIds} from './roles.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
 import catalog from '../models/catalog.json' with {type:'json'};
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
-import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
+import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, claudeSubagentCacheOverride, BEGIN, END } from './native.mjs';
 
 const CLIENTS = ['chatgpt', 'claude', 'kimi', 'gemini', 'grok'];
 const LIMIT = 1024 * 1024;
@@ -308,6 +308,10 @@ export async function inspectConfiguration(options) {
   return {status:'verified',releaseVersion:applied.version,source:applied.source,preset:applied.preset,warnings:[...record.warnings]};
 }
 function prerequisite(plan,warning) {return {...plan,status:'prerequisite',warnings:[warning],changes:[]};}
+function claudeCacheWarnings(preferences,roleIds,native) {
+  if(!roleIds.some(role=>rolePreference(preferences,role).cacheTtl!==undefined))return [];
+  return ['claude-role-cache-ttl-experimental',...(claudeSubagentCacheOverride(native)===null?[]:['claude-role-cache-ttl-overridden'])];
+}
 function resolveKimiAliases(native,preferences,selectedRoles=ROLE_IDS) {
   const roles={},pins=new Map();let changed=false;
   for(const selected of effectiveRoles(preferences,selectedRoles)) {
@@ -403,7 +407,7 @@ export async function planInstall(options) {
       if(cap!==undefined&&(!Number.isSafeInteger(cap)||cap<1))fail('UNSUPPORTED_CONFIG');
     }
   }
-  const files=[];plan.warnings=[...nativeWarnings(plan.client),...(resolvedAliases?['kimi-catalog-alias-resolved']:[])];
+  const files=[];plan.warnings=[...nativeWarnings(plan.client),...(resolvedAliases?['kimi-catalog-alias-resolved']:[]),...(plan.client==='claude'?claudeCacheWarnings(selected,roleIds,native):[])];
   if(plan.client==='claude') {
     const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,roleIds[0]));nativeChange(l.config,config,edited.text);
     files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
