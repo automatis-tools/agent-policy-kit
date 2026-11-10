@@ -21,7 +21,7 @@ Installing or updating the npm package does not change your native files. Only `
 2. Show the release and its notes with the `release` command:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy release
+   npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy release
    ```
 
 3. Check the installed versions of your assistants and the models that your account can use.
@@ -37,7 +37,7 @@ A release that is not published yet has the heading `VERSION — Unreleased` in 
 1. Preview the setup with the release that you want:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy setup --release
+   npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy setup --release
    ```
 
 2. To select another preset, add `--preset fast` (Light) or `--preset quality` (Top-tier). The default is `balanced` (Standard).
@@ -89,7 +89,7 @@ These boundaries are known:
 1. Remove the Claude settings with the installed release (0.4.0 or later), for example:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --client claude --apply
+   npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy uninstall --client claude --apply
    ```
 
 2. Set up Claude with 0.3.0.
@@ -101,7 +101,7 @@ ChatGPT, Kimi, Gemini and Grok move from 0.4.0 to 0.3.0 in place.
 1. Remove its settings with the installed release (0.5.2 or later), for example:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --client grok --apply
+   npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy uninstall --client grok --apply
    ```
 
 2. Set up that assistant with 0.5.1.
@@ -140,14 +140,14 @@ APK has no background updater and requests no live model catalog. Your configure
 1. Preview the removal:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall
+   npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy uninstall
    ```
 
 2. Read the preview.
 3. Remove the configuration:
 
    ```sh
-   npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --apply
+   npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy uninstall --apply
    ```
 
 4. Run `show` to check the current settings.

@@ -22,7 +22,7 @@ Created and maintained by [Mykola Maksymenko](https://www.linkedin.com/in/nick-m
 One command removes the APK settings. It restores the settings that you had before APK and keeps your unrelated edits:
 
 ```sh
-npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy uninstall --apply
+npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy uninstall --apply
 ```
 
 To preview the removal first, run the command without `--apply`. Removal uses the receipts in `~/.agent-policy-kit`, so keep that folder. [Updates and removal](docs/guide/updates-and-removal.md#remove-apk) gives the details and the exceptions.
@@ -32,7 +32,7 @@ To preview the removal first, run the command without `--apply`. Removal uses th
 - Your main agent and its model do not change. The main agent still decides when to delegate.
 - APK configures the coding agent of each assistant: Codex in ChatGPT, Claude Code in Claude, Kimi Code, Antigravity for Gemini, and Grok Build. Plain chats do not change. [Assistants](docs/reference/assistants.md) lists the details, also for the desktop apps.
 - APK adds no proxy and no background process. You can delete the npm package after setup.
-- `npx --yes --ignore-scripts --package agent-policy-kit@0.5.2 agent-policy show` reads your current settings.
+- `npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy show` reads your current settings.
 - Apart from the npm download, APK makes no network requests. [Privacy](docs/guide/privacy.md) tells what it reads and writes.
 
 ## Documentation
