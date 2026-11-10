@@ -10,6 +10,7 @@ import {planInstall,applyInstall} from '../src/install.mjs';
 import {formatResult} from '../src/output.mjs';
 
 const bin=fileURLToPath(new URL('../bin/agent-policy.mjs',import.meta.url));
+const skipOnWindows=process.platform==='win32';
 const text=(count,end='\n')=>Array.from({length:count},(_,i)=>`line ${i}`).join(end)+end;
 function fixture(t){
  const root=fs.realpathSync(fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'apk-doctor-size-')));
@@ -54,10 +55,10 @@ test('the user and project files are labelled separately and carry no path or co
  assert.doesNotMatch(JSON.stringify(report),/home|project\/|line 0/);
 });
 
-test('files that cannot be counted give no warning and no failure',async t=>{
+test('files that cannot be counted give no warning and no failure',{skip:skipOnWindows},async t=>{
  const f=fixture(t);
  fs.mkdirSync(f.user);
- spawnSync('mkfifo',[f.local]);
+ assert.equal(spawnSync('mkfifo',[f.local]).status,0);
  assert.ok(fs.lstatSync(f.local).isFIFO());
  assert.deepEqual(await scan(f),[],'a directory and a named pipe are skipped without blocking');
  fs.rmSync(f.user,{recursive:true});fs.rmSync(f.local);
@@ -74,7 +75,7 @@ test('files that cannot be counted give no warning and no failure',async t=>{
  assert.deepEqual(await scan(f),[],'a file above the read limit is skipped');
 });
 
-test('a symlinked file is counted and one file is reported once',async t=>{
+test('a symlinked file is counted and one file is reported once',{skip:skipOnWindows},async t=>{
  const f=fixture(t),shared=path.join(f.root,'shared.md');
  fs.writeFileSync(shared,text(220));fs.symlinkSync(shared,f.local);
  assert.deepEqual(await scan(f),[{file:'project',lines:220}]);
@@ -119,7 +120,7 @@ test('CLI doctor reports the sizes without changing its status, files or receipt
  assert.doesNotMatch(receipt,/oversized|"lines"/);
 });
 
-test('CLI doctor keeps the size check on Claude and survives a removed current directory',t=>{
+test('CLI doctor keeps the size check on Claude',t=>{
  const f=fixture(t);
  fs.writeFileSync(f.local,text(300));
  const other=cli(f,['--client','chatgpt']);
@@ -128,6 +129,10 @@ test('CLI doctor keeps the size check on Claude and survives a removed current d
  const clean=fixture(t),none=cli(clean,['--client','claude']);
  assert.equal(none.status,0);
  assert.deepEqual(JSON.parse(none.stdout).clients.claude.oversizedInstructionFiles,[]);
+});
+
+test('CLI doctor survives a removed current directory',{skip:skipOnWindows},t=>{
+ const f=fixture(t);
  const gone=path.join(f.root,'gone');fs.mkdirSync(gone);
  const shell=`cd "$GONE" && rmdir "$GONE" && exec "$NODE" "$BIN" doctor --client claude --home "$HOME" --state-dir "$HOME/.agent-policy-kit" --json`;
  const removed=spawnSync('/bin/sh',['-c',shell],{encoding:'utf8',timeout:60000,env:{GONE:gone,NODE:process.execPath,BIN:bin,HOME:f.home,TMPDIR:f.root,PATH:['/usr/bin','/bin',path.dirname(process.execPath)].join(path.delimiter)}});
