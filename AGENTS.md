@@ -8,5 +8,6 @@
 - Preserve main models, credentials, permissions, unrelated settings and later user edits. Default operations are plan-only; --apply writes owned changes. Drift must refuse destructive removal.
 - Never put account data, credentials, user paths, raw configs or test evidence in Git/npm.
 - Native configuration, client loading and actual model/provider execution are different evidence. Do not advertise universal policy enforcement or unsupported native caps.
-- Public repository and release publication are authorized by the owner. Publish only verified, explicitly requested versions; do not publish account data or private evidence. New PRs must remain draft.
-- Never merge branches or mark draft PRs ready.
+- Public repository and release publication are authorized by the owner. Publish only verified, explicitly requested versions; do not publish account data or private evidence. New PRs start as draft.
+- When the work is complete and all CI checks are green, mark the PR ready yourself and wait for the review bot. Do not mark ready a PR that is on hold or unfinished.
+- Never merge branches or enable auto-merge.

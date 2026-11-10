@@ -6,7 +6,7 @@ This document tells maintainers how to prepare, verify and publish a configurati
 
 - One package version is one configuration release. [Architecture](architecture.md) lists what a release contains.
 - The owner authorizes each publication. Nothing publishes automatically.
-- New pull requests stay draft. Only the owner merges them.
+- New pull requests start as draft. When the work is complete and CI is green, mark them ready and wait for the review bot. Only the owner merges them.
 - Publish only from reviewed commits that are already on `main`.
 - Never rewrite a published version. See the [npm publication rules](https://docs.npmjs.com/cli/v11/commands/npm-publish/).
 
@@ -91,4 +91,4 @@ Publish to npm before you push the tag. The tag identifies the reviewed immutabl
 2. If the website is being updated, verify its dependency pin and generated command against the published version after the owner merges its separate PR.
 3. Check the links in the published README.
 
-Do not merge, mark a draft ready or enable auto-merge as part of a release.
+Do not merge or enable auto-merge as part of a release.
