@@ -2,20 +2,68 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and command contract. The web configurator is maintained separately on getacc.dev. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
-## Unreleased
+## 0.6.0 — Unreleased
 
-### Claude auto-compact window
+### Why this release
+
+A command-line option and a `doctor` check reach you only through a new release. This release adds two for Claude and moves the web configurator out of the package:
+
+- The opt-in `--claude-auto-compact` option sets the window at which Claude Code compacts the main conversation. APK owns, restores and reports this setting like its other settings (#42).
+- `doctor` warns about a `CLAUDE.md` that is over 200 lines (#41).
+- The configurator page now lives on getacc.dev. The package has no HTML page.
+
+### Who should update
+
+- Claude users who want APK to set and restore the auto-compact window.
+- Claude users who want the `doctor` warning. Run `doctor` with 0.6.0. You do not need a new setup for it.
+- Other users get no configuration change. A setup without the option writes the same native files as 0.5.2.
+
+### Presets and model catalog
+
+Nothing changed. Models, effort levels, parallel limits, role files and role instructions are the same as in 0.5.2, so there is no new choice to explain. No preset sets the auto-compact window.
+
+The catalog snapshot stays dated 2026-11-02. Its sources are the official documents that each entry in `models/catalog.json` links. This release has no new model review, because it changes no preset and no catalog entry.
+
+### Native client requirements
+
+- Claude: `--claude-auto-compact` writes the top-level `autoCompactWindow` in `settings.json`, as the [Claude Code model configuration](https://code.claude.com/docs/en/model-config) describes it (read on 2026-11-09). APK does not check the Claude Code version for this key.
+- `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, the `--autocompact` flag and a per-model `/autocompact` value outrank this key. See [Auto-compact window](docs/reference/assistants.md#auto-compact-window).
+- All other requirements are the same as in 0.5.2. Claude Code 2.1.316 or later reads `CLAUDE_CODE_SUBAGENT_EFFORT`, and earlier versions ignore it.
+- Not checked: a live Claude Code session that compacts at the configured window. Configuration checks are not model-quality evaluations.
+
+### Migration and rollback
+
+Assistant IDs and preset ids are unchanged. APK 0.6.0 reads receipt formats v2, v3 and v4, so setup with 0.6.0 replaces a 0.5.2 installation in place.
+
+**Without the option, there is no boundary.** Every setup without `--claude-auto-compact` writes receipt format v4. Setup with 0.5.2 moves it back in place, and `uninstall` of 0.5.2 removes it.
+
+**With the option, there is a migration boundary, for Claude only.** A setup with `--claude-auto-compact` writes receipt format v5, and the saved `policy.json` keeps the field `clients.claude.autoCompactWindow`. 0.5.2 and earlier do not know either of them:
+
+- With a v5 receipt, `doctor` of 0.5.2 reports `attention` with `INVALID_RECEIPT`. Setup and `uninstall` of 0.5.2 stop with `INVALID_RECEIPT` and exit code 3. They change nothing.
+- With a saved `policy.json` that has the field, setup of 0.5.2 with no preferences input stops with `INVALID_POLICY`. Give it `--release`, `--preset`, `--policy`, `--config` or explicit arguments instead.
+
+To move such a Claude setup back to 0.5.2, use 0.6.0 first. Do one of these:
+
+- Run a replacing setup without the option, for example `npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy setup --release --client claude --apply`. It returns to format v4, removes the key or restores its earlier value, and replaces the saved `policy.json`. `--release` selects the default preset. To keep custom choices, repeat your own command or preferences without the option. After this, 0.5.2 moves Claude back in place.
+- Remove the Claude settings: `npx --yes --ignore-scripts --package agent-policy-kit@0.6.0 agent-policy uninstall --client claude --apply`. The saved `policy.json` keeps the field after removal, so setup with 0.5.2 needs one of the preferences inputs above.
+
+The window does not move back with you. 0.5.2 has no such option and cannot own this key.
+
+These paths were checked with the published 0.5.2 package and this release in isolated homes, for Claude. A setup without the option gave identical native files for Claude, ChatGPT and Grok. See the [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries).
+
+### What changed
+
+#### Claude auto-compact window
 
 - Add the opt-in explicit option `--claude-auto-compact`, Claude only. It takes a token count from 100000 to 1000000, or the same range with `k` or `M`, and writes the top-level `autoCompactWindow` in `settings.json`. No preset sets it. The policy field is `clients.claude.autoCompactWindow`.
 - Setup and `show` report `CLAUDE_CODE_AUTO_COMPACT_WINDOW` and per-model `/autocompact` values that outrank the configured window. They do not block or change them.
 - A setup with the option writes receipt format v5. Every other setup still writes v4. A replacing setup without the option returns to v4 and removes or restores the key.
-- Migration boundary: 0.5.2 and earlier refuse a v5 receipt (`INVALID_RECEIPT`) without changing anything, and refuse a saved `policy.json` that has the field (`INVALID_POLICY`).
 
-### Doctor
+#### Doctor
 
 - `doctor` warns when the user-level Claude `CLAUDE.md` or the `CLAUDE.md` in the current directory is over 200 lines. The warning has the label `user` or `project` and the line count, and no path. It changes no file, receipt, preferences or exit status. A missing or unreadable file gives no warning.
 
-### Website ownership
+#### Website ownership
 
 - Move the configurator UI, sharing logic and illustrated articles to getacc.dev. The website pins an exact published APK package for its release data and command contract.
 - Retire standalone website builds, deployment and packaged HTML. Legacy URLs and version archives are not carried over.

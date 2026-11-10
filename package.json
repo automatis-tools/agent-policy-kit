@@ -1,6 +1,6 @@
 {
   "name": "agent-policy-kit",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Configure native subagent settings across AI assistants, then exit",
   "type": "module",
   "license": "MIT",
