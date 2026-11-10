@@ -4,6 +4,10 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## Unreleased
 
+### Doctor
+
+- `doctor` warns when the user-level Claude `CLAUDE.md` or the `CLAUDE.md` in the current directory is over 200 lines. The warning has the label `user` or `project` and the line count, and no path. It changes no file, receipt, preferences or exit status. A missing or unreadable file gives no warning.
+
 ### Website ownership
 
 - Move the configurator UI, sharing logic and illustrated articles to getacc.dev. The website pins an exact published APK package for its release data and command contract.

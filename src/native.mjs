@@ -4,6 +4,7 @@ import {ROLE_DEFINITIONS,ROLE_IDS} from './roles.mjs';
 
 export const BEGIN = '<!-- BEGIN agent-policy-kit -->';
 export const END = '<!-- END agent-policy-kit -->';
+export const CLAUDE_MD_LINE_LIMIT = 200;
 const directory = {chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
 export function nativeHomeConflict(client,home,env) {
   const variable={chatgpt:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'}[client];
