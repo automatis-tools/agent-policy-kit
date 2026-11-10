@@ -231,7 +231,15 @@ For each assistant, it reports:
 
 `doctor` reads the receipts. It does not need the current presets or saved preferences. It does not run a model, so `modelExecution` is always `not_checked`.
 
-`doctor` exits with code 0 also when an assistant has `attention`. Read the status of each assistant.
+For Claude, `doctor` also counts the lines of two instruction files: the user-level `CLAUDE.md` and the `CLAUDE.md` in the current directory. It adds a warning for each file over 200 lines, with the label `user` or `project` and the line count:
+
+```text
+! Claude         user CLAUDE.md has 250 lines (over 200)
+```
+
+JSON output has the same data in `clients.claude.oversizedInstructionFiles`, as a list of `{"file":"user","lines":250}` entries. The list is empty when no file is over the limit. This check only reads the two files and writes nothing. The output has no paths and no file content, and receipts and preferences do not change. A missing or unreadable file gives no warning. The check runs in the directory where you start `doctor`, so `--home` changes only the user-level file.
+
+`doctor` exits with code 0 also when an assistant has `attention` or a file is over the limit. Read the status of each assistant.
 
 ## detect
 

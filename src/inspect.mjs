@@ -4,11 +4,11 @@ import path from 'node:path';
 import {parseToml} from './toml.mjs';
 import {CLIENTS,NATIVE_EFFORTS} from './policy.mjs';
 import {inspectConfiguration} from './install.mjs';
-import {claudeAutoCompactOverrides} from './native.mjs';
+import {CLAUDE_MD_LINE_LIMIT,claudeAutoCompactOverrides} from './native.mjs';
 
 const ROOTS={chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
 const ENV_ROOTS={chatgpt:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'};
-const MAX_FILE=1024*1024,MAX_TOTAL=4*MAX_FILE,MAX_ENTRIES=256;
+const MAX_FILE=1024*1024,MAX_TOTAL=4*MAX_FILE,MAX_ENTRIES=256,MAX_INSTRUCTION_FILE=16*MAX_FILE;
 const identifier=/^[A-Za-z0-9][A-Za-z0-9._:@/\[\]-]{0,127}$/;
 const namePattern=/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,79}$/;
 const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -190,6 +190,33 @@ async function readGuidance(root,client,budget){
  const counts=[...blocks[0][1].matchAll(/^When delegating, run at most (\d+) subagents concurrently in this session\./gm)];
  if(counts.length!==1)throw failure('UNSUPPORTED_NATIVE_SETTING');
  client.concurrency.value=cap(Number(counts[0][1]));
+}
+// Counts one instruction file for doctor. Claude Code loads a symlinked CLAUDE.md, so this read follows links.
+// Only a count leaves here, and a file that cannot be read is skipped so that this check can never fail doctor.
+async function instructionFile(locate){
+ let handle;
+ try{
+  handle=await fs.open(locate(),constants.O_RDONLY|constants.O_NONBLOCK);
+  const stat=await handle.stat();
+  if(!stat.isFile()||stat.size>MAX_INSTRUCTION_FILE)return null;
+  const body=await handle.readFile();
+  let lines=body.length&&body.at(-1)!==0x0a?1:0;
+  for(const byte of body)if(byte===0x0a)lines++;
+  return {id:`${stat.dev}:${stat.ino}`,lines};
+ }catch{return null;}
+ finally{await handle?.close().catch(()=>{});}
+}
+// The user file comes first, so running inside the Claude folder reports its one CLAUDE.md as the user file.
+export async function oversizedClaudeInstructions({home,cwd,env=process.env,explicitHome=false}={}){
+ const files=[['user',()=>path.join(path.resolve(!explicitHome&&env.CLAUDE_CONFIG_DIR?env.CLAUDE_CONFIG_DIR:path.join(home,ROOTS.claude)),'CLAUDE.md')],['project',()=>path.join(cwd??process.cwd(),'CLAUDE.md')]];
+ const seen=new Set(),oversized=[];
+ for(const[file,locate]of files){
+  const found=await instructionFile(locate);
+  if(!found||seen.has(found.id))continue;
+  seen.add(found.id);
+  if(found.lines>CLAUDE_MD_LINE_LIMIT)oversized.push({file,lines:found.lines});
+ }
+ return oversized;
 }
 export async function readConfiguration({client=null,home,env=process.env,explicitHome=false,stateDir=path.join(home,'.agent-policy-kit')}={}){
  if(!path.isAbsolute(home)||client!==null&&!CLIENTS.includes(client))throw failure('INVALID_CLIENT');

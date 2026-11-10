@@ -1,4 +1,5 @@
 import {PRESETS} from './release.mjs';
+import {CLAUDE_MD_LINE_LIMIT} from './native.mjs';
 const LABELS={chatgpt:'ChatGPT',claude:'Claude',kimi:'Kimi',gemini:'Gemini',grok:'Grok'};
 const label=client=>LABELS[client]??'Tool';
 const code=value=>typeof value==='string'&&/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(value)?value:'OPERATION_FAILED';
@@ -104,7 +105,7 @@ export function formatResult(command,result,{version='',apply=false}={}){
  else if(command==='detect')lines=result.map(r=>row(r.client,r.status==='detected'?`Detected${typeof r.version==='string'&&/^[0-9A-Za-z.+-]{1,128}$/.test(r.version)?' · '+r.version:''}`:r.status==='not_found'?'Not installed':r.status==='timeout'?'Detection timed out':'Identity unverified',r.status==='detected'?'✓':r.status==='not_found'?'·':'!'));
  else if(command==='doctor'){
   lines=['Configuration check',''];
-  for(const[client,r]of Object.entries(result.clients??{})){const c=r.configuration;lines.push(row(client,c.status==='verified'?`Verified${preset(c.preset)}`:c.status==='not_configured'?'Not configured':reason(c.reason),c.status==='attention'?'!':c.status==='verified'?'✓':'·'));}
+  for(const[client,r]of Object.entries(result.clients??{})){const c=r.configuration;lines.push(row(client,c.status==='verified'?`Verified${preset(c.preset)}`:c.status==='not_configured'?'Not configured':reason(c.reason),c.status==='attention'?'!':c.status==='verified'?'✓':'·'));for(const found of r.oversizedInstructionFiles??[])lines.push(row(client,`${found.file} CLAUDE.md has ${found.lines} lines (over ${CLAUDE_MD_LINE_LIMIT})`,'!'));}
   lines.push('Native configuration only; model execution was not checked.');
  }else if(command==='release')lines=[`Configuration release ${/^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$/.test(result.version)?result.version:''}${preset(result.preset)}`,'','Use setup --release to preview; add --apply to configure.'];
  else lines=['Operation completed.'];
