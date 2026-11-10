@@ -1,5 +1,6 @@
 import catalog from '../models/catalog.json' with {type:'json'};
 import {ROLES,ROLE_IDS,selectedRoleIds} from './roles.mjs';
+import {validAutoCompactWindow} from './explicit.mjs';
 export {ROLES} from './roles.mjs';
 export const CLIENTS = Object.freeze(['chatgpt', 'claude', 'kimi', 'gemini', 'grok']);
 export const rolePreference=(config,role)=>config.roles?.[role]??config[ROLES[role]];
@@ -21,7 +22,8 @@ export function validatePolicy(value) {
   object(value.clients,CLIENTS);
   if (!Object.keys(value.clients).length) invalid();
   for (const [client,config] of Object.entries(value.clients)) {
-    object(config,['code','light','roles','avoidModels','maxConcurrent']);
+    object(config,['code','light','roles','avoidModels','maxConcurrent',...(client==='claude'?['autoCompactWindow']:[])]);
+    if(config.autoCompactWindow!==undefined&&!validAutoCompactWindow(config.autoCompactWindow))invalid();
     if(config.maxConcurrent!==undefined&&(!Number.isInteger(config.maxConcurrent)||config.maxConcurrent<1||config.maxConcurrent>32))invalid();
     if(config.roles!==undefined)object(config.roles,Object.keys(ROLES));
     for (const selected of [config.code,config.light,...Object.values(config.roles??{})]) {

@@ -55,7 +55,7 @@ The content of role files and the instruction block is described in [Roles](role
 | Assistant | Settings that APK owns |
 |---|---|
 | ChatGPT | `[agents]` `max_concurrent_threads_per_session`, `default_subagent_model` and, when the effort is pinned, `default_subagent_reasoning_effort` |
-| Claude | In `env`: `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`, `CLAUDE_CODE_SUBAGENT_MODEL` and, when the effort is pinned, `CLAUDE_CODE_SUBAGENT_EFFORT` |
+| Claude | In `env`: `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`, `CLAUDE_CODE_SUBAGENT_MODEL` and, when the effort is pinned, `CLAUDE_CODE_SUBAGENT_EFFORT`. Only with the opt-in `--claude-auto-compact`: the top-level `autoCompactWindow` |
 | Kimi | `[secondary_model]` `default_model`, one `[secondary_model.models]` entry for each selected alias that names the roles that use it, and `[models.<alias>.overrides]` `default_effort` for each alias with a pinned effort |
 | Gemini | none |
 | Grok | `[subagents]` `max_concurrent`, one `[subagents.models]` entry `apk-<role>` for each selected role, and `[subagents.models]` `general-purpose` |
@@ -81,7 +81,7 @@ Each assistant adds warning codes to the setup result. The codes tell the person
 | Assistant | Warning codes |
 |---|---|
 | ChatGPT | `chatgpt-native-precedence-limits` |
-| Claude | `claude-native-precedence-limits` |
+| Claude | `claude-native-precedence-limits`, and `claude-auto-compact-overridden` when a higher-priority control outranks the configured window |
 | Kimi | `kimi-concurrency-guidance-only`, `kimi-model-pool-routing-guidance` |
 | Gemini | `gemini-concurrency-guidance-only`, `gemini-per-role-effort-unsupported` |
 | Grok | `grok-effort-model-dependent`, `grok-native-precedence-limits`. Installs made by 0.4.0 keep the older code `grok-per-role-effort-unsupported` in their receipt; setup shows it with the same corrected note. |
@@ -110,6 +110,23 @@ These rules apply to all assistants except Gemini:
 
 - If `env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is `1`, setup returns `claude-force-model-conflict`. That setting forces one model for all subagents, so the role models cannot apply. Change the native setting first.
 - Claude Code 2.1.316 or later reads `CLAUDE_CODE_SUBAGENT_EFFORT`. Earlier versions ignore it.
+
+#### Auto-compact window
+
+`--claude-auto-compact` is the one APK option that changes the main conversation: it sets when Claude Code compacts a session, for every model. It is off by default, and no preset sets it.
+
+APK writes the top-level `autoCompactWindow` in `settings.json`. APK does not write `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, because that variable outranks `/autocompact` and would remove your control for each model.
+
+Claude Code applies these controls in this order. The first one that is set wins:
+
+1. `CLAUDE_CODE_AUTO_COMPACT_WINDOW`. Claude Code ignores a value that is not a token count.
+2. The `--autocompact` flag, for one launch.
+3. `modelSettings.<model>.autoCompactWindow`, which `/autocompact` saves for one model.
+4. The top-level `autoCompactWindow`.
+
+Other settings scopes, such as managed settings, can also set a window. Claude Code caps every value at the context window of the model. Without a window, models with a native 1M window compact at about 967K tokens.
+
+Setup and `show` report the variable and any `modelSettings` entry that outranks the configured value. They do not block or change them. APK cannot see the `--autocompact` flag of a later launch. Whether a session actually compacts at this window is native client behavior that APK does not check.
 
 #### Claude model aliases on other providers
 

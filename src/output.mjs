@@ -17,6 +17,7 @@ const NOTES={
  'grok-per-role-effort-unsupported':'Grok: a role effort applies only when its model supports effort; a role without one uses its model default.',
  'grok-native-precedence-limits':'Project and explicit client settings can override these defaults.',
  'kimi-catalog-alias-resolved':'Kimi: an existing matching model alias was selected.',
+ 'claude-auto-compact-overridden':'Claude: CLAUDE_CODE_AUTO_COMPACT_WINDOW or a per-model /autocompact value outranks the configured auto-compact window.',
 };
 const REASONS={
  OWNED_DRIFT:'Local edits prevent an update',
@@ -82,6 +83,7 @@ function show(result){
    if(c.defaults.enabled===false)lines.push('  Subagents explicitly disabled.');
    lines.push(`  Default model: ${setting(c.defaults.model)} · effort: ${setting(c.defaults.effort)}`);
    lines.push(`  Max concurrent: ${Number.isSafeInteger(c.concurrency.value)?c.concurrency.value:'not explicitly set'}${c.concurrency.kind==='guidance'?' (guidance)':' (native setting)'}`);
+   if(Number.isSafeInteger(c.autoCompactWindow))lines.push(`  Auto-compact window: ${c.autoCompactWindow} (native setting)`);
    for(const role of c.roles)lines.push(`  ${setting(role.name).padEnd(22)} ${setting(role.model)} · ${setting(role.effort)}${role.modelSelection==='guidance'?' (routing guidance)':role.modelSelection==='parent'?' (parent selects model)':''}${role.enabled===false?' (delegation disabled)':''}`);
    for(const entry of c.pool)lines.push(`  Pool: ${setting(entry.alias)} · ${setting(entry.effort)}${entry.configured?'':' · alias not provisioned'}`);
    for(const[field,value]of Object.entries(c.overrides??{}))lines.push(`  Override ${field}: ${typeof value==='boolean'?String(value):typeof value==='number'?value:setting(value)}`);

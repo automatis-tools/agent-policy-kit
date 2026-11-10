@@ -77,9 +77,12 @@ These boundaries are known:
 | Assistant | Change | Setup without removal | Remove with |
 |---|---|---|---|
 | Claude | From 0.4.0 or later to 0.3.0 or earlier | `INVALID_RECEIPT` | The installed release, 0.4.0 or later |
+| Claude, only with `--claude-auto-compact` | From a version after 0.5.2 to 0.5.2 or earlier | `INVALID_RECEIPT` | The installed release, after 0.5.2 |
 | ChatGPT, Kimi and Grok, only if `config.toml` did not end with a line break before setup | From 0.5.2 or later to 0.5.1 or earlier | `INVALID_RECEIPT` | The installed release, 0.5.2 or later |
 | ChatGPT and Gemini | From 0.2.0 or earlier to 0.3.0 or later | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.2.0 |
 | ChatGPT and Gemini | From 0.3.0 or later to 0.2.0 or earlier | `OWNERSHIP_CONFLICT` | The release that created the settings, for example 0.4.0 |
+
+**Claude with `--claude-auto-compact`, to 0.5.2 or earlier.** A setup with this option writes receipt format v5, which 0.5.2 and earlier refuse without changing anything. First run the installed release without the option to return to format v4, or remove the Claude settings with it. The saved `policy.json` also keeps the option, so 0.5.2 needs a preferences input such as `--preset` until a setup without the option replaces that file.
 
 **Claude, 0.4.0 or later to 0.3.0 or earlier.** A Claude receipt from 0.4.0 or later owns `CLAUDE_CODE_SUBAGENT_EFFORT` when the effort of the default subagent role is pinned. Every preset pins it. Releases 0.3.0 and earlier do not know this setting, so they refuse the receipt. To move Claude back to 0.3.0:
 

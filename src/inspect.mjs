@@ -4,7 +4,7 @@ import path from 'node:path';
 import {parseToml} from './toml.mjs';
 import {CLIENTS,NATIVE_EFFORTS} from './policy.mjs';
 import {inspectConfiguration} from './install.mjs';
-import {CLAUDE_MD_LINE_LIMIT} from './native.mjs';
+import {CLAUDE_MD_LINE_LIMIT,claudeAutoCompactOverrides} from './native.mjs';
 
 const ROOTS={chatgpt:'.codex',claude:'.claude',kimi:'.kimi-code',gemini:'.gemini',grok:'.grok'};
 const ENV_ROOTS={chatgpt:'CODEX_HOME',claude:'CLAUDE_CONFIG_DIR',kimi:'KIMI_CODE_HOME',grok:'GROK_HOME'};
@@ -117,6 +117,12 @@ function extractSettings(client,id,native,env,models){
   }
   if((env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE??stored.CLAUDE_CODE_SUBAGENT_MODEL_FORCE)==='1')client.overrides.forceModel=true;
   if(env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS!==undefined){if(!/^\d{1,9}$/.test(env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS))throw failure('UNSUPPORTED_NATIVE_SETTING');client.overrides.maxConcurrent=cap(Number(env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS));}
+  if(Number.isSafeInteger(native.autoCompactWindow)){
+   client.autoCompactWindow=native.autoCompactWindow;
+   const overrides=claudeAutoCompactOverrides(native,env);
+   if(overrides.window!==null)client.overrides.autoCompactWindowEnv=overrides.window;
+   if(overrides.models)client.overrides.autoCompactWindowModels=overrides.models;
+  }
  }else if(id==='kimi'){
   const secondary=native.secondary_model??{};if(!record(secondary))throw failure('UNSUPPORTED_NATIVE_SETTING');
   client.defaults.model=optionalString(secondary.default_model);
@@ -230,7 +236,7 @@ export async function readConfiguration({client=null,home,env=process.env,explic
    }
    await rolesIn(path.join(root,id==='gemini'?'config/agents':'agents'),c,id,budget,models);
    if(id==='kimi'||id==='gemini'){try{await readGuidance(root,c,budget);}catch(error){warning(c,error);}}
-   if(c.status!=='attention'&&(c.roles.length||c.pool.length||c.defaults.model!==null||c.defaults.effort!==null||c.defaults.enabled!==null||c.concurrency.value!==null||Object.keys(c.overrides??{}).length))c.status='configured';
+   if(c.status!=='attention'&&(c.roles.length||c.pool.length||c.defaults.model!==null||c.defaults.effort!==null||c.defaults.enabled!==null||c.concurrency.value!==null||c.autoCompactWindow!==undefined||Object.keys(c.overrides??{}).length))c.status='configured';
    if(root===path.resolve(home,ROOTS[id])){
     try{const installed=await inspectConfiguration({client:id,home,stateDir});c.apk.status=installed.status;if(installed.status==='verified'){c.apk.releaseVersion=installed.releaseVersion;c.apk.preset=installed.preset;}}
     catch(error){c.apk.status=error.code==='OWNED_DRIFT'?'modified':'attention';warning(c,error);}

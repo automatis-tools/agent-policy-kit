@@ -145,7 +145,7 @@ The receipts verify ownership. Removal restores the original user settings and k
 - Do not restore old whole-file backups.
 - Do not delete locks or pending journals by force.
 - Do not delete hooks by text match.
-- Use a version that can read the receipt. All versions from 0.1.0 write receipt format v4, but an older version can refuse the content of a newer receipt. Versions 0.3.0 and earlier cannot read a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`: remove it with 0.4.0. ChatGPT and Gemini settings from 0.2.0 or earlier need removal with the version that created them. See [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries).
+- Use a version that can read the receipt. All versions from 0.1.0 write receipt format v4, but an older version can refuse the content of a newer receipt. A Claude setup with `--claude-auto-compact` writes format v5, which 0.5.2 and earlier refuse. Versions 0.3.0 and earlier cannot read a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`: remove it with 0.4.0. ChatGPT and Gemini settings from 0.2.0 or earlier need removal with the version that created them. See [migration boundaries](docs/guide/updates-and-removal.md#migration-boundaries).
 
 More: [ownership](docs/reference/ownership.md), [updates and removal](docs/guide/updates-and-removal.md).
 

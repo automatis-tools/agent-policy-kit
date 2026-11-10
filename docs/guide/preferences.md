@@ -51,6 +51,7 @@ Each assistant has these fields:
 | `roles` | No | An object with a choice for one or more role IDs. It replaces `code` or `light` for that role. |
 | `avoidModels` | Yes | A list of model IDs, at most 32, without duplicates. It can be empty. |
 | `maxConcurrent` | No | A whole number from 1 to 32. It replaces the shared `maxConcurrent` for this assistant. |
+| `autoCompactWindow` | No, Claude only | A whole number from 100000 to 1000000. It sets the Claude Code auto-compact window. No preset sets it. See [Auto-compact window](../reference/assistants.md#auto-compact-window). |
 
 The [roles reference](../reference/roles.md) describes each role and its ID.
 

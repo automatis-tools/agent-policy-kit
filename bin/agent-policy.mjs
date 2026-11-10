@@ -44,11 +44,13 @@ Options: --client chatgpt|claude|kimi|gemini|grok --home PATH --state-dir PATH
          --chatgpt-max-concurrent N --claude-max-concurrent N
          --kimi-max-concurrent N --gemini-max-concurrent N --grok-max-concurrent N
          --avoid-chatgpt MODELS --avoid-claude MODELS --avoid-kimi MODELS --avoid-gemini MODELS --avoid-grok MODELS
+         --claude-auto-compact WINDOW
          --apply --json --help --version
 
 Explicit tool input requires --roles and --max-concurrent. Use :native for unpinned effort. Gemini and Grok take ROLE=TIER and ROLE=MODEL with no effort.
 Include every selected role for each selected tool. Per-tool concurrency overrides the shared fallback.
 Avoid lists are comma-separated.
+--claude-auto-compact takes a token count from 100000 to 1000000, or a k or M form such as 500k. It needs --claude.
 State defaults to AGENT_POLICY_HOME or ~/.agent-policy-kit.
 Terminal output is readable text; captured output is JSON. --json always prints JSON.
 This configurator exits after setup. Native files work without the package.`);}

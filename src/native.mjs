@@ -11,6 +11,16 @@ export function nativeHomeConflict(client,home,env) {
   const active=variable&&env[variable];
   return typeof active==='string'&&active.length>0&&path.resolve(active)!==path.resolve(home,directory[client]);
 }
+// What outranks the top-level autoCompactWindow, in Claude Code's own order: the variable, then a per-model value saved by /autocompact.
+// Claude Code ignores a variable that is not a token count and clamps any other value to 100000-1000000.
+export function claudeAutoCompactOverrides(settings,env={}) {
+  const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+  const stored=record(settings.env)?settings.env:{},raw=env.CLAUDE_CODE_AUTO_COMPACT_WINDOW??stored.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+  const match=typeof raw==='string'?raw.trim().match(/^(\d+)([kKmM]?)$/):null;
+  const window=match?Math.min(1000000,Math.max(100000,Number(match[1])*({k:1000,m:1000000}[match[2].toLowerCase()]??1))):null;
+  const models=record(settings.modelSettings)?Object.values(settings.modelSettings).filter(entry=>record(entry)&&entry.autoCompactWindow!==undefined).length:0;
+  return {window,models};
+}
 export function nativeLocations(client,home) {
   const root=path.join(home,directory[client]);
   return {
