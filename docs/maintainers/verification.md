@@ -14,6 +14,23 @@ A configuration check does not prove native loading. Native loading does not pro
 
 Each record names the platform and the date. Browser evidence, temporary homes, raw configuration fixtures and logs stay outside Git and npm.
 
+## 0.6.0
+
+macOS arm64, 2026-11-09.
+
+| Layer | Evidence |
+|---|---|
+| Full Node 26.5.1 suite | PASS: 316/316, including the packed-package tests |
+| Hosted CI | PASS on main fb95d3f: macOS Node 22.13.0 and Ubuntu Node 24 suites and lint ([run](https://github.com/automatis-tools/agent-policy-kit/actions/runs/42755902113)) |
+| Published 0.5.2 against 0.6.0 without the option | PASS in isolated homes for Claude: receipt format v4, upgrade from 0.5.2, move back and uninstall. Native files from the default preset are identical between 0.5.2 and 0.6.0 for Claude, ChatGPT and Grok. Kimi and Gemini NOT CHECKED by comparison; their presets and role data have no change from 0.5.2 |
+| Published 0.5.2 against 0.6.0 with the option | PASS in isolated homes: receipt format v5. 0.5.2 `doctor` reports `INVALID_RECEIPT`, setup and uninstall stop with exit 3, setup with no input stops with `INVALID_POLICY`, and no file changes. A 0.6.0 setup without the option returns to v4, which 0.5.2 can read and remove |
+| Receipts older than 0.5.2 | NOT CHECKED by a run for this release |
+| Native Claude loading of `autoCompactWindow` and compaction at that window through an APK setup | NOT CHECKED for 0.6.0. No live model tasks were used as configuration proof |
+| Native ChatGPT, Claude, Kimi, Gemini and Grok loading and provider execution | NOT CHECKED for 0.6.0 |
+| Windows | NOT CHECKED |
+| npm packaging | PASS: `npm pack --dry-run` lists 49 files. No private evidence or configuration |
+| Model catalog | Unchanged from 0.5.2 |
+
 ## 0.5.2
 
 macOS arm64, 2026-11-01.

@@ -2,7 +2,7 @@
 
 Each npm version is one configuration release: its presets, native role definitions, instructions and command contract. The web configurator is maintained separately on getacc.dev. Published versions are not rewritten. Applying another release is explicit; package installation alone changes no settings.
 
-## 0.6.0 — Unreleased
+## 0.6.0 — 2026-11-09
 
 ### Why this release
 
