@@ -4,6 +4,13 @@ Each npm version is one configuration release: its presets, native role definiti
 
 ## Unreleased
 
+### Claude auto-compact window
+
+- Add the opt-in explicit option `--claude-auto-compact`, Claude only. It takes a token count from 100000 to 1000000, or the same range with `k` or `M`, and writes the top-level `autoCompactWindow` in `settings.json`. No preset sets it. The policy field is `clients.claude.autoCompactWindow`.
+- Setup and `show` report `CLAUDE_CODE_AUTO_COMPACT_WINDOW` and per-model `/autocompact` values that outrank the configured window. They do not block or change them.
+- A setup with the option writes receipt format v5. Every other setup still writes v4. A replacing setup without the option returns to v4 and removes or restores the key.
+- Migration boundary: 0.5.2 and earlier refuse a v5 receipt (`INVALID_RECEIPT`) without changing anything, and refuse a saved `policy.json` that has the field (`INVALID_POLICY`).
+
 ### Website ownership
 
 - Move the configurator UI, sharing logic and illustrated articles to getacc.dev. The website pins an exact published APK package for its release data and command contract.

@@ -48,7 +48,7 @@ export async function setupDetected({home,stateDir,policyPath,apply=false,client
     try {
       // Planning and applying are sequential per client: the preceding transaction
       // can create shared policy/receipts that the next plan must capture afresh.
-      const plan = await planInstall({client:record.client,home,stateDir,policyPath,releaseVersion,replace,source,preset});
+      const plan = await planInstall({client:record.client,home,stateDir,policyPath,releaseVersion,replace,source,preset,env});
       requiredActions.push(...actions(record.client,plan.warnings));
       if (plan.status === 'prerequisite') { results.push({client:record.client,status:'prerequisite',plan:summarizePlan(plan),...releaseMetadata(plan)}); continue; }
       if (apply) {

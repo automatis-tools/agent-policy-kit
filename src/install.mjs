@@ -8,7 +8,8 @@ import {ROLE_IDS,LEGACY_ROLE_IDS,selectedRoleIds} from './roles.mjs';
 import { PACKAGE_VERSION } from './release.mjs';
 import catalog from '../models/catalog.json' with {type:'json'};
 import { parseToml, setTomlValue, restoreTomlValue, removeTomlValue } from './toml.mjs';
-import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, BEGIN, END } from './native.mjs';
+import { nativeLocations, nativeRoles, instructionBlock, nativeWarnings, claudeAutoCompactOverrides, BEGIN, END } from './native.mjs';
+import { validAutoCompactWindow } from './explicit.mjs';
 
 const CLIENTS = ['chatgpt', 'claude', 'kimi', 'gemini', 'grok'];
 const LIMIT = 1024 * 1024;
@@ -91,13 +92,17 @@ function ensureObject(parent,key) {
 // It copies the Coder effort, capped at high, so a Coder at xhigh or max does not raise every unnamed subagent.
 const CLAUDE_SUBAGENT_EFFORTS=['low','medium','high'];
 const claudeSubagentEffort=effort=>effort===null?null:CLAUDE_SUBAGENT_EFFORTS.includes(effort)?effort:'high';
-function jsonInstall(text,maxConcurrent,defaultChoice) {
+function jsonInstall(text,maxConcurrent,defaultChoice,autoCompactWindow) {
   const value=configJson(text),ops=[],created=[];
   if(!own(value,'env'))created.push(['env']);
   const env=ensureObject(value,'env'),effort=claudeSubagentEffort(defaultChoice.effort);
   for(const [key,after] of [['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS',String(maxConcurrent)],['CLAUDE_CODE_SUBAGENT_MODEL',defaultChoice.model],...(effort===null?[]:[['CLAUDE_CODE_SUBAGENT_EFFORT',effort]])]) {
     if(own(env,key)&&typeof env[key]!=='string')fail('UNSUPPORTED_CONFIG');
     ops.push({kind:'value',path:['env',key],existed:own(env,key),before:env[key]??null,after});env[key]=after;
+  }
+  if(autoCompactWindow!==undefined) {
+    if(own(value,'autoCompactWindow')&&!Number.isSafeInteger(value.autoCompactWindow))fail('UNSUPPORTED_CONFIG');
+    ops.push({kind:'value',path:['autoCompactWindow'],existed:own(value,'autoCompactWindow'),before:value.autoCompactWindow??null,after:autoCompactWindow});value.autoCompactWindow=autoCompactWindow;
   }
   return {text:json(value),ops,created};
 }
@@ -242,21 +247,28 @@ function validateTomlSnapshot(file,client,schemaVersion,selectedRoles=ROLE_IDS) 
   }
 }
 function validateJsonSnapshot(file,schemaVersion) {
-  // Receipts before format v4 never owned CLAUDE_CODE_SUBAGENT_EFFORT; v4 owns it only when the Coder effort was pinned.
-  if(!Array.isArray(file.ops)||!(schemaVersion===4?[2,3]:[2]).includes(file.ops.length)||!Array.isArray(file.created)||file.created.length>1||!file.created.every(keys=>equal(keys,['env'])))fail('INVALID_RECEIPT');
-  for(const[i,key]of ['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL','CLAUDE_CODE_SUBAGENT_EFFORT'].slice(0,file.ops.length).entries()) {
-    const op=file.ops[i];fields(op,['kind','path','existed','before','after']);
+  // Receipts before format v4 never owned CLAUDE_CODE_SUBAGENT_EFFORT; v4 and v5 own it only when the Coder effort was pinned.
+  // Format v5 is v4 with one more owned value, autoCompactWindow, as the last operation.
+  if(!Array.isArray(file.ops))fail('INVALID_RECEIPT');
+  const envOps=schemaVersion===5?file.ops.slice(0,-1):file.ops;
+  if(!(schemaVersion>=4?[2,3]:[2]).includes(envOps.length)||!Array.isArray(file.created)||file.created.length>1||!file.created.every(keys=>equal(keys,['env'])))fail('INVALID_RECEIPT');
+  for(const[i,key]of ['CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS','CLAUDE_CODE_SUBAGENT_MODEL','CLAUDE_CODE_SUBAGENT_EFFORT'].slice(0,envOps.length).entries()) {
+    const op=envOps[i];fields(op,['kind','path','existed','before','after']);
     if(op.kind!=='value'||!equal(op.path,['env',key])||typeof op.existed!=='boolean'||typeof op.after!=='string'||op.after.length>4096||(op.existed?typeof op.before!=='string'||op.before.length>4096:op.before!==null))fail('INVALID_RECEIPT');
     if(i===0&&(!/^[1-9]\d?$/.test(op.after)||Number(op.after)>32))fail('INVALID_RECEIPT');
     if(i===2&&!CLAUDE_SUBAGENT_EFFORTS.includes(op.after))fail('INVALID_RECEIPT');
   }
+  if(schemaVersion===5) {
+    const op=file.ops.at(-1);fields(op,['kind','path','existed','before','after']);
+    if(op.kind!=='value'||!equal(op.path,['autoCompactWindow'])||typeof op.existed!=='boolean'||!validAutoCompactWindow(op.after)||(op.existed?!Number.isSafeInteger(op.before):op.before!==null))fail('INVALID_RECEIPT');
+  }
 }
 function validateReceipt(r,plan) {
   if(object(r)&&(r.schemaVersion===1||own(r,'packageRoot')||own(r,'nodePath')||own(r,'mode')||(Array.isArray(r.files)&&r.files.some(file=>object(file)&&(['owned','hook'].includes(file.type)||(Array.isArray(file.ops)&&file.ops.some(op=>object(op)&&['hook','entry'].includes(op.kind))))))))fail('LEGACY_RUNTIME_RECEIPT');
-  fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source','preset']),...(r?.schemaVersion===4?['selectedRoles']:[])]);
-  if(r.schemaVersion===4&&(!Array.isArray(r.selectedRoles)||!r.selectedRoles.length||r.selectedRoles.length>ROLE_IDS.length||new Set(r.selectedRoles).size!==r.selectedRoles.length||r.selectedRoles.some(role=>!ROLE_IDS.includes(role))))fail('INVALID_RECEIPT');
-  const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l,r.schemaVersion===4?r.selectedRoles:LEGACY_ROLE_IDS);
-  if(![2,3,4].includes(r.schemaVersion)||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!validHash(r.policyHash)||!Array.isArray(r.warnings)||r.warnings.length>32||!r.warnings.every(w=>typeof w==='string'&&/^[a-z][a-z0-9-]{0,127}$/.test(w))||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(file=>object(file)&&allowed.includes(file.path))||new Set(r.files.map(file=>file.path)).size!==allowed.length)fail('INVALID_RECEIPT');
+  fields(r,['schemaVersion','kind','client','home','stateDir','policyHash','warnings','files',...(r?.schemaVersion===2?['maxConcurrent','preferences']:['releaseVersion','source','preset']),...(r?.schemaVersion>=4?['selectedRoles']:[])]);
+  if(r.schemaVersion>=4&&(!Array.isArray(r.selectedRoles)||!r.selectedRoles.length||r.selectedRoles.length>ROLE_IDS.length||new Set(r.selectedRoles).size!==r.selectedRoles.length||r.selectedRoles.some(role=>!ROLE_IDS.includes(role))))fail('INVALID_RECEIPT');
+  const l=locations(plan.client,plan.home,plan.stateDir),allowed=nativeTargets(l,r.schemaVersion>=4?r.selectedRoles:LEGACY_ROLE_IDS);
+  if(![2,3,4,5].includes(r.schemaVersion)||(r.schemaVersion===5&&r.client!=='claude')||r.kind!=='native-config'||r.client!==plan.client||r.home!==plan.home||r.stateDir!==plan.stateDir||!validHash(r.policyHash)||!Array.isArray(r.warnings)||r.warnings.length>32||!r.warnings.every(w=>typeof w==='string'&&/^[a-z][a-z0-9-]{0,127}$/.test(w))||!Array.isArray(r.files)||r.files.length!==allowed.length||!r.files.every(file=>object(file)&&allowed.includes(file.path))||new Set(r.files.map(file=>file.path)).size!==allowed.length)fail('INVALID_RECEIPT');
   if(r.schemaVersion>=3) {if(!version(r.releaseVersion)||!SOURCES.includes(r.source)||(own(r,'preset')&&!validPreset(r.preset)))fail('INVALID_RECEIPT');}
   else if(!object(r.preferences)||!Number.isInteger(r.maxConcurrent)||r.maxConcurrent<1||r.maxConcurrent>32)fail('INVALID_RECEIPT');
   for(const file of r.files) {
@@ -270,7 +282,7 @@ function validateReceipt(r,plan) {
     } else if(plan.client==='claude') {
       fields(file,['path','type','existed','ops','created']);if(file.type!=='json')fail('INVALID_RECEIPT');validateJsonSnapshot(file,r.schemaVersion);
     } else {
-      fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client,r.schemaVersion,r.schemaVersion===4?r.selectedRoles:LEGACY_ROLE_IDS);
+      fields(file,['path','type','existed','ops']);if(file.type!=='toml')fail('INVALID_RECEIPT');validateTomlSnapshot(file,plan.client,r.schemaVersion,r.schemaVersion>=4?r.selectedRoles:LEGACY_ROLE_IDS);
     }
   }
   return r;
@@ -306,6 +318,11 @@ export async function inspectConfiguration(options) {
   await undoFiles(plan,record,false);await verifyDependencies(plan);
   const applied=appliedRecord(record);
   return {status:'verified',releaseVersion:applied.version,source:applied.source,preset:applied.preset,warnings:[...record.warnings]};
+}
+function claudeAutoCompactWarnings(preferences,native,env) {
+  if(preferences.autoCompactWindow===undefined)return [];
+  const overrides=claudeAutoCompactOverrides(native,env);
+  return overrides.window===null&&!overrides.models?[]:['claude-auto-compact-overridden'];
 }
 function prerequisite(plan,warning) {return {...plan,status:'prerequisite',warnings:[warning],changes:[]};}
 function resolveKimiAliases(native,preferences,selectedRoles=ROLE_IDS) {
@@ -403,9 +420,9 @@ export async function planInstall(options) {
       if(cap!==undefined&&(!Number.isSafeInteger(cap)||cap<1))fail('UNSUPPORTED_CONFIG');
     }
   }
-  const files=[];plan.warnings=[...nativeWarnings(plan.client),...(resolvedAliases?['kimi-catalog-alias-resolved']:[])];
+  const files=[];plan.warnings=[...nativeWarnings(plan.client),...(resolvedAliases?['kimi-catalog-alias-resolved']:[]),...(plan.client==='claude'?claudeAutoCompactWarnings(selected,native,options.env):[])];
   if(plan.client==='claude') {
-    const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,roleIds[0]));nativeChange(l.config,config,edited.text);
+    const edited=jsonInstall(config.text,maxConcurrent,rolePreference(selected,roleIds[0]),selected.autoCompactWindow);nativeChange(l.config,config,edited.text);
     files.push({path:l.config,type:'json',existed:config.text!==null,ops:edited.ops,created:edited.created});
   } else if(config) {
     let text=config.text??'';const ops=[];
@@ -428,7 +445,8 @@ export async function planInstall(options) {
   const prefix=!text||text.endsWith('\n\n')?'':text.endsWith('\n')?'\n':'\n\n',block=instructionBlock(plan.client,selected,maxConcurrent,roleIds);
   nativeChange(l.instructions,before,text+prefix+block);
   files.push({path:l.instructions,type:'instructions',existed:before.text!==null,prefix,block});
-  const r={schemaVersion:4,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,releaseVersion,source,...(preset===null?{}:{preset}),selectedRoles:roleIds,policyHash,warnings:plan.warnings,files};
+  // Only a setup that owns autoCompactWindow needs format v5. Every other setup stays readable by earlier releases.
+  const r={schemaVersion:selected.autoCompactWindow===undefined?4:5,kind:'native-config',client:plan.client,home:plan.home,stateDir:plan.stateDir,releaseVersion,source,...(preset===null?{}:{preset}),selectedRoles:roleIds,policyHash,warnings:plan.warnings,files};
   validateReceipt(r,plan);
   let canonicalText=policyBefore.text;
   if(canonicalText===null||replace) {

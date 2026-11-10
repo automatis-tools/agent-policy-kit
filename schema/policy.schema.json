@@ -380,6 +380,12 @@
           "minimum": 1,
           "maximum": 32,
           "description": "Overrides the shared maxConcurrent fallback for this tool."
+        },
+        "autoCompactWindow": {
+          "type": "integer",
+          "minimum": 100000,
+          "maximum": 1000000,
+          "description": "Writes the top-level autoCompactWindow key in Claude Code settings.json. A per-model /autocompact value and CLAUDE_CODE_AUTO_COMPACT_WINDOW override it."
         }
       }
     },

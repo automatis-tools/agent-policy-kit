@@ -1,6 +1,6 @@
 # Ownership and state
 
-This document describes how APK records the settings that it writes, how it detects changes to them and how it applies and rolls back a change safely. It covers the state directory, the receipt formats v2, v3 and v4, transactions, drift and rollback. It is for advanced users and maintainers who need to know exactly what APK owns.
+This document describes how APK records the settings that it writes, how it detects changes to them and how it applies and rolls back a change safely. It covers the state directory, the receipt formats v2, v3, v4 and v5, transactions, drift and rollback. It is for advanced users and maintainers who need to know exactly what APK owns.
 
 For the steps to update, remove or recover a setup, see [Updates and removal](../guide/updates-and-removal.md). For the files that APK writes in each assistant, see [AI assistants](assistants.md#files-written).
 
@@ -48,7 +48,7 @@ A receipt records, for one assistant:
 - A SHA-256 hash of the applied preferences (`policyHash`).
 - The warning codes of the setup.
 - The applied release: `releaseVersion`, `source` and, for a named preset, `preset`.
-- The selected roles (v4 only).
+- The selected roles (v4 and v5).
 - One entry for each owned file.
 
 Each file entry records only what APK owns in that file:
@@ -57,15 +57,16 @@ Each file entry records only what APK owns in that file:
 |---|---|---|
 | `role` | `apk-<role>` role files | The SHA-256 hash of the content that APK wrote. A role file never existed before APK. |
 | `instructions` | The global instruction file | The exact block between the markers and the line breaks that APK added before it. |
-| `json` | Claude `settings.json` | Each owned `env` value: its key, whether it existed, its old value and its new value. Also whether APK created the `env` object. |
+| `json` | Claude `settings.json` | Each owned `env` value: its key, whether it existed, its old value and its new value. Also whether APK created the `env` object. In v5, the same record for the top-level `autoCompactWindow`. |
 | `toml` | `config.toml` of ChatGPT, Kimi and Grok | Each owned value: its key path, its old value and its new value. Whether APK added the table of the value (`addedTable`). Since 0.5.2, when APK added a line break at the end of a file that did not end with one, a SHA-256 hash of that last line (`addedLineBreak`); the receipt keeps no config text. For Kimi, also a value that APK removed. |
 
 ### Receipt formats
 
-APK 0.4.0 writes format v4. It can read, check and remove v2, v3 and v4.
+APK writes format v4, or format v5 for a Claude setup that uses `--claude-auto-compact`. Versions after 0.5.2 can read, check and remove v2, v3, v4 and v5. Versions 0.4.0 to 0.5.2 read v2, v3 and v4.
 
 | Format | Written by | Roles it can own | Release fields |
 |---|---|---|---|
+| v5 | Versions after 0.5.2, only for a Claude setup that uses `--claude-auto-compact` | The selected subset of all six roles (`selectedRoles`) | `releaseVersion`, `source`, `preset` |
 | v4 | All releases from 0.1.0, including 0.4.0 | The selected subset of all six roles (`selectedRoles`) | `releaseVersion`, `source`, `preset` |
 | v3 | Development versions before 0.1.0 | The four original roles: Coder, Reviewer, Code explorer, Task runner | `releaseVersion`, `source`, `preset` |
 | v2 | Development versions before 0.1.0 | The four original roles | None. The applied release is reported as unknown. |
@@ -74,6 +75,9 @@ APK 0.4.0 writes format v4. It can read, check and remove v2, v3 and v4.
 - Grok receipts exist only in v4.
 - A Claude v4 receipt owns two or three `env` values. The third, `CLAUDE_CODE_SUBAGENT_EFFORT`, is new in 0.4.0. It is present only when the effort of the first selected role is pinned. Receipts from 0.3.0 without it stay valid.
 - An older APK version can reject a v4 receipt that a newer version wrote. For example, APK 0.3.0 accepts only two owned `env` values in a Claude receipt, so it stops with `INVALID_RECEIPT` on a 0.4.0 Claude receipt that owns `CLAUDE_CODE_SUBAGENT_EFFORT`. Use a version that supports the receipt before you downgrade. For example, remove the Claude settings with 0.4.0 and then run setup with 0.3.0. [Migration boundaries](../guide/updates-and-removal.md#migration-boundaries) lists the known cases.
+- A v5 receipt is a Claude v4 receipt with one more owned value at the end: `autoCompactWindow`, an integer, with its old value. Every other setup stays v4. A replacing setup without the option writes v4 again and removes or restores the key.
+- APK 0.5.2 and earlier refuse a v5 receipt. `doctor` reports `attention` with `INVALID_RECEIPT`, and `uninstall` exits with code 3. Both change nothing. Remove or replace such a setup with a version that reads v5. [Migration boundaries](../guide/updates-and-removal.md#migration-boundaries) gives the steps.
+- The requested snapshot `policy.json` keeps `autoCompactWindow` after a setup with the option, and also after removal. APK 0.5.2 and earlier refuse that file, so `setup` with no preferences input stops with `INVALID_POLICY` until you give it `--release`, `--preset`, `--policy`, `--config` or explicit arguments.
 - A `toml` value has `addedLineBreak` only when `config.toml` did not end with a line break before setup. APK 0.5.1 and earlier stop with `INVALID_RECEIPT` on such a receipt.
 
 APK refuses these receipts:
