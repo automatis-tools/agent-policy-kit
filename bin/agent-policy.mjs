@@ -138,6 +138,7 @@ async function main(){
     }finally{if(temporary)fs.rmSync(temporary,{recursive:true,force:true});}
   }
   const {inspectConfiguration}=await import('../src/install.mjs');
+  const {oversizedClaudeInstructions}=await import('../src/inspect.mjs');
   const report={schemaVersion:1,mode:'configuration_only',version,clients:{}};
   for(const selected of client?[client]:CLIENTS){
     const detection=summarizeDetection([await resolveClient(selected)])[0];
@@ -151,6 +152,7 @@ async function main(){
     report.clients[selected]={detection,configuration,modelExecution:'not_checked',
       concurrency:['chatgpt','claude','grok'].includes(selected)?'native_setting_with_client_exceptions':'instructions_only',
       models:selected==='gemini'?'native_tiers':selected==='kimi'?'native_pool_with_routing_guidance':'native_role_settings'};
+    if(selected==='claude')report.clients.claude.oversizedInstructionFiles=await oversizedClaudeInstructions({home,explicitHome:Boolean(opts.home)});
   }
   print(report);
 }
